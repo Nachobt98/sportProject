@@ -2,8 +2,10 @@ import AppBar from "@mui/material/AppBar";
 import { Button, Grid, Toolbar } from "@mui/material";
 import Typography from "@mui/material/Typography";
 import { Link, useLocation } from "react-router-dom";
-
+import { useAuth } from "../context/authContext";
+import { DropdownMenu } from "./dropDownMenu";
 export function Header() {
+  const { isAuthenticated, username } = useAuth();
   const location = useLocation();
 
   // Verificar si estás en la página de inicio de sesión
@@ -14,7 +16,8 @@ export function Header() {
   if (isLoginPage || isRegisterPage) {
     return null;
   }
-
+  console.log(isAuthenticated);
+  console.log(username);
   return (
     <AppBar
       sx={{ height: "8%", justifyContent: "center", background: "#fafafa" }}
@@ -59,36 +62,51 @@ export function Header() {
               </Button>
             </Grid>
           </Grid>
-          <Grid
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-            }}
-          >
-            <Link to="/loginpage">
+          {isAuthenticated ? (
+            <Grid
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+              }}
+            >
+              <Link to="/loginpage">
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  sx={{ background: "secondary", margin: "10px" }}
+                >
+                  <Typography variant="h6" fontWeight={600}>
+                    LogIn
+                  </Typography>
+                </Button>
+              </Link>
+              {/* Enlace de Registro */}
               <Button
+                component={Link}
+                to="/registerpage" // Ajusta la ruta de registro según tu configuración
                 variant="contained"
                 color="secondary"
                 sx={{ background: "secondary", margin: "10px" }}
               >
                 <Typography variant="h6" fontWeight={600}>
-                  LogIn
+                  Registro
                 </Typography>
               </Button>
-            </Link>
-            {/* Enlace de Registro */}
-            <Button
-              component={Link}
-              to="/registerpage" // Ajusta la ruta de registro según tu configuración
-              variant="contained"
-              color="secondary"
-              sx={{ background: "secondary", margin: "10px" }}
+            </Grid>
+          ) : (
+            <Grid
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+              }}
             >
-              <Typography variant="h6" fontWeight={600}>
-                Registro
+              <Typography variant="h4" fontWeight={600} color="secondary">
+                Bienvenido, {username}!
               </Typography>
-            </Button>
-          </Grid>
+
+              <DropdownMenu />
+            </Grid>
+          )}
         </Grid>
       </Toolbar>
     </AppBar>

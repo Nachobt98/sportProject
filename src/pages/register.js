@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Button,
   Grid,
@@ -10,7 +10,7 @@ import {
 import { makeStyles } from "@mui/styles";
 import { Link } from "react-router-dom";
 import img3 from "../img/img3.jpg";
-
+import { useUser } from "../context/userContext";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100vh",
@@ -39,7 +39,51 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export function RegisterPage() {
+  const { addUser } = useUser();
   const classes = useStyles();
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    userName: "",
+    city: "",
+    email: "",
+    birthdate: "",
+    password: "",
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    addUser(formData);
+
+    // try {
+    //   const response = await fetch("/registeredUser", {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify(formData),
+    //   });
+
+    //   const data = await response.json();
+
+    //   if (response.ok) {
+    //     console.log("Usuario registrado exitosamente");
+    //     // Puedes redirigir o hacer otras acciones después del registro
+    //   } else {
+    //     console.error("Error de registro:", data.message);
+    //   }
+    // } catch (error) {
+    //   console.error("Error al enviar el formulario de registro:", error);
+    // }
+  };
 
   return (
     <Grid container component="main" className={classes.root}>
@@ -65,6 +109,9 @@ export function RegisterPage() {
                   fullWidth
                   id="firstName"
                   name="firstName"
+                  autoComplete="off"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -77,9 +124,27 @@ export function RegisterPage() {
                   fullWidth
                   id="lastName"
                   name="lastName"
+                  autoComplete="off"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="h5" color="textSecondary" gutterBottom>
+                  Nombre de Usuario
+                </Typography>
+                <TextField
+                  variant="outlined"
+                  required
+                  fullWidth
+                  id="userName"
+                  name="userName"
+                  autoComplete="off"
+                  value={formData.userName}
+                  onChange={handleInputChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
                 <Typography variant="h5" color="textSecondary" gutterBottom>
                   Ciudad
                 </Typography>
@@ -89,6 +154,9 @@ export function RegisterPage() {
                   fullWidth
                   id="city"
                   name="city"
+                  autoComplete="off"
+                  value={formData.city}
+                  onChange={handleInputChange}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -101,7 +169,24 @@ export function RegisterPage() {
                   fullWidth
                   id="email"
                   name="email"
-                  autoComplete="email"
+                  autoComplete="off"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="h5" color="textSecondary" gutterBottom>
+                  Contraseña
+                </Typography>
+                <TextField
+                  variant="outlined"
+                  required
+                  fullWidth
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -115,6 +200,8 @@ export function RegisterPage() {
                   id="birthdate"
                   name="birthdate"
                   type="date"
+                  value={formData.birthdate}
+                  onChange={handleInputChange}
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
@@ -128,11 +215,11 @@ export function RegisterPage() {
             </Grid>
 
             <Button
-              type="submit"
               fullWidth
               variant="contained"
               color="secondary"
               className={classes.submit}
+              onClick={handleSubmit}
             >
               Registrarse
             </Button>

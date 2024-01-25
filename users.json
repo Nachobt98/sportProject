@@ -1,0 +1,37 @@
+[
+  {
+    "firstName": "John",
+    "lastName": "Doe",
+    "city": "New York",
+    "email": "john.doe@example.com",
+    "birthdate": "1990-01-01"
+  },
+  {
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "city": "Los Angeles",
+    "email": "jane.smith@example.com",
+    "birthdate": "1995-02-15"
+  },
+  {
+    "firstName": "Robert",
+    "lastName": "Johnson",
+    "city": "Chicago",
+    "email": "robert.johnson@example.com",
+    "birthdate": "1988-07-20"
+  },
+  {
+    "firstName": "Emily",
+    "lastName": "Williams",
+    "city": "Houston",
+    "email": "emily.williams@example.com",
+    "birthdate": "1992-10-05"
+  },
+  {
+    "firstName": "Michael",
+    "lastName": "Brown",
+    "city": "Phoenix",
+    "email": "michael.brown@example.com",
+    "birthdate": "1998-12-30"
+  }
+]

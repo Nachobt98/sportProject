@@ -8,6 +8,8 @@ import { Header } from "./components/header";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { LoginPage } from "./pages/login";
 import { RegisterPage } from "./pages/register";
+import { UserProvider } from "./context/userContext";
+import { AuthProvider } from "./context/authContext";
 function App() {
   const theme = createTheme({
     typography: {
@@ -21,16 +23,20 @@ function App() {
   });
   return (
     <>
-      <ThemeProvider theme={theme}>
-        <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/article" element={<Article />} />
-          <Route path="/searchCard" element={<SearchCard />} />
-          <Route path="/loginpage" element={<LoginPage />} />
-          <Route path="/registerpage" element={<RegisterPage />} />
-        </Routes>
-      </ThemeProvider>
+      <UserProvider>
+        <AuthProvider>
+          <ThemeProvider theme={theme}>
+            <Header />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/article" element={<Article />} />
+              <Route path="/searchCard" element={<SearchCard />} />
+              <Route path="/loginpage" element={<LoginPage />} />
+              <Route path="/registerpage" element={<RegisterPage />} />
+            </Routes>
+          </ThemeProvider>
+        </AuthProvider>
+      </UserProvider>
     </>
   );
 }

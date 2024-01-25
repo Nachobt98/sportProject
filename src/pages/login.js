@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Button,
   Grid,
@@ -8,8 +8,10 @@ import {
   Container,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import img3 from "../img/img3.jpg";
+import { useUser } from "../context/userContext";
+import { useAuth } from "../context/authContext";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -37,10 +39,45 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing(3, 0, 2),
   },
 }));
-
+const handleSubmit = (event) => {
+  event.preventDefault();
+  console.log("submiiit");
+};
 export function LoginPage() {
-  const classes = useStyles();
+  const { users } = useUser();
+  const { login, username } = useAuth();
+  const navigate = useNavigate();
+  const [loginData, setLoginData] = useState({
+    userName: "",
+    password: "",
+  });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setLoginData({
+      ...loginData,
+      [name]: value,
+    });
+  };
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // Comprobar si las credenciales están registradas
+    const isUserRegistered = users.some(
+      (user) => user.userName === loginData.userName
+    );
 
+    if (isUserRegistered) {
+      console.log("Usuario autenticado");
+      navigate("/");
+      login(loginData.userName);
+      console.log(login(loginData.userName));
+      console.log(username);
+      // Puedes redirigir o hacer otras acciones después de la autenticación
+    } else {
+      console.error("Credenciales no válidas");
+    }
+  };
+
+  const classes = useStyles();
   return (
     <Grid container component="main" className={classes.root}>
       <Container component="main" maxWidth="xs">
@@ -48,19 +85,21 @@ export function LoginPage() {
           <Typography variant="h2" color="secondary" align="center">
             SportLife
           </Typography>
-          <form className={classes.form} noValidate>
+          <form className={classes.form}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <Typography variant="h5" color="textSecondary">
-                  Email
+                  Username
                 </Typography>
                 <TextField
                   variant="outlined"
                   required
                   fullWidth
-                  id="email"
-                  name="email"
-                  autoComplete="email"
+                  id="userName"
+                  name="userName"
+                  autoComplete="off"
+                  value={loginData.userName}
+                  onChange={handleInputChange}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -75,6 +114,8 @@ export function LoginPage() {
                   type="password"
                   id="password"
                   autoComplete="current-password"
+                  value={loginData.password}
+                  onChange={handleInputChange}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -93,17 +134,16 @@ export function LoginPage() {
               </Grid>
             </Grid>
 
-            <Link to="/">
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="secondary"
-                className={classes.submit}
-              >
-                LogIn
-              </Button>
-            </Link>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="secondary"
+              className={classes.submit}
+              onClick={handleLogin}
+            >
+              LogIn
+            </Button>
           </form>
         </Paper>
       </Container>
