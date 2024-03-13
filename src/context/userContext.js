@@ -9,8 +9,25 @@ export const UserProvider = ({ children }) => {
     setUsers([...users, user]);
   };
 
+  const getUserData = (userId) => {
+    // Buscar el usuario por ID y devolver sus datos
+    const user = users.find((u) => u.id === userId);
+    return user || {};
+  };
+
+  const updateUserData = (userId, newData) => {
+    // Actualizar los datos del usuario con el nuevo objeto newData
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId ? { ...user, ...newData } : user
+      )
+    );
+  };
+
   return (
-    <UserContext.Provider value={{ users, addUser }}>
+    <UserContext.Provider
+      value={{ users, addUser, getUserData, updateUserData }}
+    >
       {children}
     </UserContext.Provider>
   );

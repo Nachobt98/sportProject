@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Menu, MenuItem, IconButton } from "@mui/material";
+import { Menu, MenuItem, IconButton, Divider } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
@@ -26,12 +26,13 @@ export function DropdownMenu() {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleMenuClose} component={Link} to="/profile">
+        <MenuItem onClick={handleMenuClose} component={Link} to="/Perfil">
           Mi Perfil
         </MenuItem>
-        <MenuItem onClick={handleMenuClose} component={Link} to="/faq">
+        <MenuItem onClick={handleMenuClose} component={Link} to="/faqPage">
           FAQ
         </MenuItem>
+        <Divider sx={{ margin: "5px", backgroundColor: "#262626" }} />
         <MenuItem
           onClick={() => {
             logout();

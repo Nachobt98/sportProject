@@ -1,15 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
+
 import {
-  Container,
-  Typography,
-  TextField,
   Button,
-  Grid,
   Card,
-  CardContent,
   CardActions,
+  CardContent,
   CardHeader,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Grid,
   MenuItem,
+  TextField,
+  Typography,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import img8 from "../img/img8.jpg";
@@ -49,29 +55,58 @@ const eventsData = [
   {
     id: 2,
     city: "Barcelona",
+    description: "Torneo de Tenis",
+    sport: "Tenis",
+  },
+  {
+    id: 3,
+    city: "Valencia",
+    description: "Torneo de Fútbol",
+    sport: "Fútbol",
+  },
+  {
+    id: 4,
+    city: "Barcelona",
+    description: "Torneo de Golf",
+    sport: "Golf",
+  },
+  {
+    id: 5,
+    city: "Barcelona",
     description: "Torneo de baloncesto",
     sport: "Baloncesto",
   },
+  {
+    id: 6,
+    city: "Valencia",
+    description: "Torneo de baloncesto",
+    sport: "Baloncesto",
+  },
+  {
+    id: 7,
+    city: "Las Palmas",
+    description: "Torneo de Pádel",
+    sport: "Pádel",
+  },
+  {
+    id: 8,
+    city: "Barcelona",
+    description: "Torneo de baloncesto",
+    sport: "Baloncesto",
+  },
+  {
+    id: 9,
+    city: "Las Palmas",
+    description: "Torneo de baloncesto",
+    sport: "Baloncesto",
+  },
+  {
+    id: 10,
+    city: "Málaga",
+    description: "Torneo de Pádel",
+    sport: "Pádel",
+  },
 ];
-
-const getRandomCity = () => {
-  const randomIndex = Math.floor(Math.random() * cities.length);
-  return cities[randomIndex];
-};
-
-const getRandomSport = () => {
-  const randomIndex = Math.floor(Math.random() * sports.length);
-  return sports[randomIndex];
-};
-
-const generateRandomEvents = () => {
-  return Array.from({ length: 15 }, (_, index) => ({
-    id: index + 1,
-    city: getRandomCity(),
-    description: `Evento ${index + 1}`,
-    sport: getRandomSport(),
-  }));
-};
 
 const useStyles = makeStyles((theme) => ({
   grid: {
@@ -90,15 +125,18 @@ const useStyles = makeStyles((theme) => ({
   },
   eventCard: {
     marginBottom: theme.spacing(3),
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fondo tenue para las cards
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
   },
   noResultsText: {
     textAlign: "center",
-    color: "rgba(0, 0, 0, 0.4)", // Texto en color tenue
+    color: "black",
     marginTop: theme.spacing(2),
   },
   optionPointer: {
     cursor: "pointer",
+  },
+  dialog: {
+    color: "black",
   },
 }));
 
@@ -109,8 +147,12 @@ export function SearchCard() {
     sport: "",
     date: "",
   });
-
-  const [events, setEvents] = React.useState(generateRandomEvents());
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [participants, setParticipants] = useState([]);
+  const [maxParticipants, setMaxParticipants] = useState(5); // Número máximo de participantes
+  const [isFull, setIsFull] = useState(false); // Bandera para verificar si se ha alcanzado el límite de participantes
+  const [events, setEvents] = React.useState(eventsData);
   const [filteredEvents, setFilteredEvents] = React.useState(events); // Inicializar con todos los eventos
   const [isSearching, setIsSearching] = React.useState(false);
 
@@ -134,10 +176,22 @@ export function SearchCard() {
 
   const handleSearch = () => {
     // Actualizar la lista de eventos simulados
-    setEvents(generateRandomEvents());
+    setEvents(eventsData);
     setIsSearching(true); // Establecer la bandera de búsqueda al iniciar la búsqueda
   };
-
+  const handleDialogOpen = (event) => {
+    setSelectedEvent(event);
+    setOpenDialog(true);
+    // Verifica si participants es undefined y, de ser así, inicialízalo como un array vacío
+    setParticipants(event.participants || []);
+    setIsFull((event.participants || []).length >= maxParticipants);
+  };
+  const handleSignUp = () => {
+    // Aquí podrías implementar la lógica para registrar al usuario en el evento
+    // Actualiza la lista de participantes y verifica si se ha alcanzado el límite máximo
+    setParticipants([...participants, "Nachobt98"]);
+    setIsFull(participants.length + 1 >= maxParticipants);
+  };
   return (
     <Grid className={classes.grid}>
       <Container
@@ -160,7 +214,10 @@ export function SearchCard() {
               onChange={(e) =>
                 setSearchCriteria({ ...searchCriteria, city: e.target.value })
               }
-              InputLabelProps={{ shrink: true }}
+              InputLabelProps={{ shrink: true, style: { color: "#FFD700" } }}
+              InputProps={{
+                style: { color: "#FFD700" },
+              }}
               className={classes.optionPointer}
             >
               {cities.map((city) => (
@@ -180,7 +237,10 @@ export function SearchCard() {
               onChange={(e) =>
                 setSearchCriteria({ ...searchCriteria, sport: e.target.value })
               }
-              InputLabelProps={{ shrink: true }}
+              InputLabelProps={{ shrink: true, style: { color: "#FFD700" } }}
+              InputProps={{
+                style: { color: "#FFD700" },
+              }}
               className={classes.optionPointer}
             >
               {sports.map((sport) => (
@@ -200,7 +260,10 @@ export function SearchCard() {
               onChange={(e) =>
                 setSearchCriteria({ ...searchCriteria, date: e.target.value })
               }
-              InputLabelProps={{ shrink: true }}
+              InputLabelProps={{ shrink: true, style: { color: "#FFD700" } }}
+              InputProps={{
+                style: { color: "#FFD700" },
+              }}
             />
           </Grid>
           <Grid item xs={12}>
@@ -223,8 +286,12 @@ export function SearchCard() {
                   <Typography variant="body1">{event.description}</Typography>
                 </CardContent>
                 <CardActions>
-                  <Button variant="contained" color="secondary">
-                    Unirse
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleDialogOpen(event)}
+                  >
+                    INFO
                   </Button>
                 </CardActions>
               </Card>
@@ -235,6 +302,40 @@ export function SearchCard() {
             </Typography>
           )}
         </Grid>
+        {/* <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+          <Grid>
+            <DialogTitle>{selectedEvent?.city}</DialogTitle>
+            <DialogContent sx={{ backgroundColor: "grey" }}>
+              <DialogContentText sx={{ color: "black" }}>
+                {selectedEvent?.description}
+              </DialogContentText>
+              <Typography variant="body2">
+                Fecha: {selectedEvent?.date}
+              </Typography>
+              <Typography variant="body2">Participantes:</Typography>
+              <ul>
+                {participants.map((participant, index) => (
+                  <li key={index}>{participant}</li>
+                ))}
+              </ul>
+              <Typography variant="body2">
+                {participants.length}/{maxParticipants}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              {!isFull && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleSignUp}
+                >
+                  APUNTARSE
+                </Button>
+              )}
+              <Button onClick={() => setOpenDialog(false)}>Cerrar</Button>
+            </DialogActions>
+          </Grid>
+        </Dialog> */}
       </Container>
     </Grid>
   );

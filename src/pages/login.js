@@ -6,12 +6,15 @@ import {
   Typography,
   Paper,
   Container,
+  Link as MuiLink,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import { Link, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import img3 from "../img/img3.jpg";
 import { useUser } from "../context/userContext";
 import { useAuth } from "../context/authContext";
+import { Formik, Form, Field } from "formik";
+import * as Yup from "yup";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -39,12 +42,17 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing(3, 0, 2),
   },
 }));
+const validationSchema = Yup.object().shape({
+  userName: Yup.string().required("Username es requerido"),
+  password: Yup.string().required("Contraseña es requerida"),
+});
+
 const handleSubmit = (event) => {
   event.preventDefault();
   console.log("submiiit");
 };
 export function LoginPage() {
-  const { users } = useUser();
+  const { users, addUser } = useUser();
   const { login, username } = useAuth();
   const navigate = useNavigate();
   const [loginData, setLoginData] = useState({
@@ -58,22 +66,67 @@ export function LoginPage() {
       [name]: value,
     });
   };
-  const handleLogin = (e) => {
-    e.preventDefault();
+  const handleLogine = async (e) => {
     // Comprobar si las credenciales están registradas
     const isUserRegistered = users.some(
       (user) => user.userName === loginData.userName
     );
+    console.log(loginData);
 
     if (isUserRegistered) {
       console.log("Usuario autenticado");
       navigate("/");
       login(loginData.userName);
-      console.log(login(loginData.userName));
-      console.log(username);
+
       // Puedes redirigir o hacer otras acciones después de la autenticación
     } else {
       console.error("Credenciales no válidas");
+    }
+  };
+  const fetchUserByUsername = async (username) => {
+    console.log(username);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/user/${username}` // Aquí se debe utilizar el nombre de usuario real
+      );
+
+      if (response.ok) {
+        const user = await response.json();
+        console.log("response", user);
+        return user;
+      } else {
+        console.error("Usuario no encontrado");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error al obtener el usuario:", error);
+      return null;
+    }
+  };
+
+  const handleLogin = async (values) => {
+    try {
+      // Envía los datos de inicio de sesión al backend
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+      const user = await fetchUserByUsername("nachobt98");
+      console.log(user);
+      if (response.ok) {
+        login(data.username); // Almacena el nombre de usuario autenticado en el contexto de autenticación
+        addUser(user);
+        navigate("/"); // Redirige al usuario a la página principal
+      } else {
+        console.error("Credenciales no válidas");
+      }
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
     }
   };
 
@@ -85,66 +138,94 @@ export function LoginPage() {
           <Typography variant="h2" color="secondary" align="center">
             SportLife
           </Typography>
-          <form className={classes.form}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="h5" color="textSecondary">
-                  Username
-                </Typography>
-                <TextField
-                  variant="outlined"
-                  required
-                  fullWidth
-                  id="userName"
-                  name="userName"
-                  autoComplete="off"
-                  value={loginData.userName}
-                  onChange={handleInputChange}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h5" color="textSecondary">
-                  Contraseña
-                </Typography>
-                <TextField
-                  variant="outlined"
-                  required
-                  fullWidth
-                  name="password"
-                  type="password"
-                  id="password"
-                  autoComplete="current-password"
-                  value={loginData.password}
-                  onChange={handleInputChange}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Link>
-                  <Typography variant="body2" color="secondary" align="center">
-                    ¿Olvidaste tu contraseña?
-                  </Typography>
-                </Link>
-              </Grid>
-              <Grid item xs={12}>
-                <Link to="/registerpage">
-                  <Typography variant="body2" color="secondary" align="center">
-                    Registrate aquí
-                  </Typography>
-                </Link>
-              </Grid>
-            </Grid>
+          <Formik
+            initialValues={{
+              userName: loginData.userName,
+              password: loginData.password,
+            }}
+            validationSchema={validationSchema}
+            onSubmit={handleLogin}
+          >
+            {(formikProps) => (
+              <Form className={classes.form}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Typography variant="h5" color="textSecondary">
+                      Username
+                    </Typography>
+                    <Field
+                      type="text"
+                      name="userName"
+                      as={TextField}
+                      variant="outlined"
+                      required
+                      fullWidth
+                      id="userName"
+                      autoComplete="off"
+                      onChange={(e) => {
+                        formikProps.handleChange(e);
+                        setLoginData({
+                          ...loginData,
+                          userName: e.target.value,
+                        });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="h5" color="textSecondary">
+                      Contraseña
+                    </Typography>
+                    <Field
+                      type="password"
+                      name="password"
+                      as={TextField}
+                      variant="outlined"
+                      required
+                      fullWidth
+                      autoComplete="current-password"
+                      onChange={(e) => {
+                        formikProps.handleChange(e);
+                        setLoginData({
+                          ...loginData,
+                          password: e.target.value,
+                        });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <MuiLink
+                      component={RouterLink}
+                      to="/forgotpassword"
+                      variant="body2"
+                      color="secondary"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </MuiLink>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <MuiLink
+                      component={RouterLink}
+                      to="/registerpage"
+                      variant="body2"
+                      color="secondary"
+                    >
+                      Regístrate aquí
+                    </MuiLink>
+                  </Grid>
+                </Grid>
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              color="secondary"
-              className={classes.submit}
-              onClick={handleLogin}
-            >
-              LogIn
-            </Button>
-          </form>
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  color="secondary"
+                  className={classes.submit}
+                >
+                  LogIn
+                </Button>
+              </Form>
+            )}
+          </Formik>
         </Paper>
       </Container>
     </Grid>
