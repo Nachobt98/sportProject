@@ -17,6 +17,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { makeStyles } from "@mui/styles";
 import img8 from "../img/img8.jpg";
 import "../styles/styles.css";
@@ -147,6 +148,7 @@ export function SearchCard() {
     sport: "",
     date: "",
   });
+  const navigate = useNavigate();
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [participants, setParticipants] = useState([]);
@@ -276,6 +278,21 @@ export function SearchCard() {
               Buscar
             </Button>
           </Grid>
+        </Grid>
+        <Grid
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "20px", // Ajusta el margen superior según sea necesario
+          }}
+        >
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => navigate("/createEvent")}
+          >
+            Crear evento
+          </Button>
         </Grid>
         <Grid marginTop={10} sx={{ maxHeight: "1600px", overflow: "auto" }}>
           {filteredEvents.length > 0 ? (

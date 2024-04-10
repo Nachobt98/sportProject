@@ -12,6 +12,10 @@ import { UserProvider } from "./context/userContext";
 import { AuthProvider } from "./context/authContext";
 import { Perfil } from "./pages/perfil";
 import { FaqPage } from "./pages/faqPage";
+import { CreateEvent } from "./pages/CreateEvent";
+import { SearchCard2 } from "./pages/searchCard2";
+import CardDetails from "./pages/CardDetails";
+import { EventProvider } from "./context/eventContext";
 function App() {
   const theme = createTheme({
     typography: {
@@ -46,22 +50,27 @@ function App() {
   });
   return (
     <>
-      <UserProvider>
-        <AuthProvider>
-          <ThemeProvider theme={theme}>
-            <Header />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/article" element={<Article />} />
-              <Route path="/searchCard" element={<SearchCard />} />
-              <Route path="/loginpage" element={<LoginPage />} />
-              <Route path="/registerpage" element={<RegisterPage />} />
-              <Route path="/Perfil" element={<Perfil />} />
-              <Route path="/faqPage" element={<FaqPage />} />
-            </Routes>
-          </ThemeProvider>
-        </AuthProvider>
-      </UserProvider>
+      <EventProvider>
+        <UserProvider>
+          <AuthProvider>
+            <ThemeProvider theme={theme}>
+              <Header />
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/article" element={<Article />} />
+                <Route path="/searchCard" element={<SearchCard />} />
+                <Route path="/loginpage" element={<LoginPage />} />
+                <Route path="/registerpage" element={<RegisterPage />} />
+                <Route path="/Perfil" element={<Perfil />} />
+                <Route path="/faqPage" element={<FaqPage />} />
+                <Route path="/createEvent" element={<CreateEvent />} />
+                <Route path="/searchCard2" element={<SearchCard2 />} />
+                <Route path="/cardDetails" element={<CardDetails />} />
+              </Routes>
+            </ThemeProvider>
+          </AuthProvider>
+        </UserProvider>
+      </EventProvider>
     </>
   );
 }

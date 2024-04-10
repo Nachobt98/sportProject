@@ -50,7 +50,7 @@ export function Header() {
                   Article
                 </Typography>
               </Button>
-              <Button component={Link} to="/searchCard" sx={{ color: "#fff" }}>
+              <Button component={Link} to="/searchCard2" sx={{ color: "#fff" }}>
                 <Typography variant="h6" fontWeight={600} color="secondary">
                   Search
                 </Typography>

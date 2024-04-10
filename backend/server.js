@@ -22,7 +22,14 @@ const User = mongoose.model("User", {
   birthdate: Date,
   password: String,
 });
-
+const Event = mongoose.model("Event", {
+  name: String,
+  description: String,
+  sport: String,
+  date: Date,
+  city: String,
+  participants: Number,
+});
 app.use(bodyParser.json());
 
 app.use(cors());
@@ -71,6 +78,33 @@ app.get("/api/user/username", async (req, res) => {
     res.status(500).json({ message: "Error al buscar el usuario" });
   }
 });
+
+// Ruta para manejar la creación de eventos
+app.post("/api/events", async (req, res) => {
+  try {
+    const newEvent = new Event(req.body);
+    await newEvent.save();
+    console.log("Evento creado exitosamente:", newEvent); // Imprime el objeto completo del evento en la consola del servidor
+    res
+      .status(201)
+      .json({ message: "Evento creado exitosamente", event: newEvent }); // Aquí se incluye el objeto del evento en la respuesta
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al crear el evento" });
+  }
+});
+
+// Ruta para obtener la lista de eventos
+app.get("/api/events", async (req, res) => {
+  try {
+    const events = await Event.find().exec();
+    res.status(200).json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener la lista de eventos" });
+  }
+});
+
 // Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
