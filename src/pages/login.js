@@ -116,7 +116,7 @@ export function LoginPage() {
       });
 
       const data = await response.json();
-      const user = await fetchUserByUsername("nachobt98");
+      const user = await fetchUserByUsername(loginData.userName);
       console.log(user);
       if (response.ok) {
         login(data.username); // Almacena el nombre de usuario autenticado en el contexto de autenticación

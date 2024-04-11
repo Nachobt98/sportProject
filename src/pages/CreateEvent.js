@@ -70,6 +70,7 @@ export function CreateEvent() {
     sport: "",
     date: "",
     city: "",
+    location: "",
     participants: "",
   });
 
@@ -78,6 +79,7 @@ export function CreateEvent() {
     description: Yup.string().required("Descripcion es requerida"),
     sport: Yup.string().required("Deporte es requerido"),
     city: Yup.string().required("Ciudad es requerido"),
+    location: Yup.string().required("Ubicacion es requerido"),
     date: Yup.date().required("Fecha de Nacimiento es requerida"),
     participants: Yup.string().required("Participantes es requerido"),
   });
@@ -100,6 +102,7 @@ export function CreateEvent() {
               description: "",
               sport: "",
               date: "",
+              location: "",
               city: "",
               participants: "",
             }}
@@ -233,7 +236,30 @@ export function CreateEvent() {
                       className={classes.error}
                     />
                   </Grid>
-
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="h5" color="textSecondary" gutterBottom>
+                      Ubicacion
+                    </Typography>
+                    <Field
+                      type="text"
+                      name="location"
+                      as={TextField}
+                      variant="outlined"
+                      required
+                      fullWidth
+                      id="location"
+                      autoComplete="off"
+                      onChange={(e) => {
+                        formikProps.handleChange(e);
+                        setFormData({ ...formData, location: e.target.value });
+                      }}
+                    />
+                    <ErrorMessage
+                      name="location"
+                      component="div"
+                      className={classes.error}
+                    />
+                  </Grid>
                   <Grid item xs={12}>
                     <Typography variant="h5" color="textSecondary" gutterBottom>
                       Fecha del evento

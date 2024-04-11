@@ -19,9 +19,11 @@ import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
-
+import img8 from "../img/img3.jpg";
 const useStyles = makeStyles((theme) => ({
   root: {
+    backgroundImage: `url(${img3})`,
+    backgroundSize: "cover",
     margin: "100px",
     width: "100%",
     borderRadius: theme.spacing(2),
@@ -72,9 +74,9 @@ const useStyles = makeStyles((theme) => ({
 export function Perfil() {
   const classes = useStyles();
   const { users, updateUserData } = useUser();
-  const [loggedInUser, setLoggedInUser] = useState(users[0] || {});
+  const [loggedInUser, setLoggedInUser] = useState(users);
 
-  console.log(loggedInUser);
+  console.log("usersdasds", users);
   const [editable, setEditable] = useState(false);
   const [editedData, setEditedData] = useState({ ...loggedInUser });
 

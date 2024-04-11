@@ -3,15 +3,16 @@ import { Menu, MenuItem, IconButton, Divider } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
-
+import { useUser } from "../context/userContext";
 export function DropdownMenu() {
   const { logout } = useAuth();
+
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
-
+  const { deleteUser } = useUser();
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
@@ -35,6 +36,7 @@ export function DropdownMenu() {
         <Divider sx={{ margin: "5px", backgroundColor: "#262626" }} />
         <MenuItem
           onClick={() => {
+            deleteUser();
             logout();
             handleMenuClose();
           }}

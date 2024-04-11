@@ -27,6 +27,7 @@ const Event = mongoose.model("Event", {
   description: String,
   sport: String,
   date: Date,
+  location: String,
   city: String,
   participants: Number,
 });
@@ -64,11 +65,10 @@ app.post("/api/login", async (req, res) => {
 });
 
 // Ruta para buscar un usuario por su nombre de usuario
-app.get("/api/user/username", async (req, res) => {
-  const { userName } = req.params;
+app.get("/api/user/:userName", async (req, res) => {
+  const userName = req.params.userName;
   try {
     const user = await User.findOne({ userName }).exec();
-    console.log("user", user);
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
