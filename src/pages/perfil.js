@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Grid,
   Typography,
@@ -19,12 +19,13 @@ import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
+import { CardEvent } from "../components/cardEvent";
 import img8 from "../img/img3.jpg";
 const useStyles = makeStyles((theme) => ({
   root: {
     backgroundImage: `url(${img3})`,
     backgroundSize: "cover",
-    margin: "100px",
+    marginTop: "60px",
     width: "100%",
     borderRadius: theme.spacing(2),
     backdropFilter: "blur(10px)",
@@ -72,23 +73,35 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export function Perfil() {
+  const [events, setEvents] = useState([]);
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/events");
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+  useEffect(() => {
+    fetchEvents();
+  }, []);
   const classes = useStyles();
   const { users, updateUserData } = useUser();
-  const [loggedInUser, setLoggedInUser] = useState(users);
 
   console.log("usersdasds", users);
   const [editable, setEditable] = useState(false);
-  const [editedData, setEditedData] = useState({ ...loggedInUser });
+  const [editedData, setEditedData] = useState({ ...users });
 
   const handleEdit = () => {
     setEditable(true);
   };
 
   const handleSave = () => {
-    updateUserData(loggedInUser.id, editedData);
+    updateUserData(users.id, editedData);
     setEditable(false);
   };
-  const [bio, setBio] = useState(loggedInUser?.bio || "");
+  const [bio, setBio] = useState(users?.bio || "");
   const inputRef = useRef(null);
   const [isBioEditing, setIsBioEditing] = useState(false);
 
@@ -101,9 +114,9 @@ export function Perfil() {
   };
 
   const handleAcceptBio = () => {
-    updateUserData(loggedInUser.id, { ...loggedInUser, bio });
+    updateUserData(users.id, { ...users, bio });
     setIsBioEditing(false);
-    setLoggedInUser((prevUser) => ({ ...prevUser, bio })); // Actualiza localmente la biografía
+    updateUserData((prevUser) => ({ ...prevUser, bio })); // Actualiza localmente la biografía
   };
 
   const handleChange = (e) => {
@@ -132,9 +145,9 @@ export function Perfil() {
   };
 
   return (
-    <Paper className={classes.profileContainer}>
+    <Grid className={classes.profileContainer}>
       <Grid className={classes.root}>
-        <Grid item xs={12} align="center" style={{ margin: "10px" }}>
+        <Grid item xs={12} align="center" style={{ marginTop: "30px" }}>
           <Avatar
             className={classes.avatar}
             src={editedData.profileImage || perfil}
@@ -186,7 +199,7 @@ export function Perfil() {
             </Box>
           ) : (
             <Typography color="secondary" style={{ marginBottom: "10px" }}>
-              {loggedInUser?.bio || ""}
+              {users?.bio || ""}
               <IconButton
                 style={{ color: "black", marginLeft: "20px" }}
                 onClick={handleEditBio}
@@ -204,24 +217,24 @@ export function Perfil() {
           <Grid className={classes.userData}>
             <div>
               <Typography color="secondary" style={{ marginBottom: "5px" }}>
-                <strong>Nombre:</strong> {loggedInUser.firstName}
+                <strong>Nombre:</strong> {users.firstName}
               </Typography>
               <Typography color="secondary" style={{ marginBottom: "5px" }}>
-                <strong>Apellidos:</strong> {loggedInUser.lastName}
+                <strong>Apellidos:</strong> {users.lastName}
               </Typography>
               <Typography color="secondary" style={{ marginBottom: "5px" }}>
-                <strong>Nombre de Usuario:</strong> {loggedInUser.userName}
+                <strong>Nombre de Usuario:</strong> {users.userName}
               </Typography>
             </div>
             <div>
               <Typography color="secondary" style={{ marginBottom: "5px" }}>
-                <strong>Ciudad:</strong> {loggedInUser.city}
+                <strong>Ciudad:</strong> {users.city}
               </Typography>
               <Typography color="secondary" style={{ marginBottom: "5px" }}>
-                <strong>Email:</strong> {loggedInUser.email}
+                <strong>Email:</strong> {users.email}
               </Typography>
               <Typography color="secondary" style={{ marginBottom: "5px" }}>
-                <strong>Fecha de Nacimiento:</strong> {loggedInUser.birthdate}
+                <strong>Fecha de Nacimiento:</strong> {users.birthdate}
               </Typography>
             </div>
           </Grid>
@@ -236,7 +249,16 @@ export function Perfil() {
               Editar
             </Button>
           )}
+        </Grid>
+
+        <Grid style={{ margin: "50px" }}>
           <Divider className={classes.divider} />
+          <Typography variant="h4" gutterBottom>
+            Mis eventos
+          </Typography>
+          {events.map((event) => (
+            <CardEvent event={event} />
+          ))}
         </Grid>
       </Grid>
 
@@ -305,6 +327,6 @@ export function Perfil() {
           </Button>
         </DialogContent>
       </Dialog>
-    </Paper>
+    </Grid>
   );
 }

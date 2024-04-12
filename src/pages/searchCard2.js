@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
   Container,
   Grid,
   MenuItem,
@@ -16,6 +12,7 @@ import { makeStyles } from "@mui/styles";
 import img8 from "../img/img8.jpg";
 import "../styles/styles.css";
 import { useEventContext } from "../context/eventContext";
+import { CardEvent } from "../components/cardEvent";
 const cities = [
   "Madrid",
   "Barcelona",
@@ -82,22 +79,18 @@ export function SearchCard2() {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/events");
-        const data = await response.json();
-        setEvents(data);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      }
-    };
-
-    if (isSearching) {
-      fetchEvents();
-      setIsSearching(false);
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/events");
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
     }
-  }, [isSearching]);
+  };
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   useEffect(() => {
     const filtered = events.filter((event) => {
@@ -111,16 +104,10 @@ export function SearchCard2() {
     });
 
     setFilteredEvents(filtered);
-  }, [events, searchCriteria]);
+  }, [events, searchCriteria, isSearching]);
 
   const handleSearch = () => {
     setIsSearching(true);
-  };
-  const handleInfoClick = (event) => {
-    console.log(event);
-    setEvent(event);
-    console.log("evento", eventData);
-    navigate("/cardDetails");
   };
   return (
     <Grid className={classes.grid}>
@@ -230,24 +217,7 @@ export function SearchCard2() {
         {/* Resultados de la búsqueda */}
         <Grid marginTop={10} sx={{ maxHeight: "1600px", overflow: "auto" }}>
           {filteredEvents.length > 0 ? (
-            filteredEvents.map((event) => (
-              <Card key={event.id} className={classes.eventCard}>
-                <CardHeader title={event.city} subheader={event.sport} />
-                <CardContent>
-                  <Typography variant="body1">{event.description}</Typography>
-                </CardContent>
-                <CardActions>
-                  {/* Botón de información del evento */}
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={() => handleInfoClick(event)}
-                  >
-                    INFO
-                  </Button>
-                </CardActions>
-              </Card>
-            ))
+            filteredEvents.map((event) => <CardEvent event={event} />)
           ) : (
             // Mensaje si no se encuentran resultados
             <Typography variant="body1" className={classes.noResultsText}>
