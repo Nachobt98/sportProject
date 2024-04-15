@@ -27,6 +27,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundSize: "cover",
     marginTop: "60px",
     width: "100%",
+    height: "2000px",
     borderRadius: theme.spacing(2),
     backdropFilter: "blur(10px)",
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -74,20 +75,44 @@ const useStyles = makeStyles((theme) => ({
 
 export function Perfil() {
   const [events, setEvents] = useState([]);
-  const fetchEvents = async () => {
+  const { users, updateUserData } = useUser();
+  const [joinedEvents, setJoinedEvents] = useState([]);
+  const fetchUserEvents = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/events");
+      const response = await fetch(
+        `http://localhost:5000/api/user/${users.userName}/events`
+      );
       const data = await response.json();
       setEvents(data);
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.error("Error fetching user events:", error);
+    }
+  };
+  const fetchJoinedEvents = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/user/${users.userName}/joinedEvents`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setJoinedEvents(data);
+      } else {
+        console.error(
+          "Error al obtener los eventos unidos del usuario:",
+          response.statusText
+        );
+      }
+    } catch (error) {
+      console.error("Error al obtener los eventos unidos del usuario:", error);
     }
   };
   useEffect(() => {
-    fetchEvents();
+    fetchJoinedEvents();
   }, []);
+  useEffect(() => {
+    fetchUserEvents();
+  }, [users.userName]);
   const classes = useStyles();
-  const { users, updateUserData } = useUser();
 
   console.log("usersdasds", users);
   const [editable, setEditable] = useState(false);
@@ -254,11 +279,34 @@ export function Perfil() {
         <Grid style={{ margin: "50px" }}>
           <Divider className={classes.divider} />
           <Typography variant="h4" gutterBottom>
+            Eventos creados
+          </Typography>
+          {events.length === 0 ? (
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", justifyContent: "center", color: "black" }}
+            >
+              Aún no has creado ningún evento
+            </Typography>
+          ) : (
+            events.map((event) => <CardEvent event={event} />)
+          )}
+        </Grid>
+        <Grid style={{ margin: "50px" }}>
+          <Divider className={classes.divider} />
+          <Typography variant="h4" gutterBottom>
             Mis eventos
           </Typography>
-          {events.map((event) => (
-            <CardEvent event={event} />
-          ))}
+          {joinedEvents.length === 0 ? (
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", justifyContent: "center", color: "black" }}
+            >
+              No te has unido a ningun evento
+            </Typography>
+          ) : (
+            joinedEvents.map((event) => <CardEvent event={event} />)
+          )}
         </Grid>
       </Grid>
 

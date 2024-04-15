@@ -54,7 +54,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export function CreateEvent() {
-  const { addUser } = useUser();
+  const { users } = useUser();
   const classes = useStyles();
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const handleSnackbarClose = (event, reason) => {
@@ -109,6 +109,7 @@ export function CreateEvent() {
             validationSchema={validationSchema}
             onSubmit={async (values, { setSubmitting }) => {
               try {
+                const eventData = { ...values, creator: users.userName };
                 const response = await fetch(
                   "http://localhost:5000/api/events",
                   {
@@ -116,12 +117,12 @@ export function CreateEvent() {
                     headers: {
                       "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(values),
+                    body: JSON.stringify(eventData),
                   }
                 );
                 if (response.ok) {
                   const responseData = await response.json();
-                  console.log("response", values); // Maneja la respuesta del servidor si es necesario
+                  console.log("response", eventData); // Maneja la respuesta del servidor si es necesario
                   setOpenSnackbar(true); // Abre el Snackbar si el evento se creó correctamente
                 } else {
                   // Maneja errores si la respuesta no es OK

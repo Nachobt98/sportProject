@@ -225,9 +225,6 @@ export function SearchCard2() {
             </Typography>
           )}
         </Grid>
-
-        {/* Diálogo de información del evento */}
-        {/* Código del diálogo eliminado por brevedad */}
       </Container>
     </Grid>
   );

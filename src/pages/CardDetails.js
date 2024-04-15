@@ -29,8 +29,11 @@ const useStyles = makeStyles((theme) => ({
   root: {
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    height: "100%",
+    backgroundColor: "rgb(245, 245, 245, 0.8)",
+    border: "3px solid",
+    borderRadius: "15px",
+    borderColor: "#c59c00",
+    marginTop: "100px",
   },
   searchContainer: {
     marginBottom: theme.spacing(3),
@@ -78,11 +81,8 @@ function CardDetails() {
   return (
     <>
       <Grid className={classes.grid}>
-        <Container
-          className={classes.root}
-          maxWidth="xl"
-          sx={{ marginTop: "40px" }}
-        >
+        asadsadasds
+        <Container className={classes.root} maxWidth="xl">
           <Grid>
             <Typography
               variant="h2"

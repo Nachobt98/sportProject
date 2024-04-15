@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   Button,
   Card,
@@ -11,6 +12,8 @@ import { useNavigate } from "react-router-dom";
 import { useEventContext } from "../context/eventContext";
 import { makeStyles } from "@mui/styles";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
+import { useEffect } from "react";
+import { useUser } from "../context/userContext";
 const useStyles = makeStyles((theme) => ({
   eventCard: {
     marginBottom: theme.spacing(3),
@@ -21,6 +24,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 export function CardEvent({ event }) {
+  const { users, updateUserData } = useUser();
   const formatDate = (dateString) => {
     const options = {
       weekday: "long",
@@ -40,13 +44,78 @@ export function CardEvent({ event }) {
     return formattedDate;
   };
   const classes = useStyles();
+  const { eventData, setEvent } = useEventContext();
   const navigate = useNavigate();
   const handleInfoClick = (event) => {
     setEvent(event);
     navigate("/cardDetails");
   };
+  const handleDeleteClick = async (eventId) => {
+    try {
+      console.log("id", eventId);
+      const response = await fetch(
+        `http://localhost:5000/api/events/${eventId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (response.ok) {
+        console.log("Evento eliminado exitosamente");
+        // Aquí puedes realizar alguna acción adicional si es necesario, como actualizar la lista de eventos.
+      } else {
+        console.error("Error al eliminar el evento:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error al eliminar el evento:", error);
+    }
+  };
+  const handleJoinClick = async (eventId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/events/${eventId}/participants/${users.userName}`,
+        {
+          method: "POST",
+        }
+      );
+      if (response.ok) {
+        console.log("Usuario unido al evento exitosamente");
+      } else {
+        console.error(
+          "Error al unir al usuario al evento:",
+          response.statusText
+        );
+      }
+      const res = await fetch(
+        `http://localhost:5000/api/user/${users.userName}/joinEvent/${eventId}`,
+        {
+          method: "POST",
+        }
+      );
+      if (res.ok) {
+        console.log("Usuario unido al evento exitosamente");
+        updateUserData({});
+        return;
+      } else {
+        console.error(
+          "Error al actualizar la lista de participantes del evento:",
+          res.statusText
+        );
+      }
 
-  const { setEvent } = useEventContext();
+      // Aquí puedes realizar alguna acción adicional si es necesario, como actualizar la lista de eventos.
+    } catch (error) {
+      console.error("Error al unir al usuario al evento:", error);
+    }
+  };
+  const isCreator = event.creator === users.userName;
+
+  const [isUserJoined, setIsUserJoined] = useState(false);
+
+  useEffect(() => {
+    setIsUserJoined(event.participantsList.includes(users.userName));
+  }, []);
+  console.log("verdad?", isUserJoined);
+  console.log(event.participantsList);
   return (
     <Card key={event.id} className={classes.eventCard}>
       <Grid
@@ -80,8 +149,14 @@ export function CardEvent({ event }) {
           {event.description}
         </Typography>
       </CardContent>
-      <CardActions>
-        {/* Botón de información del evento */}
+      <CardActions
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginRight: "10px",
+          marginLeft: "10px",
+        }}
+      >
         <Button
           variant="contained"
           color="secondary"
@@ -89,6 +164,24 @@ export function CardEvent({ event }) {
         >
           INFO
         </Button>
+        {!isCreator && !isUserJoined && (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleJoinClick(event._id)}
+          >
+            UNIRSE
+          </Button>
+        )}
+        {isCreator && (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleDeleteClick(event._id)}
+          >
+            DELETE
+          </Button>
+        )}
       </CardActions>
     </Card>
   );
