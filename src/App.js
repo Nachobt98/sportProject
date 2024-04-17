@@ -56,10 +56,10 @@ function App() {
             <ThemeProvider theme={theme}>
               <Header />
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<LoginPage />} />
                 <Route path="/article" element={<Article />} />
                 <Route path="/searchCard" element={<SearchCard />} />
-                <Route path="/loginpage" element={<LoginPage />} />
+                <Route path="/homepage" element={<Home />} />
                 <Route path="/registerpage" element={<RegisterPage />} />
                 <Route path="/Perfil" element={<Perfil />} />
                 <Route path="/faqPage" element={<FaqPage />} />

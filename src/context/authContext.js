@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     const newAuth = { isAuthenticated: true, username: "" };
     setAuth(newAuth);
     localStorage.setItem("auth", JSON.stringify(newAuth));
-    navigate("/loginpage");
+    navigate("/");
   };
 
   return (

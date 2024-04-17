@@ -9,7 +9,7 @@ export function Header() {
   const location = useLocation();
 
   // Verificar si estás en la página de inicio de sesión
-  const isLoginPage = location.pathname === "/loginpage";
+  const isLoginPage = location.pathname === "/";
   const isRegisterPage = location.pathname === "/registerpage";
 
   // Si es la página de inicio de sesión, no mostrar el Header
@@ -38,7 +38,12 @@ export function Header() {
             }}
           >
             <Grid mr={20}>
-              <Button variant="text" color="inherit" component={Link} to="/">
+              <Button
+                variant="text"
+                color="inherit"
+                component={Link}
+                to="/homepage"
+              >
                 <Typography variant="h4" fontWeight={600} color="secondary">
                   SportLife
                 </Typography>
@@ -69,7 +74,7 @@ export function Header() {
                 flexDirection: "row",
               }}
             >
-              <Link to="/loginpage">
+              <Link to="/">
                 <Button
                   variant="contained"
                   color="secondary"

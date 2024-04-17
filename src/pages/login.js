@@ -75,7 +75,7 @@ export function LoginPage() {
 
     if (isUserRegistered) {
       console.log("Usuario autenticado");
-      navigate("/");
+      navigate("/homepage");
       login(loginData.userName);
 
       // Puedes redirigir o hacer otras acciones después de la autenticación
@@ -121,7 +121,7 @@ export function LoginPage() {
       if (response.ok) {
         login(data.username); // Almacena el nombre de usuario autenticado en el contexto de autenticación
         addUser(user);
-        navigate("/"); // Redirige al usuario a la página principal
+        navigate("/homepage"); // Redirige al usuario a la página principal
       } else {
         console.error("Credenciales no válidas");
       }

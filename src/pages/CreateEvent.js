@@ -123,7 +123,10 @@ export function CreateEvent() {
                 if (response.ok) {
                   const responseData = await response.json();
                   console.log("response", eventData); // Maneja la respuesta del servidor si es necesario
-                  setOpenSnackbar(true); // Abre el Snackbar si el evento se creó correctamente
+                  setOpenSnackbar(true);
+                  setTimeout(() => {
+                    navigate("/searchCard2");
+                  }, 1000);
                 } else {
                   // Maneja errores si la respuesta no es OK
                   console.error("Error al crear evento:", response.statusText);

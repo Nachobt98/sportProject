@@ -124,7 +124,7 @@ export function RegisterPage() {
         addUser(formData);
         setOpenSnackbar(true);
         setTimeout(() => {
-          navigate("/loginpage");
+          navigate("/");
         }, 3000);
       } else {
         console.error("Error de registro:", data.message);
@@ -139,7 +139,7 @@ export function RegisterPage() {
     console.log(formData);
     setOpenSnackbar(true);
     setTimeout(() => {
-      navigate("/loginpage");
+      navigate("/");
     }, 3000);
     // try {
     //   const response = await fetch("/registeredUser", {
@@ -384,7 +384,7 @@ export function RegisterPage() {
                 </Button>
                 <MuiLink
                   component={RouterLink}
-                  to="/loginpage"
+                  to="/"
                   variant="body2"
                   color="secondary"
                 >
