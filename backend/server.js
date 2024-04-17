@@ -160,28 +160,6 @@ app.post("/api/events/:eventId/participants/:userName", async (req, res) => {
   }
 });
 
-app.delete("/api/events/:eventId/participants/:userName", async (req, res) => {
-  const eventId = req.params.eventId;
-  const userName = req.params.userName;
-  try {
-    const event = await Event.findById(eventId).exec();
-    if (!event) {
-      return res.status(404).json({ message: "Evento no encontrado" });
-    }
-    // Remover el usuario de la lista de participantes
-    event.participants = event.participants.filter(
-      (participant) => participant !== userName
-    );
-    await event.save();
-    res
-      .status(200)
-      .json({ message: "Usuario eliminado correctamente del evento" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error al eliminar usuario del evento" });
-  }
-});
-
 // Ruta para que un usuario se una a un evento
 app.post("/api/user/:userName/joinEvent/:eventId", async (req, res) => {
   const { userName, eventId } = req.params;
@@ -221,6 +199,41 @@ app.get("/api/user/:userName/joinedEvents", async (req, res) => {
       .json({ message: "Error al obtener los eventos unidos del usuario" });
   }
 });
+
+app.delete("/api/events/:eventId/participants/:userName", async (req, res) => {
+  const eventId = req.params.eventId;
+  const userName = req.params.userName;
+  try {
+    const event = await Event.findById(eventId).exec();
+    if (!event) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
+
+    // Remover el usuario de la lista de participantes
+    event.participantsList = event.participantsList.filter(
+      (participant) => participant !== userName
+    );
+    await event.save();
+
+    // Buscar al usuario por su nombre de usuario
+    const user = await User.findOne({ userName }).exec();
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Remover el evento de la lista de eventos del usuario
+    user.joinedEvents = user.joinedEvents.filter((event) => event !== eventId);
+    await user.save();
+    console.log("userId");
+    res
+      .status(200)
+      .json({ message: "Usuario eliminado correctamente del evento" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al eliminar usuario del evento" });
+  }
+});
+
 // Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);

@@ -107,6 +107,32 @@ export function CardEvent({ event }) {
       console.error("Error al unir al usuario al evento:", error);
     }
   };
+
+  const handleCancelClick = async (eventId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/events/${eventId}/participants/${users.userName}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (response.ok) {
+        console.log("Usuario eliminado del evento exitosamente");
+        setIsUserJoined(false); // Actualizar el estado para reflejar que el usuario ya no está unido al evento
+      } else {
+        console.error(
+          "Error al cancelar la participación del usuario en el evento:",
+          response.statusText
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Error al cancelar la participación del usuario en el evento:",
+        error
+      );
+    }
+  };
+
   const isCreator = event.creator === users.userName;
 
   const [isUserJoined, setIsUserJoined] = useState(false);
@@ -173,6 +199,17 @@ export function CardEvent({ event }) {
             UNIRSE
           </Button>
         )}
+
+        {!isCreator && isUserJoined && (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleCancelClick(event._id)}
+          >
+            CANCELAR EVENTO
+          </Button>
+        )}
+
         {isCreator && (
           <Button
             variant="contained"

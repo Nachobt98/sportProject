@@ -4,23 +4,18 @@ import {
   Typography,
   TextField,
   Button,
-  Paper,
   Avatar,
   Divider,
   Dialog,
   DialogTitle,
   DialogContent,
-  Box,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import { useUser } from "../context/userContext";
 import img3 from "../img/img3.jpg";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
-import IconButton from "@mui/material/IconButton";
-import EditIcon from "@mui/icons-material/Edit";
-import CheckIcon from "@mui/icons-material/Check";
 import { CardEvent } from "../components/cardEvent";
-import img8 from "../img/img3.jpg";
+
 const useStyles = makeStyles((theme) => ({
   root: {
     backgroundImage: `url(${img3})`,
@@ -77,41 +72,46 @@ export function Perfil() {
   const [events, setEvents] = useState([]);
   const { users, updateUserData } = useUser();
   const [joinedEvents, setJoinedEvents] = useState([]);
-  const fetchUserEvents = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/user/${users.userName}/events`
-      );
-      const data = await response.json();
-      setEvents(data);
-    } catch (error) {
-      console.error("Error fetching user events:", error);
-    }
-  };
-  const fetchJoinedEvents = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/user/${users.userName}/joinedEvents`
-      );
-      if (response.ok) {
+
+  useEffect(() => {
+    const fetchUserEvents = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/user/${users.userName}/events`
+        );
         const data = await response.json();
-        setJoinedEvents(data);
-      } else {
+        setEvents(data);
+      } catch (error) {
+        console.error("Error fetching user events:", error);
+      }
+    };
+
+    const fetchJoinedEvents = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/user/${users.userName}/joinedEvents`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setJoinedEvents(data);
+        } else {
+          console.error(
+            "Error al obtener los eventos unidos del usuario:",
+            response.statusText
+          );
+        }
+      } catch (error) {
         console.error(
           "Error al obtener los eventos unidos del usuario:",
-          response.statusText
+          error
         );
       }
-    } catch (error) {
-      console.error("Error al obtener los eventos unidos del usuario:", error);
-    }
-  };
-  useEffect(() => {
+    };
+
     fetchJoinedEvents();
-  }, []);
-  useEffect(() => {
     fetchUserEvents();
   }, [users.userName]);
+
   const classes = useStyles();
 
   console.log("usersdasds", users);
@@ -126,23 +126,7 @@ export function Perfil() {
     updateUserData(users.id, editedData);
     setEditable(false);
   };
-  const [bio, setBio] = useState(users?.bio || "");
   const inputRef = useRef(null);
-  const [isBioEditing, setIsBioEditing] = useState(false);
-
-  const handleBioChange = (e) => {
-    setBio(e.target.value);
-  };
-
-  const handleEditBio = () => {
-    setIsBioEditing(true);
-  };
-
-  const handleAcceptBio = () => {
-    updateUserData(users.id, { ...users, bio });
-    setIsBioEditing(false);
-    updateUserData((prevUser) => ({ ...prevUser, bio })); // Actualiza localmente la biografía
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -168,7 +152,6 @@ export function Perfil() {
       inputRef.current.click();
     }
   };
-
   return (
     <Grid className={classes.profileContainer}>
       <Grid className={classes.root}>
@@ -199,66 +182,50 @@ export function Perfil() {
             style={{ display: "none" }}
           />
         </Grid>
+
         <Grid style={{ margin: "50px" }}>
           <Divider className={classes.divider} />
-          <Typography variant="h4" gutterBottom>
-            Biografía
-          </Typography>
-
-          {isBioEditing ? (
-            <Box display="flex" alignItems="center">
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Biografía"
-                name="bio"
-                value={bio}
-                onChange={handleBioChange}
-                style={{ marginBottom: "10px" }}
-              />
-
-              <IconButton style={{ color: "black" }} onClick={handleAcceptBio}>
-                <CheckIcon />
-              </IconButton>
-            </Box>
-          ) : (
-            <Typography color="secondary" style={{ marginBottom: "10px" }}>
-              {users?.bio || ""}
-              <IconButton
-                style={{ color: "black", marginLeft: "20px" }}
-                onClick={handleEditBio}
-              >
-                <EditIcon />
-              </IconButton>
-            </Typography>
-          )}
-        </Grid>
-        <Grid style={{ margin: "50px" }}>
-          <Divider className={classes.divider} />
-          <Typography variant="h4" gutterBottom>
+          <Typography variant="h4" color="secondary" gutterBottom>
             Datos Personales
           </Typography>
           <Grid className={classes.userData}>
             <div>
-              <Typography color="secondary" style={{ marginBottom: "5px" }}>
+              <Typography
+                color="secondary"
+                style={{ marginBottom: "5px", background: "none" }}
+              >
                 <strong>Nombre:</strong> {users.firstName}
               </Typography>
-              <Typography color="secondary" style={{ marginBottom: "5px" }}>
+              <Typography
+                color="secondary"
+                style={{ marginBottom: "5px", background: "none" }}
+              >
                 <strong>Apellidos:</strong> {users.lastName}
               </Typography>
-              <Typography color="secondary" style={{ marginBottom: "5px" }}>
+              <Typography
+                color="secondary"
+                style={{ marginBottom: "5px", background: "none" }}
+              >
                 <strong>Nombre de Usuario:</strong> {users.userName}
               </Typography>
             </div>
             <div>
-              <Typography color="secondary" style={{ marginBottom: "5px" }}>
+              <Typography
+                color="secondary"
+                style={{ marginBottom: "5px", background: "none" }}
+              >
                 <strong>Ciudad:</strong> {users.city}
               </Typography>
-              <Typography color="secondary" style={{ marginBottom: "5px" }}>
+              <Typography
+                color="secondary"
+                style={{ marginBottom: "5px", background: "none" }}
+              >
                 <strong>Email:</strong> {users.email}
               </Typography>
-              <Typography color="secondary" style={{ marginBottom: "5px" }}>
+              <Typography
+                color="secondary"
+                style={{ marginBottom: "5px", background: "none" }}
+              >
                 <strong>Fecha de Nacimiento:</strong> {users.birthdate}
               </Typography>
             </div>
@@ -278,13 +245,17 @@ export function Perfil() {
 
         <Grid style={{ margin: "50px" }}>
           <Divider className={classes.divider} />
-          <Typography variant="h4" gutterBottom>
+          <Typography variant="h4" color="secondary" gutterBottom>
             Eventos creados
           </Typography>
           {events.length === 0 ? (
             <Typography
               variant="body1"
-              sx={{ display: "flex", justifyContent: "center", color: "black" }}
+              color="secondary"
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+              }}
             >
               Aún no has creado ningún evento
             </Typography>
@@ -294,13 +265,14 @@ export function Perfil() {
         </Grid>
         <Grid style={{ margin: "50px" }}>
           <Divider className={classes.divider} />
-          <Typography variant="h4" gutterBottom>
+          <Typography variant="h4" color="secondary" gutterBottom>
             Mis eventos
           </Typography>
           {joinedEvents.length === 0 ? (
             <Typography
               variant="body1"
-              sx={{ display: "flex", justifyContent: "center", color: "black" }}
+              color="secondary"
+              sx={{ display: "flex", justifyContent: "center" }}
             >
               No te has unido a ningun evento
             </Typography>
