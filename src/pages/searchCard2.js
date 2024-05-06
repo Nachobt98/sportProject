@@ -215,7 +215,7 @@ export function SearchCard2() {
         </Grid>
 
         {/* Resultados de la búsqueda */}
-        <Grid marginTop={10} sx={{ maxHeight: "1600px", overflow: "auto" }}>
+        <Grid marginTop={10} sx={{ maxHeight: "1000px", overflowY: "scroll" }}>
           {filteredEvents.length > 0 ? (
             filteredEvents.map((event) => <CardEvent event={event} />)
           ) : (

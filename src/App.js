@@ -16,10 +16,11 @@ import { CreateEvent } from "./pages/CreateEvent";
 import { SearchCard2 } from "./pages/searchCard2";
 import CardDetails from "./pages/CardDetails";
 import { EventProvider } from "./context/eventContext";
+import { Contact } from "./pages/contact";
 function App() {
   const theme = createTheme({
     typography: {
-      fontFamily: "'Nunito Sans', sans-serif",
+      fontFamily: "Open Sans, sans-serif",
     },
 
     palette: {
@@ -66,6 +67,7 @@ function App() {
                 <Route path="/createEvent" element={<CreateEvent />} />
                 <Route path="/searchCard2" element={<SearchCard2 />} />
                 <Route path="/cardDetails" element={<CardDetails />} />
+                <Route path="/contact" element={<Contact />} />
               </Routes>
             </ThemeProvider>
           </AuthProvider>

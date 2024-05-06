@@ -120,7 +120,6 @@ export function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Usuario registrado exitosamente");
         addUser(formData);
         setOpenSnackbar(true);
         setTimeout(() => {
@@ -136,7 +135,7 @@ export function RegisterPage() {
   const handleSubmite = (e) => {
     //e.preventDefault();
     addUser(formData);
-    console.log(formData);
+
     setOpenSnackbar(true);
     setTimeout(() => {
       navigate("/");
@@ -153,7 +152,7 @@ export function RegisterPage() {
     //   const data = await response.json();
 
     //   if (response.ok) {
-    //     console.log("Usuario registrado exitosamente");
+    //
     //     // Puedes redirigir o hacer otras acciones después del registro
     //   } else {
     //     console.error("Error de registro:", data.message);

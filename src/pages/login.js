@@ -49,7 +49,6 @@ const validationSchema = Yup.object().shape({
 
 const handleSubmit = (event) => {
   event.preventDefault();
-  console.log("submiiit");
 };
 export function LoginPage() {
   const { users, addUser } = useUser();
@@ -71,10 +70,8 @@ export function LoginPage() {
     const isUserRegistered = users.some(
       (user) => user.userName === loginData.userName
     );
-    console.log(loginData);
 
     if (isUserRegistered) {
-      console.log("Usuario autenticado");
       navigate("/homepage");
       login(loginData.userName);
 
@@ -84,7 +81,6 @@ export function LoginPage() {
     }
   };
   const fetchUserByUsername = async (username) => {
-    console.log(username);
     try {
       const response = await fetch(
         `http://localhost:5000/api/user/${username}` // Aquí se debe utilizar el nombre de usuario real
@@ -92,7 +88,7 @@ export function LoginPage() {
 
       if (response.ok) {
         const user = await response.json();
-        console.log("response", user);
+
         return user;
       } else {
         console.error("Usuario no encontrado");
@@ -117,7 +113,7 @@ export function LoginPage() {
 
       const data = await response.json();
       const user = await fetchUserByUsername(loginData.userName);
-      console.log(user);
+
       if (response.ok) {
         login(data.username); // Almacena el nombre de usuario autenticado en el contexto de autenticación
         addUser(user);

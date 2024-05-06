@@ -122,7 +122,7 @@ export function CreateEvent() {
                 );
                 if (response.ok) {
                   const responseData = await response.json();
-                  console.log("response", eventData); // Maneja la respuesta del servidor si es necesario
+
                   setOpenSnackbar(true);
                   setTimeout(() => {
                     navigate("/searchCard2");
@@ -290,7 +290,7 @@ export function CreateEvent() {
                     />
                   </Grid>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} sx={{ marginBottom: "50px" }}>
                   <Typography variant="h5" color="textSecondary" gutterBottom>
                     Número de Participantes
                   </Typography>

@@ -4,6 +4,9 @@ import Typography from "@mui/material/Typography";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { DropdownMenu } from "./dropDownMenu";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import ContactSupportOutlinedIcon from "@mui/icons-material/ContactSupportOutlined";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 export function Header() {
   const { isAuthenticated, username } = useAuth();
   const location = useLocation();
@@ -16,8 +19,11 @@ export function Header() {
   if (isLoginPage || isRegisterPage) {
     return null;
   }
-  console.log(isAuthenticated);
-  console.log(username);
+  const isButtonActive = (pathname) => {
+    return location.pathname === pathname
+      ? { borderBottom: "3px solid #c59c00" }
+      : {};
+  };
   return (
     <AppBar
       sx={{ height: "8%", justifyContent: "center", background: "#fafafa" }}
@@ -50,17 +56,44 @@ export function Header() {
               </Button>
             </Grid>
             <Grid item container gap={4}>
-              <Button component={Link} to="/article" sx={{ color: "#fff" }}>
+              <Button
+                component={Link}
+                to="/article"
+                sx={{
+                  ...isButtonActive("/article"),
+                  color: "#fff",
+                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
+                }}
+              >
+                <ArticleOutlinedIcon color="secondary" />
                 <Typography variant="h6" fontWeight={600} color="secondary">
                   Article
                 </Typography>
               </Button>
-              <Button component={Link} to="/searchCard2" sx={{ color: "#fff" }}>
+              <Button
+                component={Link}
+                to="/searchCard2"
+                sx={{
+                  ...isButtonActive("/searchCard2"),
+                  color: "#fff",
+                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
+                }}
+              >
+                <SearchOutlinedIcon color="secondary" />
                 <Typography variant="h6" fontWeight={600} color="secondary">
                   Search
                 </Typography>
               </Button>
-              <Button sx={{ color: "#fff" }}>
+              <Button
+                component={Link}
+                to="/contact"
+                sx={{
+                  ...isButtonActive("/contact"),
+                  color: "#fff",
+                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
+                }}
+              >
+                <ContactSupportOutlinedIcon color="secondary" />
                 <Typography variant="h6" fontWeight={600} color="secondary">
                   Contact
                 </Typography>
@@ -103,12 +136,13 @@ export function Header() {
               sx={{
                 display: "flex",
                 flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              <Typography variant="h4" fontWeight={600} color="secondary">
+              <Typography variant="h5" fontWeight={600} color="secondary">
                 Bienvenido, {username}!
               </Typography>
-
               <DropdownMenu />
             </Grid>
           )}

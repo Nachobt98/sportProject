@@ -110,11 +110,10 @@ export function Perfil() {
 
     fetchJoinedEvents();
     fetchUserEvents();
-  }, [users.userName]);
+  }, [joinedEvents]);
 
   const classes = useStyles();
 
-  console.log("usersdasds", users);
   const [editable, setEditable] = useState(false);
   const [editedData, setEditedData] = useState({ ...users });
 
@@ -248,37 +247,41 @@ export function Perfil() {
           <Typography variant="h4" color="secondary" gutterBottom>
             Eventos creados
           </Typography>
-          {events.length === 0 ? (
-            <Typography
-              variant="body1"
-              color="secondary"
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              Aún no has creado ningún evento
-            </Typography>
-          ) : (
-            events.map((event) => <CardEvent event={event} />)
-          )}
+          <Grid refstyle={{ maxHeight: "500px", overflowY: "scroll" }}>
+            {events.length === 0 ? (
+              <Typography
+                variant="body1"
+                color="secondary"
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                Aún no has creado ningún evento
+              </Typography>
+            ) : (
+              events.map((event) => <CardEvent event={event} />)
+            )}
+          </Grid>
         </Grid>
         <Grid style={{ margin: "50px" }}>
           <Divider className={classes.divider} />
           <Typography variant="h4" color="secondary" gutterBottom>
             Mis eventos
           </Typography>
-          {joinedEvents.length === 0 ? (
-            <Typography
-              variant="body1"
-              color="secondary"
-              sx={{ display: "flex", justifyContent: "center" }}
-            >
-              No te has unido a ningun evento
-            </Typography>
-          ) : (
-            joinedEvents.map((event) => <CardEvent event={event} />)
-          )}
+          <Grid style={{ maxHeight: "500px", overflowY: "scroll" }}>
+            {joinedEvents.length === 0 ? (
+              <Typography
+                variant="body1"
+                color="secondary"
+                sx={{ display: "flex", justifyContent: "center" }}
+              >
+                No te has unido a ningun evento
+              </Typography>
+            ) : (
+              joinedEvents.map((event) => <CardEvent event={event} />)
+            )}
+          </Grid>
         </Grid>
       </Grid>
 

@@ -52,7 +52,6 @@ export function CardEvent({ event }) {
   };
   const handleDeleteClick = async (eventId) => {
     try {
-      console.log("id", eventId);
       const response = await fetch(
         `http://localhost:5000/api/events/${eventId}`,
         {
@@ -61,7 +60,6 @@ export function CardEvent({ event }) {
       );
       if (response.ok) {
         console.log("Evento eliminado exitosamente");
-        // Aquí puedes realizar alguna acción adicional si es necesario, como actualizar la lista de eventos.
       } else {
         console.error("Error al eliminar el evento:", response.statusText);
       }
@@ -78,7 +76,7 @@ export function CardEvent({ event }) {
         }
       );
       if (response.ok) {
-        console.log("Usuario unido al evento exitosamente");
+        setIsUserJoined(true);
       } else {
         console.error(
           "Error al unir al usuario al evento:",
@@ -92,7 +90,6 @@ export function CardEvent({ event }) {
         }
       );
       if (res.ok) {
-        console.log("Usuario unido al evento exitosamente");
         updateUserData({});
         return;
       } else {
@@ -110,24 +107,40 @@ export function CardEvent({ event }) {
 
   const handleCancelClick = async (eventId) => {
     try {
-      const response = await fetch(
+      // Eliminar el evento de la lista de eventos del usuario
+      const responseUser = await fetch(
+        `http://localhost:5000/api/user/${users.userName}/events/${eventId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (responseUser.ok) {
+        setIsUserJoined(false);
+      } else {
+        console.error(
+          "Error al eliminar el evento de la lista de eventos del usuario:",
+          responseUser.statusText
+        );
+      }
+
+      // Eliminar al usuario de la lista de participantes del evento
+      const responseEvent = await fetch(
         `http://localhost:5000/api/events/${eventId}/participants/${users.userName}`,
         {
           method: "DELETE",
         }
       );
-      if (response.ok) {
+      if (responseEvent.ok) {
         console.log("Usuario eliminado del evento exitosamente");
-        setIsUserJoined(false); // Actualizar el estado para reflejar que el usuario ya no está unido al evento
       } else {
         console.error(
-          "Error al cancelar la participación del usuario en el evento:",
-          response.statusText
+          "Error al eliminar al usuario del evento:",
+          responseEvent.statusText
         );
       }
     } catch (error) {
       console.error(
-        "Error al cancelar la participación del usuario en el evento:",
+        "Error al eliminar el evento o al usuario del evento:",
         error
       );
     }
@@ -140,8 +153,6 @@ export function CardEvent({ event }) {
   useEffect(() => {
     setIsUserJoined(event.participantsList.includes(users.userName));
   }, []);
-  console.log("verdad?", isUserJoined);
-  console.log(event.participantsList);
   return (
     <Card key={event.id} className={classes.eventCard}>
       <Grid

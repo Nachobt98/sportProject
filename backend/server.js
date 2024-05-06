@@ -95,7 +95,7 @@ app.post("/api/events", async (req, res) => {
   try {
     const newEvent = new Event(req.body);
     await newEvent.save();
-    console.log("Evento creado exitosamente:", newEvent); // Imprime el objeto completo del evento en la consola del servidor
+
     res
       .status(201)
       .json({ message: "Evento creado exitosamente", event: newEvent }); // Aquí se incluye el objeto del evento en la respuesta
@@ -215,16 +215,6 @@ app.delete("/api/events/:eventId/participants/:userName", async (req, res) => {
     );
     await event.save();
 
-    // Buscar al usuario por su nombre de usuario
-    const user = await User.findOne({ userName }).exec();
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    // Remover el evento de la lista de eventos del usuario
-    user.joinedEvents = user.joinedEvents.filter((event) => event !== eventId);
-    await user.save();
-    console.log("userId");
     res
       .status(200)
       .json({ message: "Usuario eliminado correctamente del evento" });
@@ -234,7 +224,42 @@ app.delete("/api/events/:eventId/participants/:userName", async (req, res) => {
   }
 });
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+app.delete("/api/events/:eventId", async (req, res) => {
+  const eventId = req.params.eventId;
+  try {
+    // Buscar el evento por su ID y eliminarlo de la base de datos
+    await Event.findByIdAndDelete(eventId).exec();
+    res.status(200).json({ message: "Evento eliminado correctamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al eliminar el evento" });
+  }
 });
+
+app.delete("/api/user/:userName/events/:eventId", async (req, res) => {
+  const eventId = req.params.eventId;
+  const userName = req.params.userName;
+  try {
+    // Buscar al usuario por su nombre de usuario
+    const user = await User.findOne({ userName }).exec();
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Remover el evento de la lista de eventos del usuario
+    user.joinedEvents = user.joinedEvents.filter(
+      (event) => event.toString() !== eventId
+    );
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "Evento eliminado correctamente del usuario" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al eliminar evento del usuario" });
+  }
+});
+
+// Iniciar el servidor
+app.listen(PORT, () => {});

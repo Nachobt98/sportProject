@@ -77,7 +77,7 @@ function CardDetails() {
 
     return formattedDate;
   };
-  console.log("lcoaiton", eventData.location);
+
   return (
     <>
       <Grid className={classes.grid}>
