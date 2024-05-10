@@ -58,16 +58,16 @@ export function Header() {
             <Grid item container gap={4}>
               <Button
                 component={Link}
-                to="/article"
+                to="/calendar"
                 sx={{
-                  ...isButtonActive("/article"),
+                  ...isButtonActive("/calendar"),
                   color: "#fff",
                   "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
                 }}
               >
                 <ArticleOutlinedIcon color="secondary" />
                 <Typography variant="h6" fontWeight={600} color="secondary">
-                  Article
+                  Calendar
                 </Typography>
               </Button>
               <Button

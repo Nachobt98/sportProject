@@ -1,16 +1,5 @@
 import React from "react";
-import {
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Button,
-  Typography,
-  Grid,
-  Avatar,
-  Container,
-} from "@mui/material";
+import { Button, Typography, Grid, Avatar, Container } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import img8 from "../img/img8.jpg";
 import avatar2 from "../img/avatar2.jpeg";
@@ -229,15 +218,15 @@ function CardDetails() {
                   href={eventData.location}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: "black", textDecoration: "none" }}
+                  style={{ color: "#344b6c", textDecoration: "none" }}
                 >
-                  Calle Sta. Escolástica, 13, Centro, 18009 Granada
+                  {eventData.location}
                 </a>
               </Grid>
             </Grid>
           </Grid>
 
-          <Button variant="primary" onClick={() => navigate("/searchCard2")}>
+          <Button variant="primary" onClick={() => navigate(-1)}>
             Cerrar
           </Button>
         </Container>

@@ -17,6 +17,7 @@ import { SearchCard2 } from "./pages/searchCard2";
 import CardDetails from "./pages/CardDetails";
 import { EventProvider } from "./context/eventContext";
 import { Contact } from "./pages/contact";
+import { Calendar } from "./pages/calendar";
 function App() {
   const theme = createTheme({
     typography: {
@@ -68,6 +69,7 @@ function App() {
                 <Route path="/searchCard2" element={<SearchCard2 />} />
                 <Route path="/cardDetails" element={<CardDetails />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/calendar" element={<Calendar />} />
               </Routes>
             </ThemeProvider>
           </AuthProvider>
