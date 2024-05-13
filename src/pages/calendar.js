@@ -141,6 +141,25 @@ export function Calendar() {
           <Grid className={classes.divCalendar} sx={{ marginTop: "20px" }}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DateCalendar
+                sx={{
+                  "& .MuiPickersDay-root": {
+                    "&:not(.Mui-selected)": {
+                      color: "black",
+                    },
+                    "&.Mui-selected": {
+                      backgroundColor: "#c59c00",
+                      color: "black",
+                    },
+                  },
+                  "& .MuiPickersDay-today": {
+                    backgroundColor: "rgba(0, 0, 0, 0.2)",
+                    border: "0px solid rgba(0, 0, 0, 0.2)",
+                  },
+                  "& .MuiPickersDay-dayWithMargin": {},
+                  "& .MuiDayCalendar-weekDayLabel": {
+                    color: "black",
+                  },
+                }}
                 components={{
                   Day: ({ children, day }) => (
                     <div style={{ position: "relative" }}>
@@ -164,24 +183,6 @@ export function Calendar() {
                       })}
                     </div>
                   ),
-                }}
-                sx={{
-                  "& .MuiPickersDay-root": {
-                    "&:not(.Mui-selected)": {
-                      color: "black",
-                    },
-                    "&.Mui-selected": {
-                      backgroundColor: "#c59c00",
-                      color: "black",
-                    },
-                  },
-                  "& .MuiPickersDay-today": {
-                    backgroundColor: "rgba(0, 0, 0, 0.2)",
-                    border: "0px solid transparent",
-                  },
-                  "& .MuiDayCalendar-weekDayLabel": {
-                    color: "black",
-                  },
                 }}
                 onChange={(newValue) => setValue(newValue)}
               />

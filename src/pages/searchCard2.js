@@ -116,7 +116,13 @@ export function SearchCard2() {
         maxWidth="md"
         sx={{ marginTop: "40px" }}
       >
-        <Typography variant="h2" color="secondary" align="center" gutterBottom>
+        <Typography
+          variant="h2"
+          color="secondary"
+          align="center"
+          gutterBottom
+          sx={{ background: "none" }}
+        >
           Buscar Eventos
         </Typography>
 

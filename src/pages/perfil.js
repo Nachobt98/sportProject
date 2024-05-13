@@ -31,8 +31,8 @@ const useStyles = makeStyles((theme) => ({
     backdropFilter: "blur(10px)",
   },
   avatar: {
-    width: theme.spacing(18),
-    height: theme.spacing(18),
+    width: 150,
+    height: 150,
     marginBottom: theme.spacing(2),
   },
   userData: {
@@ -154,13 +154,14 @@ export function Perfil() {
   return (
     <Grid className={classes.profileContainer}>
       <Grid className={classes.root}>
-        <Grid item xs={12} align="center" style={{ marginTop: "30px" }}>
+        <Grid align="center" style={{ marginTop: "30px" }}>
           <Avatar
             className={classes.avatar}
             src={editedData.profileImage || perfil}
             style={
               !editedData.profileImage ? { backgroundColor: "#bdbdbd" } : {}
             }
+            sx={{ width: 100, height: 100 }}
           />
 
           <Button
