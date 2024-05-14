@@ -70,9 +70,11 @@ const useStyles = makeStyles((theme) => ({
 
 export function Perfil() {
   const [events, setEvents] = useState([]);
-  const { users, updateUserData } = useUser();
+  const { users, setUsers, updateUserData, getUserData } = useUser();
   const [joinedEvents, setJoinedEvents] = useState([]);
-
+  useEffect(() => {
+    setEditedData({ ...users });
+  }, [users]);
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
@@ -122,7 +124,10 @@ export function Perfil() {
   };
 
   const handleSave = () => {
-    updateUserData(users.id, editedData);
+    // Actualiza los datos editados en el contexto de usuario
+    console.log(editedData);
+    setUsers(editedData);
+    console.log(users);
     setEditable(false);
   };
   const inputRef = useRef(null);
@@ -144,6 +149,8 @@ export function Perfil() {
       reader.readAsDataURL(file);
     }
   };
+
+  const formattedDate = new Date(users.birthdate).toLocaleDateString();
 
   const handleEditPhoto = () => {
     // Abrir el explorador de archivos al hacer clic en "Editar Foto"
@@ -226,7 +233,7 @@ export function Perfil() {
                 color="secondary"
                 style={{ marginBottom: "5px", background: "none" }}
               >
-                <strong>Fecha de Nacimiento:</strong> {users.birthdate}
+                <strong>Fecha de Nacimiento:</strong> {formattedDate}
               </Typography>
             </div>
           </Grid>
@@ -337,7 +344,7 @@ export function Perfil() {
             fullWidth
             label="Fecha de Nacimiento"
             name="birthdate"
-            value={editedData.birthdate}
+            value={formattedDate}
             onChange={handleChange}
             style={{ marginBottom: "10px" }}
           />

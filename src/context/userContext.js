@@ -16,15 +16,36 @@ export const UserProvider = ({ children }) => {
   };
 
   const updateUserData = (newData) => {
-    setUsers((prevUserData) => ({
-      ...prevUserData,
-      ...newData,
-    }));
+    console.log("newData", newData);
+
+    // Verificar si newData contiene un nuevo nombre de usuario
+    if (newData.userName !== undefined) {
+      // Realizar cualquier validación necesaria para el nombre de usuario
+
+      // Actualizar el estado solo con el nuevo nombre de usuario
+      setUsers((prevUserData) => ({
+        ...prevUserData,
+        userName: newData.userName,
+      }));
+    } else {
+      // Si no hay cambios en el nombre de usuario, actualizar todos los datos del usuario
+      setUsers((prevUserData) => ({
+        ...prevUserData,
+        ...newData,
+      }));
+    }
   };
 
   return (
     <UserContext.Provider
-      value={{ users, addUser, getUserData, updateUserData, deleteUser }}
+      value={{
+        users,
+        addUser,
+        setUsers,
+        getUserData,
+        updateUserData,
+        deleteUser,
+      }}
     >
       {children}
     </UserContext.Provider>

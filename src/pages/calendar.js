@@ -6,7 +6,7 @@ import { makeStyles } from "@mui/styles";
 import { Grid, Container, Typography } from "@mui/material";
 import img8 from "../img/img8.jpg";
 import { CardEvent } from "../components/cardEvent";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 const useStyles = makeStyles((theme) => ({
   grid: {
     backgroundImage: `url(${img8})`,
