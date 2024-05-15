@@ -3,10 +3,12 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { makeStyles } from "@mui/styles";
-import { Grid, Container, Typography } from "@mui/material";
+import { Grid, Container, Typography, Tabs, Tab } from "@mui/material";
 import img8 from "../img/img8.jpg";
 import { CardEvent } from "../components/cardEvent";
 import dayjs from "dayjs";
+import { useUser } from "../context/userContext";
+
 const useStyles = makeStyles((theme) => ({
   grid: {
     backgroundImage: `url(${img8})`,
@@ -35,22 +37,49 @@ const useStyles = makeStyles((theme) => ({
     height: "10px",
     borderRadius: "50%",
   },
+  div: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  divEventSelected: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+  },
   divCalToday: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
+  },
+  today: {
+    width: "50%",
+    justifyContent: "center",
+    marginRight: "10%",
   },
 }));
 
 export function Calendar() {
   const classes = useStyles();
-
+  const { users } = useUser();
   const [events, setEvents] = useState([]);
+  const [userEvents, setUserEvents] = useState([]);
   const [value, setValue] = useState(dayjs());
+  const [activeTab, setActiveTab] = useState(0);
+
   useEffect(() => {
     console.log("values", value);
   }, [value]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
 
   const fetchEvents = async () => {
     try {
@@ -62,13 +91,33 @@ export function Calendar() {
     }
   };
 
+  const fetchJoinedEvents = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/user/${users.userName}/joinedEvents`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setUserEvents(data);
+      } else {
+        console.error(
+          "Error al obtener los eventos unidos del usuario:",
+          response.statusText
+        );
+      }
+    } catch (error) {
+      console.error("Error al obtener los eventos unidos del usuario:", error);
+    }
+  };
+
   useEffect(() => {
+    fetchJoinedEvents();
     fetchEvents();
   }, []);
 
-  const groupEventsByDate = () => {
+  const groupEventsByDate = (e) => {
     const groupedEvents = {};
-    events.forEach((event) => {
+    e.forEach((event) => {
       const date = new Date(event.date).toLocaleDateString("en-EN", {
         weekday: "long",
         day: "numeric",
@@ -84,7 +133,7 @@ export function Calendar() {
   };
 
   const renderEventsByDate = () => {
-    const groupedEvents = groupEventsByDate();
+    const groupedEvents = groupEventsByDate(events);
 
     return Object.entries(groupedEvents).map(([date, events]) => {
       const eventDate = dayjs(date);
@@ -104,9 +153,36 @@ export function Calendar() {
           </div>
         );
       }
+
       return console.log("va antes");
     });
   };
+  const renderMyEventsByDate = () => {
+    const groupedEvents = groupEventsByDate(userEvents);
+
+    return Object.entries(groupedEvents).map(([date, userEvents]) => {
+      const eventDate = dayjs(date);
+
+      if (eventDate.isAfter(value)) {
+        return (
+          <div key={date}>
+            <Typography
+              variant="h5"
+              sx={{ color: "black", marginBottom: "10px" }}
+            >
+              {date}
+            </Typography>
+            {userEvents.map((event, index) => (
+              <CardEvent key={index} event={event} />
+            ))}
+          </div>
+        );
+      }
+
+      return console.log("va antes");
+    });
+  };
+
   const renderTodaysEvents = () => {
     const selectedEvents = events.filter((event) => {
       const eventDate = dayjs(event.date);
@@ -120,7 +196,7 @@ export function Calendar() {
     }
 
     return (
-      <div className={classes.divEventSelected}>
+      <div>
         <Typography variant="h5" sx={{ marginBottom: "10px" }}>
           Eventos para el día seleccionado:
         </Typography>
@@ -130,6 +206,7 @@ export function Calendar() {
       </div>
     );
   };
+
   return (
     <Grid className={classes.grid}>
       <Container
@@ -150,12 +227,15 @@ export function Calendar() {
                       backgroundColor: "#c59c00",
                       color: "black",
                     },
+                    "& .MuiPickersDay-dayWithMargin": {
+                      backgroundColor: "#c59c00",
+                    },
                   },
                   "& .MuiPickersDay-today": {
                     backgroundColor: "rgba(0, 0, 0, 0.2)",
                     border: "0px solid rgba(0, 0, 0, 0.2)",
                   },
-                  "& .MuiPickersDay-dayWithMargin": {},
+
                   "& .MuiDayCalendar-weekDayLabel": {
                     color: "black",
                   },
@@ -188,16 +268,50 @@ export function Calendar() {
               />
             </LocalizationProvider>
           </Grid>
-          <Grid sx={{ width: "50%", marginTop: "50px" }}>
+          <Grid className={classes.today} sx={{ marginTop: "50px" }}>
             {renderTodaysEvents()}
           </Grid>
         </Grid>
-
-        <Grid marginTop={10} sx={{ maxHeight: "1000px" }}>
-          <Typography variant="h4" sx={{ marginBottom: "30px" }}>
-            Proximos eventos:
-          </Typography>
-          {renderEventsByDate()}
+        <Grid sx={{ marginTop: "50px" }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            indicatorColor="secondary"
+            centered
+          >
+            <Tab
+              label="Todos los Eventos"
+              sx={{
+                "&.Mui-selected": {
+                  color: "#c59c00",
+                },
+              }}
+            />
+            <Tab
+              label="Mis Eventos"
+              sx={{
+                "&.Mui-selected": {
+                  color: "#c59c00",
+                },
+              }}
+            />
+          </Tabs>
+          {activeTab === 0 && (
+            <div>
+              <Typography variant="h4" sx={{ marginBottom: "30px" }}>
+                Todos los eventos:
+              </Typography>
+              {renderEventsByDate()}
+            </div>
+          )}
+          {activeTab === 1 && (
+            <div>
+              <Typography variant="h4" sx={{ marginBottom: "30px" }}>
+                Mis eventos:
+              </Typography>
+              {renderMyEventsByDate()}
+            </div>
+          )}
         </Grid>
       </Container>
     </Grid>

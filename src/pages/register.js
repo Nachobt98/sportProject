@@ -40,7 +40,7 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(1),
   },
   submit: {
-    margin: theme.spacing(3, 0, 2),
+    marginBottom: "10px",
   },
   error: {
     color: "#a93131",
@@ -171,6 +171,7 @@ export function RegisterPage() {
             color="secondary"
             align="center"
             gutterBottom
+            sx={{ background: "none" }}
           >
             SportLife
           </Typography>
@@ -189,7 +190,7 @@ export function RegisterPage() {
           >
             {(formikProps) => (
               <Form className={classes.form}>
-                <Grid container spacing={2}>
+                <Grid container spacing={2} sx={{ marginBottom: "20px" }}>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="h5" color="textSecondary" gutterBottom>
                       Nombre
@@ -378,6 +379,7 @@ export function RegisterPage() {
                   variant="contained"
                   color="secondary"
                   className={classes.submit}
+                  sx={{ marginBottom: "10px" }}
                 >
                   Registrarse
                 </Button>

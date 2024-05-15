@@ -109,6 +109,10 @@ export function SearchCard2() {
   const handleSearch = () => {
     setIsSearching(true);
   };
+  const handleClear = () => {
+    setSearchCriteria({ city: "", sport: "", date: "" });
+    setIsSearching(false);
+  };
   return (
     <Grid className={classes.grid}>
       <Container
@@ -191,16 +195,24 @@ export function SearchCard2() {
           </Grid>
         </Grid>
 
-        {/* Botón de búsqueda */}
-        <Grid item xs={12}>
-          <Button
-            variant="contained"
-            color="secondary"
-            fullWidth
-            onClick={handleSearch}
-          >
-            Buscar
-          </Button>
+        {/* Botones de búsqueda y limpieza */}
+        <Grid
+          container
+          spacing={2}
+          sx={{
+            justifyContent: "center",
+          }}
+        >
+          <Grid item xs={12} sm={6}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              onClick={handleClear}
+            >
+              Limpiar búsqueda
+            </Button>
+          </Grid>
         </Grid>
 
         {/* Botón para crear evento */}

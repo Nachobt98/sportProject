@@ -131,7 +131,12 @@ export function LoginPage() {
     <Grid container component="main" className={classes.root}>
       <Container component="main" maxWidth="xs">
         <Paper elevation={3} className={classes.paper}>
-          <Typography variant="h2" color="secondary" align="center">
+          <Typography
+            variant="h2"
+            color="secondary"
+            align="center"
+            sx={{ background: "none" }}
+          >
             SportLife
           </Typography>
           <Formik
@@ -144,7 +149,7 @@ export function LoginPage() {
           >
             {(formikProps) => (
               <Form className={classes.form}>
-                <Grid container spacing={2}>
+                <Grid container spacing={2} sx={{ marginBottom: "20px" }}>
                   <Grid item xs={12}>
                     <Typography variant="h5" color="textSecondary">
                       Username
