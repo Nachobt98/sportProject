@@ -8,7 +8,8 @@ import img8 from "../img/img8.jpg";
 import { CardEvent } from "../components/cardEvent";
 import dayjs from "dayjs";
 import { useUser } from "../context/userContext";
-
+import "dayjs/locale/es";
+dayjs.locale("es");
 const useStyles = makeStyles((theme) => ({
   grid: {
     backgroundImage: `url(${img8})`,
@@ -118,12 +119,7 @@ export function Calendar() {
   const groupEventsByDate = (e) => {
     const groupedEvents = {};
     e.forEach((event) => {
-      const date = new Date(event.date).toLocaleDateString("en-EN", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
+      const date = dayjs(event.date).locale("es");
       if (!groupedEvents[date]) {
         groupedEvents[date] = [];
       }
@@ -134,10 +130,10 @@ export function Calendar() {
 
   const renderEventsByDate = () => {
     const groupedEvents = groupEventsByDate(events);
-
+    console.log("groupedEvents", groupedEvents);
     return Object.entries(groupedEvents).map(([date, events]) => {
       const eventDate = dayjs(date);
-
+      console.log("events", events);
       if (eventDate.isAfter(value)) {
         return (
           <div key={date}>
@@ -145,8 +141,9 @@ export function Calendar() {
               variant="h5"
               sx={{ color: "black", marginBottom: "10px" }}
             >
-              {date}
+              {eventDate.format("dddd, D [de] MMMM [de] YYYY")}
             </Typography>
+
             {events.map((event, index) => (
               <CardEvent key={index} event={event} />
             ))}
@@ -170,7 +167,7 @@ export function Calendar() {
               variant="h5"
               sx={{ color: "black", marginBottom: "10px" }}
             >
-              {date}
+              {eventDate.format("dddd, D [de] MMMM [de] YYYY")}
             </Typography>
             {userEvents.map((event, index) => (
               <CardEvent key={index} event={event} />
@@ -216,7 +213,7 @@ export function Calendar() {
       >
         <Grid className={classes.divCalToday}>
           <Grid className={classes.divCalendar} sx={{ marginTop: "20px" }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
               <DateCalendar
                 sx={{
                   "& .MuiPickersDay-root": {
@@ -285,6 +282,7 @@ export function Calendar() {
                 "&.Mui-selected": {
                   color: "#c59c00",
                 },
+                color: "black",
               }}
             />
             <Tab
@@ -293,6 +291,7 @@ export function Calendar() {
                 "&.Mui-selected": {
                   color: "#c59c00",
                 },
+                color: "black",
               }}
             />
           </Tabs>

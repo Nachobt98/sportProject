@@ -23,11 +23,13 @@ const User = mongoose.model("User", {
   password: String,
   joinedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
 });
+// Definir el modelo de evento
 const Event = mongoose.model("Event", {
   name: String,
   description: String,
   sport: String,
   date: Date,
+  locationName: String,
   location: String,
   city: String,
   participants: Number,

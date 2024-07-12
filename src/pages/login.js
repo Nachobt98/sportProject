@@ -6,6 +6,8 @@ import {
   Typography,
   Paper,
   Container,
+  IconButton,
+  InputAdornment,
   Link as MuiLink,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
@@ -15,7 +17,7 @@ import { useUser } from "../context/userContext";
 import { useAuth } from "../context/authContext";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
-
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100vh",
@@ -51,6 +53,7 @@ const handleSubmit = (event) => {
   event.preventDefault();
 };
 export function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
   const { users, addUser } = useUser();
   const { login, username } = useAuth();
   const navigate = useNavigate();
@@ -125,7 +128,13 @@ export function LoginPage() {
       console.error("Error al iniciar sesión:", error);
     }
   };
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
 
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
   const classes = useStyles();
   return (
     <Grid container component="main" className={classes.root}>
@@ -177,7 +186,7 @@ export function LoginPage() {
                       Contraseña
                     </Typography>
                     <Field
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       name="password"
                       as={TextField}
                       variant="outlined"
@@ -190,6 +199,23 @@ export function LoginPage() {
                           ...loginData,
                           password: e.target.value,
                         });
+                      }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={handleClickShowPassword}
+                              onMouseDown={handleMouseDownPassword}
+                              edge="end"
+                            >
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
                       }}
                     />
                   </Grid>

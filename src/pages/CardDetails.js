@@ -220,7 +220,7 @@ function CardDetails() {
                   rel="noopener noreferrer"
                   style={{ color: "#344b6c", textDecoration: "none" }}
                 >
-                  {eventData.location}
+                  {eventData.locationName}
                 </a>
               </Grid>
             </Grid>

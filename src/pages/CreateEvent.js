@@ -20,7 +20,7 @@ import * as Yup from "yup";
 import avatar from "../img/avatar.png";
 const useStyles = makeStyles((theme) => ({
   root: {
-    height: "110vh",
+    height: "140vh",
     backgroundImage: `url(${img3})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -70,6 +70,7 @@ export function CreateEvent() {
     sport: "",
     date: "",
     city: "",
+    locationName: "",
     location: "",
     participants: "",
   });
@@ -80,7 +81,8 @@ export function CreateEvent() {
     sport: Yup.string().required("Deporte es requerido"),
     city: Yup.string().required("Ciudad es requerido"),
     location: Yup.string().required("Ubicacion es requerido"),
-    date: Yup.date().required("Fecha de Nacimiento es requerida"),
+    locationName: Yup.string().required("Direccion es requerido"),
+    date: Yup.date().required("Fecha de Evento es requerida"),
     participants: Yup.string().required("Participantes es requerido"),
   });
 
@@ -142,7 +144,7 @@ export function CreateEvent() {
             {(formikProps) => (
               <Form className={classes.form}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <Typography variant="h5" color="textSecondary" gutterBottom>
                       Nombre del evento
                     </Typography>
@@ -166,17 +168,19 @@ export function CreateEvent() {
                       className={classes.error}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <Typography variant="h5" color="textSecondary" gutterBottom>
                       Descripcion
                     </Typography>
                     <Field
+                      fullWidth
+                      multiline
+                      rows={4}
                       type="text"
                       name="description"
                       as={TextField}
                       variant="outlined"
                       required
-                      fullWidth
                       id="description"
                       autoComplete="off"
                       onChange={(e) => {
@@ -261,6 +265,33 @@ export function CreateEvent() {
                     />
                     <ErrorMessage
                       name="location"
+                      component="div"
+                      className={classes.error}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="h5" color="textSecondary" gutterBottom>
+                      Direccion
+                    </Typography>
+                    <Field
+                      type="text"
+                      name="locationName"
+                      as={TextField}
+                      variant="outlined"
+                      required
+                      fullWidth
+                      id="locationName"
+                      autoComplete="off"
+                      onChange={(e) => {
+                        formikProps.handleChange(e);
+                        setFormData({
+                          ...formData,
+                          locationName: e.target.value,
+                        });
+                      }}
+                    />
+                    <ErrorMessage
+                      name="locationName"
                       component="div"
                       className={classes.error}
                     />

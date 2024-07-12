@@ -7,6 +7,7 @@ import { DropdownMenu } from "./dropDownMenu";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ContactSupportOutlinedIcon from "@mui/icons-material/ContactSupportOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import CreateOutlinedIcon from "@mui/icons-material/CreateOutlined";
 export function Header() {
   const { isAuthenticated, username } = useAuth();
   const location = useLocation();
@@ -67,7 +68,7 @@ export function Header() {
               >
                 <ArticleOutlinedIcon color="secondary" />
                 <Typography variant="h6" fontWeight={600} color="secondary">
-                  Calendar
+                  Calendario
                 </Typography>
               </Button>
               <Button
@@ -81,7 +82,7 @@ export function Header() {
               >
                 <SearchOutlinedIcon color="secondary" />
                 <Typography variant="h6" fontWeight={600} color="secondary">
-                  Search
+                  Busqueda
                 </Typography>
               </Button>
               <Button
@@ -95,7 +96,21 @@ export function Header() {
               >
                 <ContactSupportOutlinedIcon color="secondary" />
                 <Typography variant="h6" fontWeight={600} color="secondary">
-                  Contact
+                  Contacto
+                </Typography>
+              </Button>
+              <Button
+                component={Link}
+                to="/createEvent"
+                sx={{
+                  ...isButtonActive("/createEvent"),
+                  color: "#fff",
+                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
+                }}
+              >
+                <CreateOutlinedIcon color="secondary" />
+                <Typography variant="h6" fontWeight={600} color="secondary">
+                  Crear Evento
                 </Typography>
               </Button>
             </Grid>
