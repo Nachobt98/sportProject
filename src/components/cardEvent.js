@@ -14,6 +14,7 @@ import { makeStyles } from "@mui/styles";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import { useEffect } from "react";
 import { useUser } from "../context/userContext";
+import { apiFetch } from "../api/client";
 const useStyles = makeStyles((theme) => ({
   eventCard: {
     marginBottom: theme.spacing(3),
@@ -44,7 +45,7 @@ export function CardEvent({ event }) {
     return formattedDate;
   };
   const classes = useStyles();
-  const { eventData, setEvent } = useEventContext();
+  const { setEvent } = useEventContext();
   const navigate = useNavigate();
   const handleInfoClick = (event) => {
     setEvent(event);
@@ -52,12 +53,9 @@ export function CardEvent({ event }) {
   };
   const handleDeleteClick = async (eventId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/events/${eventId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await apiFetch(`/api/events/${eventId}`, {
+        method: "DELETE",
+      });
       if (response.ok) {
         console.log("Evento eliminado exitosamente");
       } else {
@@ -69,33 +67,20 @@ export function CardEvent({ event }) {
   };
   const handleJoinClick = async (eventId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/events/${eventId}/participants/${users.userName}`,
-        {
-          method: "POST",
-        }
-      );
+      const response = await apiFetch(`/api/events/${eventId}/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userName: users.userName }),
+      });
       if (response.ok) {
         setIsUserJoined(true);
+        updateUserData({});
       } else {
         console.error(
           "Error al unir al usuario al evento:",
           response.statusText
-        );
-      }
-      const res = await fetch(
-        `http://localhost:5000/api/user/${users.userName}/joinEvent/${eventId}`,
-        {
-          method: "POST",
-        }
-      );
-      if (res.ok) {
-        updateUserData({});
-        return;
-      } else {
-        console.error(
-          "Error al actualizar la lista de participantes del evento:",
-          res.statusText
         );
       }
 
@@ -107,37 +92,21 @@ export function CardEvent({ event }) {
 
   const handleCancelClick = async (eventId) => {
     try {
-      // Eliminar el evento de la lista de eventos del usuario
-      const responseUser = await fetch(
-        `http://localhost:5000/api/user/${users.userName}/events/${eventId}`,
+      const response = await apiFetch(
+        `/api/events/${eventId}/join/${users.userName}`,
         {
           method: "DELETE",
         }
       );
-      if (responseUser.ok) {
+      if (response.ok) {
         setIsUserJoined(false);
       } else {
         console.error(
-          "Error al eliminar el evento de la lista de eventos del usuario:",
-          responseUser.statusText
+          "Error al cancelar la participacion en el evento:",
+          response.statusText
         );
       }
 
-      // Eliminar al usuario de la lista de participantes del evento
-      const responseEvent = await fetch(
-        `http://localhost:5000/api/events/${eventId}/participants/${users.userName}`,
-        {
-          method: "DELETE",
-        }
-      );
-      if (responseEvent.ok) {
-        console.log("Usuario eliminado del evento exitosamente");
-      } else {
-        console.error(
-          "Error al eliminar al usuario del evento:",
-          responseEvent.statusText
-        );
-      }
     } catch (error) {
       console.error(
         "Error al eliminar el evento o al usuario del evento:",
@@ -151,8 +120,8 @@ export function CardEvent({ event }) {
   const [isUserJoined, setIsUserJoined] = useState(false);
 
   useEffect(() => {
-    setIsUserJoined(event.participantsList.includes(users.userName));
-  }, []);
+    setIsUserJoined((event.participantsList || []).includes(users.userName));
+  }, [event.participantsList, users.userName]);
   return (
     <Card key={event.id} className={classes.eventCard}>
       <Grid

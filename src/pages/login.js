@@ -18,6 +18,7 @@ import { useAuth } from "../context/authContext";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { apiFetch } from "../api/client";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100vh",
@@ -85,9 +86,7 @@ export function LoginPage() {
   };
   const fetchUserByUsername = async (username) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/user/${username}` // Aquí se debe utilizar el nombre de usuario real
-      );
+      const response = await apiFetch(`/api/user/${username}`);
 
       if (response.ok) {
         const user = await response.json();
@@ -106,7 +105,7 @@ export function LoginPage() {
   const handleLogin = async (values) => {
     try {
       // Envía los datos de inicio de sesión al backend
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await apiFetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -115,7 +114,7 @@ export function LoginPage() {
       });
 
       const data = await response.json();
-      const user = await fetchUserByUsername(loginData.userName);
+      const user = await fetchUserByUsername(values.userName);
 
       if (response.ok) {
         login(data.username); // Almacena el nombre de usuario autenticado en el contexto de autenticación

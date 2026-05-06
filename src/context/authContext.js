@@ -1,24 +1,23 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Intentar obtener la información de autenticación desde localStorage al inicio
   const initialAuth = JSON.parse(localStorage.getItem("auth")) || {
-    isAuthenticated: true,
+    isAuthenticated: false,
     username: "",
   };
   const navigate = useNavigate();
   const [auth, setAuth] = useState(initialAuth);
 
   const login = (username) => {
-    const newAuth = { isAuthenticated: false, username };
+    const newAuth = { isAuthenticated: true, username };
     setAuth(newAuth);
     localStorage.setItem("auth", JSON.stringify(newAuth));
   };
 
   const logout = () => {
-    const newAuth = { isAuthenticated: true, username: "" };
+    const newAuth = { isAuthenticated: false, username: "" };
     setAuth(newAuth);
     localStorage.setItem("auth", JSON.stringify(newAuth));
     navigate("/");

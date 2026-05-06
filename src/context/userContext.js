@@ -3,13 +3,21 @@ import React, { createContext, useContext, useState } from "react";
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [users, setUsers] = useState({});
+  const [users, setUsersState] = useState(
+    JSON.parse(localStorage.getItem("user")) || {}
+  );
+
+  const setUsers = (user) => {
+    setUsersState(user);
+    localStorage.setItem("user", JSON.stringify(user));
+  };
 
   const addUser = (user) => {
     setUsers(user);
   };
   const deleteUser = () => {
     setUsers({});
+    localStorage.removeItem("user");
   };
   const getUserData = () => {
     return users;
@@ -23,16 +31,18 @@ export const UserProvider = ({ children }) => {
       // Realizar cualquier validación necesaria para el nombre de usuario
 
       // Actualizar el estado solo con el nuevo nombre de usuario
-      setUsers((prevUserData) => ({
-        ...prevUserData,
-        userName: newData.userName,
-      }));
+      setUsersState((prevUserData) => {
+        const updatedUser = { ...prevUserData, userName: newData.userName };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
     } else {
       // Si no hay cambios en el nombre de usuario, actualizar todos los datos del usuario
-      setUsers((prevUserData) => ({
-        ...prevUserData,
-        ...newData,
-      }));
+      setUsersState((prevUserData) => {
+        const updatedUser = { ...prevUserData, ...newData };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
     }
   };
 

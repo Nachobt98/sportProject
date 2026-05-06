@@ -115,7 +115,7 @@ export function Header() {
               </Button>
             </Grid>
           </Grid>
-          {isAuthenticated ? (
+          {!isAuthenticated ? (
             <Grid
               sx={{
                 display: "flex",

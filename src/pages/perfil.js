@@ -15,6 +15,7 @@ import { useUser } from "../context/userContext";
 import img3 from "../img/img3.jpg";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 import { CardEvent } from "../components/cardEvent";
+import { apiFetch } from "../api/client";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -76,11 +77,13 @@ export function Perfil() {
     setEditedData({ ...users });
   }, [users]);
   useEffect(() => {
+    if (!users.userName) {
+      return;
+    }
+
     const fetchUserEvents = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/user/${users.userName}/events`
-        );
+        const response = await apiFetch(`/api/user/${users.userName}/events`);
         const data = await response.json();
         setEvents(data);
       } catch (error) {
@@ -90,8 +93,8 @@ export function Perfil() {
 
     const fetchJoinedEvents = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/user/${users.userName}/joinedEvents`
+        const response = await apiFetch(
+          `/api/user/${users.userName}/joinedEvents`
         );
         if (response.ok) {
           const data = await response.json();
@@ -112,7 +115,7 @@ export function Perfil() {
 
     fetchJoinedEvents();
     fetchUserEvents();
-  }, [joinedEvents]);
+  }, [users.userName]);
 
   const classes = useStyles();
 
@@ -255,7 +258,7 @@ export function Perfil() {
           <Typography variant="h4" color="secondary" gutterBottom>
             Eventos creados
           </Typography>
-          <Grid refstyle={{ maxHeight: "500px", overflowY: "scroll" }}>
+          <Grid style={{ maxHeight: "500px", overflowY: "scroll" }}>
             {events.length === 0 ? (
               <Typography
                 variant="body1"
