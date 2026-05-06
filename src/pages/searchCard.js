@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 import {
   Button,
@@ -7,11 +7,6 @@ import {
   CardContent,
   CardHeader,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Grid,
   MenuItem,
   TextField,
@@ -149,11 +144,6 @@ export function SearchCard() {
     date: "",
   });
   const navigate = useNavigate();
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [participants, setParticipants] = useState([]);
-  const [maxParticipants, setMaxParticipants] = useState(5); // Número máximo de participantes
-  const [isFull, setIsFull] = useState(false); // Bandera para verificar si se ha alcanzado el límite de participantes
   const [events, setEvents] = React.useState(eventsData);
   const [filteredEvents, setFilteredEvents] = React.useState(events); // Inicializar con todos los eventos
   const [isSearching, setIsSearching] = React.useState(false);
@@ -182,17 +172,7 @@ export function SearchCard() {
     setIsSearching(true); // Establecer la bandera de búsqueda al iniciar la búsqueda
   };
   const handleDialogOpen = (event) => {
-    setSelectedEvent(event);
-    setOpenDialog(true);
-    // Verifica si participants es undefined y, de ser así, inicialízalo como un array vacío
-    setParticipants(event.participants || []);
-    setIsFull((event.participants || []).length >= maxParticipants);
-  };
-  const handleSignUp = () => {
-    // Aquí podrías implementar la lógica para registrar al usuario en el evento
-    // Actualiza la lista de participantes y verifica si se ha alcanzado el límite máximo
-    setParticipants([...participants, "Nachobt98"]);
-    setIsFull(participants.length + 1 >= maxParticipants);
+    console.log("Evento seleccionado", event);
   };
   return (
     <Grid className={classes.grid}>

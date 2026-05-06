@@ -71,7 +71,7 @@ const useStyles = makeStyles((theme) => ({
 
 export function Perfil() {
   const [events, setEvents] = useState([]);
-  const { users, setUsers, updateUserData, getUserData } = useUser();
+  const { users, setUsers } = useUser();
   const [joinedEvents, setJoinedEvents] = useState([]);
   useEffect(() => {
     setEditedData({ ...users });

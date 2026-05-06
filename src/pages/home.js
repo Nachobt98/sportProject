@@ -1,8 +1,6 @@
-import { Header } from "../components/header";
 import { Carousel } from "../components/carousel";
 import { Grid, Avatar, Typography } from "@mui/material";
 import avatar2 from "../img/avatar2.jpeg";
-import avatar from "../img/avatar.png";
 import avatar3 from "../img/avatar3.jpg";
 import avatar4 from "../img/pexels-stefan-stefancik-91227.jpg";
 import { makeStyles } from "@mui/styles";

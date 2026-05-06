@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button, Container, Grid, TextField, Typography } from "@mui/material";
 import LocalPhoneRoundedIcon from "@mui/icons-material/LocalPhoneRounded";
-import { useNavigate } from "react-router-dom";
 import { makeStyles } from "@mui/styles";
 import img8 from "../img/img8.jpg";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
-import { BorderColor } from "@mui/icons-material";
 const useStyles = makeStyles((theme) => ({
   background: {
     backgroundImage: `url(${img8})`,
@@ -51,11 +49,6 @@ const useStyles = makeStyles((theme) => ({
 }));
 export function Contact() {
   const classes = useStyles();
-  const [contactData, setConactData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
   const validationSchema = Yup.object().shape({
     name: Yup.string().required("Nombre es requerido"),
     email: Yup.string().required("Correo es requerido"),
@@ -80,12 +73,15 @@ export function Contact() {
         <Grid className={classes.grid}>
           <Formik
             initialValues={{
-              name: contactData.name,
-              email: contactData.emal,
-              message: contactData.message,
+              name: "",
+              email: "",
+              message: "",
             }}
             validationSchema={validationSchema}
-            onSubmit={console.log("asdasd")}
+            onSubmit={(values, { resetForm }) => {
+              console.log("Formulario de contacto enviado", values);
+              resetForm();
+            }}
           >
             {(formikProps) => (
               <Form className={classes.form}>
@@ -116,7 +112,9 @@ export function Contact() {
                   </Grid>
                   <Grid item xs={12}>
                     <Typography variant="h5">Mensaje</Typography>
-                    <TextField
+                    <Field
+                      as={TextField}
+                      name="message"
                       fullWidth
                       multiline
                       rows={4}

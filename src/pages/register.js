@@ -80,13 +80,6 @@ export function RegisterPage() {
       profileImage: file,
     });
   };
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
   const validationSchema = Yup.object().shape({
     firstName: Yup.string().required("Nombre es requerido"),
     lastName: Yup.string().required("Apellidos son requeridos"),
@@ -132,36 +125,6 @@ export function RegisterPage() {
       console.error("Error al enviar el formulario de registro:", error);
     }
   };
-  const handleSubmite = (e) => {
-    //e.preventDefault();
-    addUser(formData);
-
-    setOpenSnackbar(true);
-    setTimeout(() => {
-      navigate("/");
-    }, 3000);
-    // try {
-    //   const response = await fetch("/registeredUser", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify(formData),
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (response.ok) {
-    //
-    //     // Puedes redirigir o hacer otras acciones después del registro
-    //   } else {
-    //     console.error("Error de registro:", data.message);
-    //   }
-    // } catch (error) {
-    //   console.error("Error al enviar el formulario de registro:", error);
-    // }
-  };
-
   return (
     <Grid container component="main" className={classes.root}>
       <Container component="main" maxWidth="sm">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
@@ -71,19 +71,11 @@ export function Calendar() {
   const [value, setValue] = useState(dayjs());
   const [activeTab, setActiveTab] = useState(0);
 
-  useEffect(() => {
-    console.log("values", value);
-  }, [value]);
-
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const response = await apiFetch("/api/events");
       const data = await response.json();
@@ -91,9 +83,9 @@ export function Calendar() {
     } catch (error) {
       console.error("Error fetching events:", error);
     }
-  };
+  }, []);
 
-  const fetchJoinedEvents = async () => {
+  const fetchJoinedEvents = useCallback(async () => {
     if (!users.userName) {
       return;
     }
@@ -114,17 +106,17 @@ export function Calendar() {
     } catch (error) {
       console.error("Error al obtener los eventos unidos del usuario:", error);
     }
-  };
+  }, [users.userName]);
 
   useEffect(() => {
     fetchJoinedEvents();
     fetchEvents();
-  }, [users.userName]);
+  }, [fetchEvents, fetchJoinedEvents]);
 
   const groupEventsByDate = (e) => {
     const groupedEvents = {};
     e.forEach((event) => {
-      const date = dayjs(event.date).locale("es");
+      const date = dayjs(event.date).format("YYYY-MM-DD");
       if (!groupedEvents[date]) {
         groupedEvents[date] = [];
       }
@@ -135,10 +127,8 @@ export function Calendar() {
 
   const renderEventsByDate = () => {
     const groupedEvents = groupEventsByDate(events);
-    console.log("groupedEvents", groupedEvents);
     return Object.entries(groupedEvents).map(([date, events]) => {
       const eventDate = dayjs(date);
-      console.log("events", events);
       if (eventDate.isAfter(value)) {
         return (
           <div key={date}>
@@ -149,14 +139,14 @@ export function Calendar() {
               {eventDate.format("dddd, D [de] MMMM [de] YYYY")}
             </Typography>
 
-            {events.map((event, index) => (
-              <CardEvent key={index} event={event} />
+            {events.map((event) => (
+              <CardEvent key={event._id} event={event} />
             ))}
           </div>
         );
       }
 
-      return console.log("va antes");
+      return null;
     });
   };
   const renderMyEventsByDate = () => {
@@ -174,14 +164,14 @@ export function Calendar() {
             >
               {eventDate.format("dddd, D [de] MMMM [de] YYYY")}
             </Typography>
-            {userEvents.map((event, index) => (
-              <CardEvent key={index} event={event} />
+            {userEvents.map((event) => (
+              <CardEvent key={event._id} event={event} />
             ))}
           </div>
         );
       }
 
-      return console.log("va antes");
+      return null;
     });
   };
 
@@ -202,8 +192,8 @@ export function Calendar() {
         <Typography variant="h5" sx={{ marginBottom: "10px" }}>
           Eventos para el día seleccionado:
         </Typography>
-        {selectedEvents.map((event, index) => (
-          <CardEvent key={index} event={event} />
+        {selectedEvents.map((event) => (
+          <CardEvent key={event._id} event={event} />
         ))}
       </div>
     );
@@ -241,30 +231,6 @@ export function Calendar() {
                   "& .MuiDayCalendar-weekDayLabel": {
                     color: "black",
                   },
-                }}
-                components={{
-                  Day: ({ children, day }) => (
-                    <div style={{ position: "relative" }}>
-                      {children}
-                      {events.map((event, index) => {
-                        const eventDate = new Date(event.date);
-                        if (
-                          eventDate.getDate() === day &&
-                          eventDate.getMonth() === day &&
-                          eventDate.getFullYear() === day
-                        ) {
-                          return (
-                            <div
-                              key={index}
-                              className={classes.eventMarker}
-                              title={event.name}
-                            />
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
-                  ),
                 }}
                 onChange={(newValue) => setValue(newValue)}
               />
