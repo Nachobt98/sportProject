@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
 import { MenuItem } from "@mui/material";
 import {
   Button,
@@ -8,16 +7,15 @@ import {
   Typography,
   Paper,
   Container,
-  Link as MuiLink,
   Snackbar,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import img3 from "../img/img3.jpg";
 import { useUser } from "../context/userContext";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import avatar from "../img/avatar.png";
+import { apiFetch } from "../api/client";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "140vh",
@@ -113,19 +111,14 @@ export function CreateEvent() {
             onSubmit={async (values, { setSubmitting }) => {
               try {
                 const eventData = { ...values, creator: users.userName };
-                const response = await fetch(
-                  "http://localhost:5000/api/events",
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(eventData),
-                  }
-                );
+                const response = await apiFetch("/api/events", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(eventData),
+                });
                 if (response.ok) {
-                  const responseData = await response.json();
-
                   setOpenSnackbar(true);
                   setTimeout(() => {
                     navigate("/searchCard2");

@@ -11,8 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { makeStyles } from "@mui/styles";
 import img8 from "../img/img8.jpg";
 import "../styles/styles.css";
-import { useEventContext } from "../context/eventContext";
 import { CardEvent } from "../components/cardEvent";
+import { apiFetch } from "../api/client";
 const cities = [
   "Madrid",
   "Barcelona",
@@ -68,7 +68,6 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export function SearchCard2() {
-  const { eventData, setEvent } = useEventContext();
   const classes = useStyles();
   const [searchCriteria, setSearchCriteria] = useState({
     city: "",
@@ -78,10 +77,9 @@ export function SearchCard2() {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const fetchEvents = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/events");
+      const response = await apiFetch("/api/events");
       const data = await response.json();
       setEvents(data);
     } catch (error) {
@@ -99,19 +97,17 @@ export function SearchCard2() {
           event.city.toLowerCase() === searchCriteria.city.toLowerCase()) &&
         (!searchCriteria.sport ||
           event.sport.toLowerCase() === searchCriteria.sport.toLowerCase()) &&
-        (!searchCriteria.date || /* Lógica de comparación de fechas */ true)
+        (!searchCriteria.date ||
+          new Date(event.date).toISOString().slice(0, 10) ===
+            searchCriteria.date)
       );
     });
 
     setFilteredEvents(filtered);
-  }, [events, searchCriteria, isSearching]);
+  }, [events, searchCriteria]);
 
-  const handleSearch = () => {
-    setIsSearching(true);
-  };
   const handleClear = () => {
     setSearchCriteria({ city: "", sport: "", date: "" });
-    setIsSearching(false);
   };
   return (
     <Grid className={classes.grid}>

@@ -1,16 +1,38 @@
 // server.js
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
 const cors = require("cors");
+
+const envPath = path.resolve(__dirname, "..", ".env");
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, "utf8")
+    .split(/\r?\n/)
+    .filter((line) => line && !line.trim().startsWith("#"))
+    .forEach((line) => {
+      const [key, ...valueParts] = line.split("=");
+      if (key && process.env[key] === undefined) {
+        process.env[key] = valueParts.join("=");
+      }
+    });
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/sportlife";
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 
 // Conéctate a MongoDB (asegúrate de tener un servidor MongoDB en ejecución)
-mongoose.connect("mongodb://localhost:27017/sportlife", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log(`MongoDB conectado: ${MONGO_URI}`);
+  })
+  .catch((error) => {
+    console.error("Error conectando con MongoDB:", error.message);
+    process.exit(1);
+  });
 
 // Definir el modelo de Usuario
 const User = mongoose.model("User", {
@@ -44,9 +66,12 @@ const Event = mongoose.model("Event", {
     ref: "User",
   },
 });
-app.use(bodyParser.json());
+app.use(express.json());
 
-app.use(cors());
+app.use(cors({ origin: CLIENT_ORIGIN }));
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 // Ruta para manejar el registro de usuarios
 app.post("/api/register", async (req, res) => {
   try {
@@ -180,6 +205,76 @@ app.post("/api/user/:userName/joinEvent/:eventId", async (req, res) => {
     res.status(500).json({ message: "Error al unir al usuario al evento" });
   }
 });
+
+app.post("/api/events/:eventId/join", async (req, res) => {
+  const { eventId } = req.params;
+  const { userName } = req.body;
+
+  if (!userName) {
+    return res.status(400).json({ message: "El nombre de usuario es requerido" });
+  }
+
+  try {
+    const event = await Event.findById(eventId).exec();
+    const user = await User.findOne({ userName }).exec();
+
+    if (!event) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    if (event.creator === userName) {
+      return res
+        .status(400)
+        .json({ message: "El creador no puede unirse a su propio evento" });
+    }
+    if (event.participantsList.includes(userName)) {
+      return res.status(400).json({ message: "El usuario ya participa en este evento" });
+    }
+    if (event.participantsList.length >= event.participants) {
+      return res.status(400).json({ message: "El evento ya no tiene plazas disponibles" });
+    }
+
+    event.participantsList.push(userName);
+    user.joinedEvents.addToSet(event._id);
+
+    await Promise.all([event.save(), user.save()]);
+    res.status(200).json({ message: "Usuario unido al evento exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al unir al usuario al evento" });
+  }
+});
+
+app.delete("/api/events/:eventId/join/:userName", async (req, res) => {
+  const { eventId, userName } = req.params;
+
+  try {
+    const event = await Event.findById(eventId).exec();
+    const user = await User.findOne({ userName }).exec();
+
+    if (!event) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    event.participantsList = event.participantsList.filter(
+      (participant) => participant !== userName
+    );
+    user.joinedEvents = user.joinedEvents.filter(
+      (event) => event.toString() !== eventId
+    );
+
+    await Promise.all([event.save(), user.save()]);
+    res.status(200).json({ message: "Usuario eliminado del evento exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al cancelar la participacion" });
+  }
+});
 // Ruta para obtener todos los eventos a los que el usuario está unido
 app.get("/api/user/:userName/joinedEvents", async (req, res) => {
   const userName = req.params.userName;
@@ -264,4 +359,6 @@ app.delete("/api/user/:userName/events/:eventId", async (req, res) => {
 });
 
 // Iniciar el servidor
-app.listen(PORT, () => {});
+app.listen(PORT, () => {
+  console.log(`Backend escuchando en http://localhost:${PORT}`);
+});

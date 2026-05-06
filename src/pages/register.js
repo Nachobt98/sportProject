@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
 import {
   Button,
   Grid,
@@ -17,6 +16,7 @@ import { useUser } from "../context/userContext";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import avatar from "../img/avatar.png";
+import { apiFetch } from "../api/client";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "110vh",
@@ -109,7 +109,7 @@ export function RegisterPage() {
   });
   const handleSubmit = async (formData) => {
     try {
-      const response = await fetch("http://localhost:5000/api/register", {
+      const response = await apiFetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

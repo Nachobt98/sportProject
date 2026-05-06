@@ -9,6 +9,7 @@ import { CardEvent } from "../components/cardEvent";
 import dayjs from "dayjs";
 import { useUser } from "../context/userContext";
 import "dayjs/locale/es";
+import { apiFetch } from "../api/client";
 dayjs.locale("es");
 const useStyles = makeStyles((theme) => ({
   grid: {
@@ -84,7 +85,7 @@ export function Calendar() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/events");
+      const response = await apiFetch("/api/events");
       const data = await response.json();
       setEvents(data);
     } catch (error) {
@@ -93,9 +94,13 @@ export function Calendar() {
   };
 
   const fetchJoinedEvents = async () => {
+    if (!users.userName) {
+      return;
+    }
+
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/user/${users.userName}/joinedEvents`
+      const response = await apiFetch(
+        `/api/user/${users.userName}/joinedEvents`
       );
       if (response.ok) {
         const data = await response.json();
@@ -114,7 +119,7 @@ export function Calendar() {
   useEffect(() => {
     fetchJoinedEvents();
     fetchEvents();
-  }, []);
+  }, [users.userName]);
 
   const groupEventsByDate = (e) => {
     const groupedEvents = {};
