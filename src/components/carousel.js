@@ -2,16 +2,13 @@ import React, { useState, useEffect } from "react";
 import "../styles/Carousel.css";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { makeStyles } from "@mui/styles";
 import img1 from "../img/img1.jpg";
 import img2 from "../img/img2.jpg";
 import img3 from "../img/img4.jpg";
 
 import { Grid } from "@mui/material";
 import Typography from "@mui/material/Typography";
-const useStyles = makeStyles((theme) => ({}));
 export function Carousel() {
-  const classes = useStyles();
   const [currImg, setCurrImg] = useState(0);
 
   const images = [
@@ -45,12 +42,12 @@ export function Carousel() {
   useEffect(() => {
     // Cambiar automáticamente de imagen cada 5 segundos (ajusta según tus necesidades)
     const interval = setInterval(() => {
-      nextImage();
+      setCurrImg((prevImg) => (prevImg < images.length - 1 ? prevImg + 1 : 0));
     }, 5000);
 
     // Limpieza del intervalo al desmontar el componente
     return () => clearInterval(interval);
-  }, [currImg]); // Dependencia para que el efecto se vuelva a ejecutar cuando cambia currImg
+  }, [images.length]);
 
   return (
     <Grid className="carousel">

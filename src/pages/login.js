@@ -50,40 +50,11 @@ const validationSchema = Yup.object().shape({
   password: Yup.string().required("Contraseña es requerida"),
 });
 
-const handleSubmit = (event) => {
-  event.preventDefault();
-};
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const { users, addUser } = useUser();
-  const { login, username } = useAuth();
+  const { addUser } = useUser();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [loginData, setLoginData] = useState({
-    userName: "",
-    password: "",
-  });
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setLoginData({
-      ...loginData,
-      [name]: value,
-    });
-  };
-  const handleLogine = async (e) => {
-    // Comprobar si las credenciales están registradas
-    const isUserRegistered = users.some(
-      (user) => user.userName === loginData.userName
-    );
-
-    if (isUserRegistered) {
-      navigate("/homepage");
-      login(loginData.userName);
-
-      // Puedes redirigir o hacer otras acciones después de la autenticación
-    } else {
-      console.error("Credenciales no válidas");
-    }
-  };
   const fetchUserByUsername = async (username) => {
     try {
       const response = await apiFetch(`/api/user/${username}`);
@@ -114,9 +85,9 @@ export function LoginPage() {
       });
 
       const data = await response.json();
-      const user = await fetchUserByUsername(values.userName);
 
       if (response.ok) {
+        const user = await fetchUserByUsername(values.userName);
         login(data.username); // Almacena el nombre de usuario autenticado en el contexto de autenticación
         addUser(user);
         navigate("/homepage"); // Redirige al usuario a la página principal
@@ -149,8 +120,8 @@ export function LoginPage() {
           </Typography>
           <Formik
             initialValues={{
-              userName: loginData.userName,
-              password: loginData.password,
+              userName: "",
+              password: "",
             }}
             validationSchema={validationSchema}
             onSubmit={handleLogin}
@@ -171,13 +142,7 @@ export function LoginPage() {
                       fullWidth
                       id="userName"
                       autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setLoginData({
-                          ...loginData,
-                          userName: e.target.value,
-                        });
-                      }}
+                      onChange={formikProps.handleChange}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -192,13 +157,7 @@ export function LoginPage() {
                       required
                       fullWidth
                       autoComplete="current-password"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setLoginData({
-                          ...loginData,
-                          password: e.target.value,
-                        });
-                      }}
+                      onChange={formikProps.handleChange}
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">

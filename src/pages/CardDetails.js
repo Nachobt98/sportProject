@@ -2,8 +2,6 @@ import React from "react";
 import { Button, Typography, Grid, Avatar, Container } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import img8 from "../img/img8.jpg";
-import avatar2 from "../img/avatar2.jpeg";
-import avatar3 from "../img/avatar3.jpg";
 import { useEventContext } from "../context/eventContext";
 import { useNavigate } from "react-router-dom";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
@@ -48,6 +46,26 @@ function CardDetails() {
   const classes = useStyles();
   const { eventData } = useEventContext();
   const navigate = useNavigate();
+
+  if (!eventData) {
+    return (
+      <Grid className={classes.grid}>
+        <Container className={classes.root} maxWidth="md">
+          <Typography variant="h4" sx={{ color: "black", background: "none" }}>
+            No hay ningun evento seleccionado.
+          </Typography>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => navigate("/searchCard2")}
+          >
+            Volver a eventos
+          </Button>
+        </Container>
+      </Grid>
+    );
+  }
+
   const formatDate = (dateString) => {
     const options = {
       weekday: "long",
@@ -70,7 +88,6 @@ function CardDetails() {
   return (
     <>
       <Grid className={classes.grid}>
-        asadsadasds
         <Container className={classes.root} maxWidth="xl">
           <Grid>
             <Typography
@@ -97,7 +114,7 @@ function CardDetails() {
                   style={{ backgroundColor: "#bdbdbd" }}
                 />
                 <Typography variant="h6" sx={{ color: "black" }}>
-                  Nacho Bru Tarin
+                  {eventData.creator || "Usuario desconocido"}
                 </Typography>
               </Grid>
             </Grid>
@@ -124,7 +141,10 @@ function CardDetails() {
                 {eventData.description}
               </Grid>
               <Grid>
-                <strong>Participantes(3/{eventData.participants}) </strong>
+                <strong>
+                  Participantes({eventData.participantsList?.length || 0}/
+                  {eventData.participants})
+                </strong>
                 <Grid
                   sx={{
                     display: "flex",
@@ -132,57 +152,32 @@ function CardDetails() {
                     gap: "30px",
                   }}
                 >
-                  <Grid
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <Avatar
-                      className={classes.avatar}
-                      src={perfil}
-                      style={{ backgroundColor: "#bdbdbd" }}
-                    />
-                    <Typography variant="h6" sx={{ color: "black" }}>
-                      Nacho Bru Tarin
+                  {(eventData.participantsList || []).length === 0 ? (
+                    <Typography variant="body1" sx={{ color: "black" }}>
+                      Todavia no hay participantes.
                     </Typography>
-                  </Grid>
-                  <Grid
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <Avatar
-                      className={classes.avatar}
-                      src={avatar2}
-                      style={{ backgroundColor: "#bdbdbd" }}
-                    />
-                    <Typography variant="h6" sx={{ color: "black" }}>
-                      Adrian Perez Lopez
-                    </Typography>
-                  </Grid>
-                  <Grid
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <Avatar
-                      className={classes.avatar}
-                      src={avatar3}
-                      style={{ backgroundColor: "#bdbdbd" }}
-                    />
-                    <Typography variant="h6" sx={{ color: "black" }}>
-                      Raul Fernandez Iglesias
-                    </Typography>
-                  </Grid>
+                  ) : (
+                    eventData.participantsList.map((participant) => (
+                      <Grid
+                        key={participant}
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "5px",
+                        }}
+                      >
+                        <Avatar
+                          className={classes.avatar}
+                          src={perfil}
+                          style={{ backgroundColor: "#bdbdbd" }}
+                        />
+                        <Typography variant="h6" sx={{ color: "black" }}>
+                          {participant}
+                        </Typography>
+                      </Grid>
+                    ))
+                  )}
                 </Grid>
               </Grid>
             </Grid>
@@ -226,7 +221,11 @@ function CardDetails() {
             </Grid>
           </Grid>
 
-          <Button variant="primary" onClick={() => navigate(-1)}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => navigate(-1)}
+          >
             Cerrar
           </Button>
         </Container>
