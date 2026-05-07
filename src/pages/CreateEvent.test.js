@@ -98,8 +98,9 @@ describe("CreateEvent", () => {
 
     const { container } = renderCreateEvent("/events/event-id/edit");
 
-    expect(await screen.findByRole("heading", { name: /editar evento/i })).toBeInTheDocument();
-    expect(container.querySelector('[name="name"]')).toHaveValue("Padel match");
+    const nameInput = await screen.findByDisplayValue("Padel match");
+    expect(screen.getByRole("heading", { name: /editar evento/i })).toBeInTheDocument();
+    expect(nameInput).toHaveAttribute("name", "name");
 
     fillField(container, "name", "Updated match");
     fireEvent.click(screen.getByRole("button", { name: /guardar cambios/i }));
