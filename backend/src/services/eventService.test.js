@@ -102,6 +102,27 @@ describe("eventService", () => {
     }));
   });
 
+  test("builds event list filters", () => {
+    const filters = service.buildEventFilters({
+      city: " Valencia ",
+      sport: " Padel ",
+      date: "2026-01-01",
+    });
+
+    expect(filters).toEqual(expect.objectContaining({
+      city: "Valencia",
+      sport: "Padel",
+      date: expect.objectContaining({
+        $gte: expect.any(Date),
+        $lt: expect.any(Date),
+      }),
+    }));
+  });
+
+  test("ignores empty or invalid event list filters", () => {
+    expect(service.buildEventFilters({ city: "", sport: "", date: "bad-date" })).toEqual({});
+  });
+
   test("rejects invalid event payloads", () => {
     expect(service.buildEventPayload({}).error).toMatch("Faltan campos obligatorios");
     expect(service.buildEventPayload({
@@ -167,6 +188,13 @@ describe("eventService", () => {
   test("lists events", async () => {
     Event.find.mockReturnValue(sortedQuery([{ _id: "1" }]));
     await expect(service.listEvents()).resolves.toEqual([{ _id: "1" }]);
+    expect(Event.find).toHaveBeenCalledWith({});
+  });
+
+  test("lists filtered events", async () => {
+    Event.find.mockReturnValue(sortedQuery([{ _id: "1" }]));
+    await expect(service.listEvents({ city: "Valencia", sport: "Padel" })).resolves.toEqual([{ _id: "1" }]);
+    expect(Event.find).toHaveBeenCalledWith({ city: "Valencia", sport: "Padel" });
   });
 
   test("lists created events", async () => {
