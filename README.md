@@ -14,7 +14,7 @@ SportLife is a full-stack JavaScript application for creating, discovering and j
 - User registration and login.
 - JWT-protected frontend routes.
 - Session validation with `/api/session`.
-- Event list and event search/filter UI.
+- Event list with backend filters and pagination.
 - Event creation.
 - Event detail pages by URL: `/events/:eventId`.
 - Join and leave event flows.
@@ -105,7 +105,7 @@ All backend routes are mounted under `/api`.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---:|---|
-| `GET` | `/api/events` | Yes | Lists all events. |
+| `GET` | `/api/events` | Yes | Lists events with optional `city`, `sport`, `date`, `page` and `limit` query parameters. |
 | `POST` | `/api/events` | Yes | Creates a new event. Creator comes from the token. |
 | `GET` | `/api/events/:eventId` | Yes | Returns one event by ID. |
 | `DELETE` | `/api/events/:eventId` | Yes | Deletes an event. Only the creator can delete it. |
@@ -113,6 +113,22 @@ All backend routes are mounted under `/api`.
 | `DELETE` | `/api/events/:eventId/join` | Yes | Removes the current user from an event. |
 | `GET` | `/api/users/me/events` | Yes | Lists events created by the current user. |
 | `GET` | `/api/users/me/joined-events` | Yes | Lists events joined by the current user. |
+
+`GET /api/events` returns a paginated response:
+
+```json
+{
+  "events": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 0,
+    "totalPages": 0,
+    "hasNextPage": false,
+    "hasPreviousPage": false
+  }
+}
+```
 
 ## Environment variables
 
@@ -168,26 +184,27 @@ The project is in a transitional but increasingly clean state:
 - Frontend routes have been normalized and legacy redirects/placeholders have been removed.
 - Event details are URL-driven and reload-safe.
 - Current-user and event participation flows are token-based instead of username-in-URL based.
+- Event user relationships are stored as `ObjectId` references while API responses expose user names for the current UI.
+- Event search is backend-filtered and paginated.
 - Profile data uses `/api/users/me`.
 - Backend code is separated into routes, controllers, services, models and utilities.
 - Tests and SonarCloud act as a quality gate for future PRs.
 
 Known cleanup areas:
 
-- Some event relationships still use `userName` strings instead of `ObjectId` references.
 - The project is still based on Create React App.
-- Event filtering is still performed on the frontend rather than through backend query parameters.
+- Event editing is not implemented yet.
+- Some production-hardening work is still pending around validation, rate limiting and payload limits.
 
 ## Suggested next priorities
 
-1. Improve event and user data modelling with `ObjectId` references and timestamps.
-2. Add event editing: `PATCH /api/events/:eventId` and creator-only edit UI.
-3. Move event filtering/pagination to the backend.
-4. Harden auth and security: rate limiting, better validation and production secrets.
-5. Improve frontend state/data fetching with clearer hooks or React Query.
-6. Improve UX with skeletons, confirmation dialogs and consistent empty states.
-7. Add deployment documentation.
-8. Consider migrating from Create React App to Vite after domain cleanup.
+1. Add event editing: `PATCH /api/events/:eventId` and creator-only edit UI.
+2. Harden auth and security: rate limiting, better validation and production secrets.
+3. Add payload limits for base64 profile images.
+4. Improve frontend state/data fetching with clearer hooks or React Query.
+5. Improve UX with skeletons, confirmation dialogs and consistent empty states.
+6. Add deployment documentation.
+7. Consider migrating from Create React App to Vite after domain cleanup.
 
 ## PR discipline
 
