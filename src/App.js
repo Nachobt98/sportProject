@@ -24,7 +24,7 @@ function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -32,6 +32,10 @@ function ProtectedRoute({ children }) {
 
 function protectedElement(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>;
+}
+
+function legacyRedirect(path) {
+  return <Navigate to={path} replace />;
 }
 
 function App() {
@@ -42,20 +46,29 @@ function App() {
           <ThemeProvider theme={appTheme}>
             <Header />
             <Routes>
-              <Route path="/" element={<LoginPage />} />
-              <Route path="/registerpage" element={<RegisterPage />} />
-              <Route path="/article" element={protectedElement(<Article />)} />
-              <Route path="/searchCard" element={protectedElement(<SearchCard />)} />
-              <Route path="/homepage" element={protectedElement(<Home />)} />
-              <Route path="/Perfil" element={protectedElement(<Perfil />)} />
-              <Route path="/faqPage" element={protectedElement(<FaqPage />)} />
-              <Route path="/createEvent" element={protectedElement(<CreateEvent />)} />
-              <Route path="/searchCard2" element={protectedElement(<SearchCard2 />)} />
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/home" element={protectedElement(<Home />)} />
+              <Route path="/profile" element={protectedElement(<Perfil />)} />
+              <Route path="/events" element={protectedElement(<SearchCard2 />)} />
+              <Route path="/events/new" element={protectedElement(<CreateEvent />)} />
               <Route path="/events/:eventId" element={protectedElement(<CardDetails />)} />
-              <Route path="/cardDetails" element={<Navigate to="/searchCard2" replace />} />
+              <Route path="/faq" element={protectedElement(<FaqPage />)} />
               <Route path="/contact" element={protectedElement(<Contact />)} />
               <Route path="/calendar" element={protectedElement(<Calendar />)} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="/article" element={protectedElement(<Article />)} />
+              <Route path="/searchCard" element={protectedElement(<SearchCard />)} />
+
+              <Route path="/registerpage" element={legacyRedirect("/register")} />
+              <Route path="/homepage" element={legacyRedirect("/home")} />
+              <Route path="/Perfil" element={legacyRedirect("/profile")} />
+              <Route path="/faqPage" element={legacyRedirect("/faq")} />
+              <Route path="/createEvent" element={legacyRedirect("/events/new")} />
+              <Route path="/searchCard2" element={legacyRedirect("/events")} />
+              <Route path="/cardDetails" element={legacyRedirect("/events")} />
+
+              <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </ThemeProvider>
         </AuthProvider>
