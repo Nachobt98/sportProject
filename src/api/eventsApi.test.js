@@ -3,6 +3,8 @@ import {
   cancelEventJoin,
   createEvent,
   deleteEvent,
+  getCurrentUserCreatedEvents,
+  getCurrentUserJoinedEvents,
   getEventById,
   getEvents,
   getUserCreatedEvents,
@@ -55,7 +57,16 @@ describe("eventsApi", () => {
     expect(client.apiFetch).toHaveBeenLastCalledWith("/api/events/123/join", { method: "DELETE" });
   });
 
-  test("gets profile event lists", async () => {
+  test("gets current user event lists", async () => {
+    mockJsonResponse([]);
+    await getCurrentUserCreatedEvents();
+    expect(client.apiFetch).toHaveBeenLastCalledWith("/api/users/me/events");
+
+    await getCurrentUserJoinedEvents();
+    expect(client.apiFetch).toHaveBeenLastCalledWith("/api/users/me/joined-events");
+  });
+
+  test("keeps compatible user event list clients", async () => {
     mockJsonResponse([]);
     await getUserCreatedEvents("nacho");
     expect(client.apiFetch).toHaveBeenLastCalledWith("/api/user/nacho/events");
