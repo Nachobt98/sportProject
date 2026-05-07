@@ -64,6 +64,17 @@ function toDateInputValue(date) {
   return parsedDate.toISOString().slice(0, 10);
 }
 
+function buildProfilePayload(profileData) {
+  return {
+    firstName: profileData.firstName,
+    lastName: profileData.lastName,
+    city: profileData.city,
+    email: profileData.email,
+    birthdate: profileData.birthdate,
+    profileImage: profileData.profileImage || "",
+  };
+}
+
 function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
@@ -133,9 +144,30 @@ export function Perfil() {
     setEditedData((previousData) => ({ ...previousData, [name]: value }));
   };
 
+  const persistProfile = async (profileData, successMessage) => {
+    setProfileError("");
+    setProfileSuccess("");
+    setIsSaving(true);
+
+    try {
+      const data = await updateCurrentUser(buildProfilePayload(profileData));
+      setUsers(data.user);
+      setEditedData({ ...data.user, birthdate: toDateInputValue(data.user.birthdate) });
+      setProfileSuccess(successMessage);
+      return data.user;
+    } catch (error) {
+      setProfileError(error.message || "No se pudo actualizar el perfil.");
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleFileChange = (event) => {
     setProfileError("");
     const file = event.target.files?.[0];
+    event.target.value = "";
+
     if (!file) {
       return;
     }
@@ -151,37 +183,23 @@ export function Perfil() {
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditedData((previousData) => ({
-        ...previousData,
-        profileImage: reader.result,
-      }));
+    reader.onloadend = async () => {
+      const profileImage = reader.result;
+      const nextData = {
+        ...editedData,
+        profileImage,
+      };
+
+      setEditedData(nextData);
+      await persistProfile(nextData, "Foto de perfil actualizada correctamente.");
     };
     reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
-    setProfileError("");
-    setProfileSuccess("");
-    setIsSaving(true);
-
-    try {
-      const payload = {
-        firstName: editedData.firstName,
-        lastName: editedData.lastName,
-        city: editedData.city,
-        email: editedData.email,
-        birthdate: editedData.birthdate,
-        profileImage: editedData.profileImage || "",
-      };
-      const data = await updateCurrentUser(payload);
-      setUsers(data.user);
+    const updatedUser = await persistProfile(editedData, "Perfil actualizado correctamente.");
+    if (updatedUser) {
       setEditable(false);
-      setProfileSuccess("Perfil actualizado correctamente.");
-    } catch (error) {
-      setProfileError(error.message || "No se pudo actualizar el perfil.");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -242,6 +260,7 @@ export function Perfil() {
                 <IconButton
                   color="primary"
                   onClick={() => inputRef.current?.click()}
+                  disabled={isSaving}
                   sx={{
                     position: "absolute",
                     right: 0,
