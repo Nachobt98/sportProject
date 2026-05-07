@@ -53,9 +53,23 @@ function buildEventPayload(payload) {
   };
 }
 
-async function findEventAndUser(eventId, userName) {
+async function findEventById(eventId) {
   if (!isValidObjectId(eventId)) {
     return serviceResponse(400, "El identificador del evento no es valido");
+  }
+
+  const event = await Event.findById(eventId).exec();
+  if (!event) {
+    return serviceResponse(404, "Evento no encontrado");
+  }
+
+  return { status: 200, body: { event } };
+}
+
+async function findEventAndUser(eventId, userName) {
+  const eventResult = await findEventById(eventId);
+  if (eventResult.status !== 200) {
+    return eventResult;
   }
 
   const normalizedUserName = normalizeString(userName);
@@ -63,20 +77,12 @@ async function findEventAndUser(eventId, userName) {
     return serviceResponse(400, "El nombre de usuario es requerido");
   }
 
-  const [event, user] = await Promise.all([
-    Event.findById(eventId).exec(),
-    User.findOne({ userName: normalizedUserName }).exec(),
-  ]);
-
-  if (!event) {
-    return serviceResponse(404, "Evento no encontrado");
-  }
-
+  const user = await User.findOne({ userName: normalizedUserName }).exec();
   if (!user) {
     return serviceResponse(404, "Usuario no encontrado");
   }
 
-  return { event, user, userName: normalizedUserName };
+  return { event: eventResult.body.event, user, userName: normalizedUserName };
 }
 
 async function createEvent(payload, creatorUserName) {
@@ -165,14 +171,12 @@ async function cancelUserEvent(eventId, userName) {
 }
 
 async function deleteEvent(eventId, authUserName) {
-  if (!isValidObjectId(eventId)) {
-    return serviceResponse(400, "El identificador del evento no es valido");
+  const eventResult = await findEventById(eventId);
+  if (eventResult.status !== 200) {
+    return eventResult;
   }
 
-  const event = await Event.findById(eventId).exec();
-  if (!event) {
-    return serviceResponse(404, "Evento no encontrado");
-  }
+  const event = eventResult.body.event;
   if (event.creator !== authUserName) {
     return serviceResponse(403, "Solo el creador puede eliminar este evento");
   }
@@ -188,6 +192,7 @@ async function deleteEvent(eventId, authUserName) {
 
 module.exports = {
   buildEventPayload,
+  findEventById,
   createEvent,
   listEvents,
   listCreatedEvents,
