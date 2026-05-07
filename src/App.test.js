@@ -12,7 +12,6 @@ jest.mock("./api/authApi", () => ({
 jest.mock("./components/header", () => ({
   Header: () => <div>Header mocked</div>,
 }));
-jest.mock("./pages/articles", () => ({ Article: () => <div>Article page</div> }));
 jest.mock("./pages/calendar", () => ({ Calendar: () => <div>Calendar page</div> }));
 jest.mock("./pages/CardDetails", () => () => <div>Card details page</div>);
 jest.mock("./pages/contact", () => ({ Contact: () => <div>Contact page</div> }));
@@ -21,7 +20,6 @@ jest.mock("./pages/faqPage", () => ({ FaqPage: () => <div>FAQ page</div> }));
 jest.mock("./pages/home", () => ({ Home: () => <div>Home page</div> }));
 jest.mock("./pages/perfil", () => ({ Perfil: () => <div>Profile page</div> }));
 jest.mock("./pages/register", () => ({ RegisterPage: () => <div>Register page</div> }));
-jest.mock("./pages/searchCard", () => ({ SearchCard: () => <div>Legacy search page</div> }));
 jest.mock("./pages/searchCard2", () => ({ SearchCard2: () => <div>Search page</div> }));
 
 beforeEach(() => {
@@ -55,12 +53,12 @@ test("renders protected routes for authenticated users", async () => {
   );
 
   render(
-    <MemoryRouter initialEntries={["/article"]}>
+    <MemoryRouter initialEntries={["/events"]}>
       <App />
     </MemoryRouter>
   );
 
-  expect(await screen.findByText("Article page")).toBeInTheDocument();
+  expect(await screen.findByText("Search page")).toBeInTheDocument();
 });
 
 test("redirects unknown routes to login", () => {
