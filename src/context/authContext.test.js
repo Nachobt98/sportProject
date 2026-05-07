@@ -5,16 +5,16 @@ import { AuthProvider, useAuth } from "./authContext";
 import * as authApi from "../api/authApi";
 
 jest.mock("../api/authApi");
-const setUsers = jest.fn();
-const deleteUser = jest.fn();
-const navigate = jest.fn();
+const mockSetUsers = jest.fn();
+const mockDeleteUser = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock("./userContext", () => ({
-  useUser: () => ({ setUsers, deleteUser }),
+  useUser: () => ({ setUsers: mockSetUsers, deleteUser: mockDeleteUser }),
 }));
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => navigate,
+  useNavigate: () => mockNavigate,
 }));
 
 function Consumer() {
@@ -64,8 +64,8 @@ describe("AuthProvider", () => {
     fireEvent.click(screen.getByText("login"));
     fireEvent.click(screen.getByText("logout"));
 
-    expect(deleteUser).toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith("/");
+    expect(mockDeleteUser).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 
   test("logs out without redirect", () => {
@@ -73,8 +73,8 @@ describe("AuthProvider", () => {
     fireEvent.click(screen.getByText("login"));
     fireEvent.click(screen.getByText("logout silent"));
 
-    expect(deleteUser).toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalled();
+    expect(mockDeleteUser).toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   test("loads and validates stored sessions", async () => {
@@ -84,7 +84,7 @@ describe("AuthProvider", () => {
     renderAuth();
 
     expect(screen.getByText("authenticated")).toBeInTheDocument();
-    await waitFor(() => expect(setUsers).toHaveBeenCalledWith({ userName: "nacho" }));
+    await waitFor(() => expect(mockSetUsers).toHaveBeenCalledWith({ userName: "nacho" }));
   });
 
   test("clears invalid stored JSON", () => {
@@ -103,6 +103,6 @@ describe("AuthProvider", () => {
     renderAuth();
     window.dispatchEvent(new Event("sportlife:unauthorized"));
 
-    expect(deleteUser).toHaveBeenCalled();
+    expect(mockDeleteUser).toHaveBeenCalled();
   });
 });
