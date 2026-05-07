@@ -3,7 +3,7 @@ import { Alert, Button, Grid, InputAdornment, Paper, Stack, TextField, Typograph
 import LocalPhoneRoundedIcon from "@mui/icons-material/LocalPhoneRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
-import { Field, Form, Formik } from "formik";
+import { Form, Formik } from "formik";
 import * as Yup from "yup";
 import { AppShell } from "../components/AppShell";
 
@@ -12,6 +12,11 @@ const validationSchema = Yup.object().shape({
   email: Yup.string().email("Correo no valido").required("Correo requerido"),
   message: Yup.string().required("Mensaje requerido"),
 });
+
+export function handleContactSubmit(_values, { resetForm, setStatus }) {
+  setStatus("Mensaje preparado correctamente.");
+  resetForm();
+}
 
 export function Contact() {
   return (
@@ -25,20 +30,19 @@ export function Contact() {
             <Formik
               initialValues={{ name: "", email: "", message: "" }}
               validationSchema={validationSchema}
-              onSubmit={(_values, { resetForm, setStatus }) => {
-                setStatus("Mensaje preparado correctamente.");
-                resetForm();
-              }}
+              onSubmit={handleContactSubmit}
             >
-              {({ errors, touched, status }) => (
+              {({ errors, handleBlur, handleChange, status, touched, values }) => (
                 <Form>
                   <Stack spacing={2.5}>
                     {status && <Alert severity="success">{status}</Alert>}
-                    <Field
-                      as={TextField}
+                    <TextField
                       fullWidth
                       label="Nombre"
                       name="name"
+                      value={values.name}
+                      onBlur={handleBlur}
+                      onChange={handleChange}
                       error={Boolean(touched.name && errors.name)}
                       helperText={touched.name && errors.name}
                       InputProps={{
@@ -49,12 +53,14 @@ export function Contact() {
                         ),
                       }}
                     />
-                    <Field
-                      as={TextField}
+                    <TextField
                       fullWidth
                       label="Correo electronico"
                       name="email"
                       type="email"
+                      value={values.email}
+                      onBlur={handleBlur}
+                      onChange={handleChange}
                       error={Boolean(touched.email && errors.email)}
                       helperText={touched.email && errors.email}
                       InputProps={{
@@ -65,13 +71,15 @@ export function Contact() {
                         ),
                       }}
                     />
-                    <Field
-                      as={TextField}
+                    <TextField
                       fullWidth
                       multiline
                       rows={5}
                       label="Mensaje"
                       name="message"
+                      value={values.message}
+                      onBlur={handleBlur}
+                      onChange={handleChange}
                       error={Boolean(touched.message && errors.message)}
                       helperText={touched.message && errors.message}
                     />

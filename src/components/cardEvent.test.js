@@ -70,6 +70,20 @@ describe("CardEvent", () => {
     expect(onChanged).toHaveBeenCalledWith(expect.objectContaining({ participantsList: ["nacho"] }));
   });
 
+  test("shows join errors and disables full events", async () => {
+    eventsApi.joinEvent.mockRejectedValue(new Error("No quedan plazas"));
+
+    renderCard({ ...baseEvent, participants: 0 });
+
+    const joinButton = screen.getByRole("button", { name: /unirse/i });
+    expect(joinButton).toBeDisabled();
+
+    renderCard(baseEvent);
+    fireEvent.click(screen.getAllByRole("button", { name: /unirse/i })[1]);
+
+    expect(await screen.findByText("No quedan plazas")).toBeInTheDocument();
+  });
+
   test("cancels event participation", async () => {
     const onChanged = jest.fn();
     const joinedEvent = { ...baseEvent, participantsList: ["nacho"] };
@@ -82,6 +96,16 @@ describe("CardEvent", () => {
     expect(onChanged).toHaveBeenCalled();
   });
 
+  test("shows cancel errors", async () => {
+    const joinedEvent = { ...baseEvent, participantsList: ["nacho"] };
+    eventsApi.cancelEventJoin.mockRejectedValue(new Error("No se pudo cancelar"));
+
+    renderCard(joinedEvent);
+    fireEvent.click(screen.getByRole("button", { name: /cancelar/i }));
+
+    expect(await screen.findByText("No se pudo cancelar")).toBeInTheDocument();
+  });
+
   test("deletes own events", async () => {
     const onRemoved = jest.fn();
     eventsApi.deleteEvent.mockResolvedValue({ eventId: "event-id" });
@@ -91,5 +115,14 @@ describe("CardEvent", () => {
 
     await waitFor(() => expect(eventsApi.deleteEvent).toHaveBeenCalledWith("event-id"));
     expect(onRemoved).toHaveBeenCalledWith("event-id");
+  });
+
+  test("shows delete errors", async () => {
+    eventsApi.deleteEvent.mockRejectedValue(new Error("No se pudo eliminar"));
+
+    renderCard({ ...baseEvent, creator: "nacho" });
+    fireEvent.click(screen.getByRole("button", { name: /eliminar/i }));
+
+    expect(await screen.findByText("No se pudo eliminar")).toBeInTheDocument();
   });
 });

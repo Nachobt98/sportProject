@@ -5,6 +5,12 @@ import CardDetails from "./CardDetails";
 import * as eventsApi from "../api/eventsApi";
 
 jest.mock("../api/eventsApi");
+const mockNavigate = jest.fn();
+
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}));
 
 const baseEvent = {
   _id: "event-id",
@@ -58,6 +64,51 @@ describe("CardDetails", () => {
     expect(await screen.findByText(/todavia no hay participantes/i)).toBeInTheDocument();
   });
 
+  test("renders external locations and unknown creators", async () => {
+    eventsApi.getEventById.mockResolvedValue({
+      event: {
+        ...baseEvent,
+        creator: "",
+        location: "https://maps.example/event",
+        locationName: "",
+        participantsList: undefined,
+      },
+    });
+
+    renderDetails();
+
+    expect(await screen.findByText("Usuario desconocido")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "https://maps.example/event" })).toHaveAttribute(
+      "href",
+      "https://maps.example/event"
+    );
+  });
+
+  test("renders missing location fallback and back navigation", async () => {
+    eventsApi.getEventById.mockResolvedValue({
+      event: { ...baseEvent, location: "", locationName: "" },
+    });
+
+    renderDetails();
+
+    expect(await screen.findByText("Ubicacion no indicada")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /volver/i }));
+    expect(mockNavigate).toHaveBeenCalledWith(-1);
+  });
+
+  test("shows an error when route has no event id", async () => {
+    render(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<CardDetails />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("No se ha indicado ningun evento.")).toBeInTheDocument();
+    expect(eventsApi.getEventById).not.toHaveBeenCalled();
+  });
+
   test("shows loading errors and navigates back to events", async () => {
     eventsApi.getEventById.mockRejectedValue(new Error("Evento no encontrado"));
 
@@ -65,6 +116,6 @@ describe("CardDetails", () => {
 
     expect(await screen.findByText("Evento no encontrado")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /volver/i }));
-    await waitFor(() => expect(screen.getByText("Events page")).toBeInTheDocument());
+    expect(mockNavigate).toHaveBeenCalledWith("/searchCard2");
   });
 });
