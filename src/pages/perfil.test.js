@@ -12,13 +12,14 @@ jest.mock("../components/cardEvent", () => ({
     <div>
       <span>{event.name}</span>
       <button onClick={() => onChanged?.({ ...event, participantsList: ["nacho"] })}>change event</button>
+      <button onClick={() => onChanged?.({ ...event, participantsList: [] })}>leave event</button>
       <button onClick={() => onRemoved?.(event._id)}>remove event</button>
     </div>
   ),
 }));
 
 const mockSetUsers = jest.fn();
-const mockUser = {
+const defaultMockUser = {
   firstName: "Nacho",
   lastName: "Bru",
   userName: "nacho",
@@ -27,6 +28,7 @@ const mockUser = {
   birthdate: "1998-10-20T00:00:00.000Z",
   profileImage: "data:image/png;base64,AAAA",
 };
+let mockUser = { ...defaultMockUser };
 
 jest.mock("../context/userContext", () => ({
   useUser: () => ({ users: mockUser, setUsers: mockSetUsers }),
@@ -50,6 +52,7 @@ function renderProfile() {
 describe("Perfil", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUser = { ...defaultMockUser };
     global.FileReader = MockFileReader;
     eventsApi.getUserCreatedEvents.mockResolvedValue([
       { _id: "created-id", name: "Created event", participantsList: [], creator: "nacho" },
@@ -67,6 +70,18 @@ describe("Perfil", () => {
     expect(screen.getByText("Nacho Bru")).toBeInTheDocument();
     expect(await screen.findByText("Created event")).toBeInTheDocument();
     expect(screen.getByText("Joined event")).toBeInTheDocument();
+  });
+
+  test("renders fallback profile values when user data is incomplete", async () => {
+    mockUser = { userName: "", birthdate: "invalid-date", profileImage: "" };
+
+    renderProfile();
+
+    expect(screen.getAllByText("Usuario").length).toBeGreaterThan(0);
+    expect(screen.getByText("Email sin completar")).toBeInTheDocument();
+    expect(screen.getAllByText("Sin completar").length).toBeGreaterThan(0);
+    expect(eventsApi.getUserCreatedEvents).not.toHaveBeenCalled();
+    expect(eventsApi.getUserJoinedEvents).not.toHaveBeenCalled();
   });
 
   test("shows event loading errors", async () => {
@@ -106,6 +121,15 @@ describe("Perfil", () => {
     );
     expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ profileImage: "data:image/png;base64,BBBB" }));
     expect(await screen.findByText(/foto de perfil actualizada correctamente/i)).toBeInTheDocument();
+  });
+
+  test("ignores empty profile image selections", () => {
+    const { container } = renderProfile();
+    const input = container.querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [] } });
+
+    expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
   });
 
   test("rejects invalid profile image types", () => {
@@ -149,5 +173,14 @@ describe("Perfil", () => {
     fireEvent.click(screen.getAllByText("remove event")[0]);
 
     expect(screen.queryByText("Created event")).not.toBeInTheDocument();
+  });
+
+  test("removes joined events when the updated participants no longer include the user", async () => {
+    renderProfile();
+    await screen.findByText("Joined event");
+
+    fireEvent.click(screen.getAllByText("leave event")[1]);
+
+    expect(screen.queryByText("Joined event")).not.toBeInTheDocument();
   });
 });

@@ -31,6 +31,11 @@ describe("Header", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  test("does not render on registration page", () => {
+    const { container } = renderHeader("/registerpage");
+    expect(container).toBeEmptyDOMElement();
+  });
+
   test("renders navigation and avatar menu for authenticated users", () => {
     renderHeader("/homepage");
 
@@ -48,5 +53,11 @@ describe("Header", () => {
     expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Registro" })).toBeInTheDocument();
     expect(screen.queryByTestId("avatar-menu")).not.toBeInTheDocument();
+  });
+
+  test("marks the active navigation item", () => {
+    renderHeader("/searchCard2");
+
+    expect(screen.getByRole("link", { name: /eventos/i })).toBeInTheDocument();
   });
 });

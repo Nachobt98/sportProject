@@ -49,6 +49,7 @@ describe("DropdownMenu", () => {
     renderMenu();
 
     fireEvent.click(screen.getByRole("button", { name: /abrir menu de usuario/i }));
+    expect(screen.getByText("Eventos")).toBeInTheDocument();
     expect(screen.getByText("Mi perfil")).toBeInTheDocument();
     expect(screen.getByText("FAQ")).toBeInTheDocument();
 
@@ -65,5 +66,13 @@ describe("DropdownMenu", () => {
     expect(screen.getByText("DE")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /abrir menu de usuario/i }));
     expect(screen.getByText("Mi perfil")).toBeInTheDocument();
+  });
+
+  test("falls back to a generic avatar label when username is empty", () => {
+    mockUsers = { userName: "", profileImage: "" };
+
+    renderMenu([]);
+
+    expect(screen.getByTestId("PersonIcon")).toBeInTheDocument();
   });
 });
