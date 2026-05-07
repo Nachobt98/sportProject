@@ -60,13 +60,7 @@ function App() {
               <Route path="/article" element={protectedElement(<Article />)} />
               <Route path="/searchCard" element={protectedElement(<SearchCard />)} />
 
-              <Route path="/registerpage" element={legacyRedirect("/register")} />
               <Route path="/homepage" element={legacyRedirect("/home")} />
-              <Route path="/Perfil" element={legacyRedirect("/profile")} />
-              <Route path="/faqPage" element={legacyRedirect("/faq")} />
-              <Route path="/createEvent" element={legacyRedirect("/events/new")} />
-              <Route path="/searchCard2" element={legacyRedirect("/events")} />
-              <Route path="/cardDetails" element={legacyRedirect("/events")} />
 
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
