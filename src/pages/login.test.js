@@ -5,19 +5,19 @@ import { LoginPage } from "./login";
 import * as authApi from "../api/authApi";
 
 jest.mock("../api/authApi");
-const addUser = jest.fn();
-const login = jest.fn();
-const navigate = jest.fn();
+const mockAddUser = jest.fn();
+const mockLogin = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock("../context/userContext", () => ({
-  useUser: () => ({ addUser }),
+  useUser: () => ({ addUser: mockAddUser }),
 }));
 jest.mock("../context/authContext", () => ({
-  useAuth: () => ({ login }),
+  useAuth: () => ({ login: mockLogin }),
 }));
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => navigate,
+  useNavigate: () => mockNavigate,
 }));
 
 function renderLogin() {
@@ -52,9 +52,9 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /entrar/i }));
 
     await waitFor(() => expect(authApi.loginUser).toHaveBeenCalled());
-    expect(login).toHaveBeenCalledWith("nacho", "token");
-    expect(addUser).toHaveBeenCalledWith({ userName: "nacho" });
-    expect(navigate).toHaveBeenCalledWith("/homepage");
+    expect(mockLogin).toHaveBeenCalledWith("nacho", "token");
+    expect(mockAddUser).toHaveBeenCalledWith({ userName: "nacho" });
+    expect(mockNavigate).toHaveBeenCalledWith("/homepage");
   });
 
   test("shows login errors", async () => {
