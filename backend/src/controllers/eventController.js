@@ -33,7 +33,7 @@ async function createEvent(req, res) {
 
 async function listEvents(req, res) {
   try {
-    const events = await eventService.listEvents();
+    const events = await eventService.listEvents(req.query);
     return res.status(200).json(events);
   } catch (error) {
     logger.error("Error al obtener la lista de eventos", error);
