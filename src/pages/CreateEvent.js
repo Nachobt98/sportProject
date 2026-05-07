@@ -79,7 +79,7 @@ export function CreateEvent() {
               await createEvent(eventData);
               setOpenSnackbar(true);
               setTimeout(() => {
-                navigate("/searchCard2");
+                navigate("/events");
               }, 900);
             } catch (error) {
               setSubmitError(error.message || "No se pudo crear el evento");
