@@ -59,10 +59,15 @@ async function listUserEvents(req, res) {
   }
 }
 
-const listCurrentUserEvents = createServiceHandler(
-  (req) => eventService.listCreatedEvents(getAuthenticatedUserName(req)),
-  "Error al obtener la lista de eventos del usuario"
-);
+async function listCurrentUserEvents(req, res) {
+  try {
+    const events = await eventService.listCreatedEvents(getAuthenticatedUserName(req));
+    return res.status(200).json(events);
+  } catch (error) {
+    logger.error("Error al obtener la lista de eventos del usuario", error);
+    return res.status(500).json({ message: "Error al obtener la lista de eventos del usuario" });
+  }
+}
 
 const listCurrentUserJoinedEvents = createServiceHandler(
   (req) => eventService.listJoinedEvents(getAuthenticatedUserName(req)),
