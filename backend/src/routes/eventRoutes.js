@@ -3,57 +3,34 @@ const eventController = require("../controllers/eventController");
 const { authenticateRequest, requireSameUser } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
+const authenticated = [authenticateRequest];
+const sameUser = [authenticateRequest, requireSameUser];
 
-router.get("/events", authenticateRequest, eventController.listEvents);
-router.post("/events", authenticateRequest, eventController.createEvent);
-router.delete("/events/:eventId", authenticateRequest, eventController.deleteEvent);
+router.get("/events", ...authenticated, eventController.listEvents);
+router.post("/events", ...authenticated, eventController.createEvent);
+router.delete("/events/:eventId", ...authenticated, eventController.deleteEvent);
 
-router.post("/events/:eventId/join", authenticateRequest, eventController.joinEvent);
-router.delete("/events/:eventId/join", authenticateRequest, eventController.cancelEventJoin);
+router.post("/events/:eventId/join", ...authenticated, eventController.joinEvent);
+router.delete("/events/:eventId/join", ...authenticated, eventController.cancelEventJoin);
 
-// Legacy endpoints kept for backwards compatibility while the frontend migrates.
-router.post(
+const legacyJoinRoutes = [
   "/events/:eventId/participants/:userName",
-  authenticateRequest,
-  requireSameUser,
-  eventController.joinEventForUser
-);
-router.post(
   "/user/:userName/joinEvent/:eventId",
-  authenticateRequest,
-  requireSameUser,
-  eventController.joinEventForUser
-);
-router.delete(
-  "/events/:eventId/join/:userName",
-  authenticateRequest,
-  requireSameUser,
-  eventController.cancelEventJoinForUser
-);
-router.delete(
-  "/events/:eventId/participants/:userName",
-  authenticateRequest,
-  requireSameUser,
-  eventController.cancelEventJoinForUser
-);
-router.delete(
-  "/user/:userName/events/:eventId",
-  authenticateRequest,
-  requireSameUser,
-  eventController.cancelEventJoinForUser
-);
+];
+legacyJoinRoutes.forEach((path) => {
+  router.post(path, ...sameUser, eventController.joinEventForUser);
+});
 
-router.get(
-  "/user/:userName/events",
-  authenticateRequest,
-  requireSameUser,
-  eventController.listUserEvents
-);
-router.get(
-  "/user/:userName/joinedEvents",
-  authenticateRequest,
-  requireSameUser,
-  eventController.listJoinedEvents
-);
+const legacyCancelRoutes = [
+  "/events/:eventId/join/:userName",
+  "/events/:eventId/participants/:userName",
+  "/user/:userName/events/:eventId",
+];
+legacyCancelRoutes.forEach((path) => {
+  router.delete(path, ...sameUser, eventController.cancelEventJoinForUser);
+});
+
+router.get("/user/:userName/events", ...sameUser, eventController.listUserEvents);
+router.get("/user/:userName/joinedEvents", ...sameUser, eventController.listJoinedEvents);
 
 module.exports = router;
