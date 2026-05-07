@@ -1,8 +1,21 @@
 import { apiFetch } from "./client";
 import { assertOkResponse } from "./response";
 
-export async function getEvents() {
-  const response = await apiFetch("/api/events");
+function buildEventQuery(filters = {}) {
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) {
+      params.set(key, value);
+    }
+  });
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+export async function getEvents(filters = {}) {
+  const response = await apiFetch(`/api/events${buildEventQuery(filters)}`);
   return assertOkResponse(response, "No se pudieron cargar los eventos");
 }
 
