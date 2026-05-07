@@ -15,7 +15,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { AppShell } from "../components/AppShell";
 import { useUser } from "../context/userContext";
-import { apiFetch } from "../api/client";
+import { createEvent } from "../api/eventsApi";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Nombre es requerido"),
@@ -34,6 +34,7 @@ export function CreateEvent() {
   const { users } = useUser();
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const handleSnackbarClose = (event, reason) => {
     if (reason === "clickaway") {
@@ -68,30 +69,21 @@ export function CreateEvent() {
           }}
           validationSchema={validationSchema}
           onSubmit={async (values, { setSubmitting }) => {
+            setSubmitError("");
             try {
               const eventData = {
                 ...values,
                 participants: Number(values.participants),
                 creator: users.userName,
               };
-              const response = await apiFetch("/api/events", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(eventData),
-              });
-
-              if (response.ok) {
-                setOpenSnackbar(true);
-                setTimeout(() => {
-                  navigate("/searchCard2");
-                }, 900);
-              } else {
-                console.error("Error al crear evento:", response.statusText);
-              }
+              await createEvent(eventData);
+              setOpenSnackbar(true);
+              setTimeout(() => {
+                navigate("/searchCard2");
+              }, 900);
             } catch (error) {
               console.error(error);
+              setSubmitError(error.message || "No se pudo crear el evento");
             } finally {
               setSubmitting(false);
             }
@@ -100,6 +92,7 @@ export function CreateEvent() {
           {(formikProps) => (
             <Form>
               <Stack spacing={2.5}>
+                {submitError && <Alert severity="error">{submitError}</Alert>}
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                   <Stack spacing={0.75} sx={{ flex: 1 }}>
                     <Typography variant="subtitle2">Nombre del evento</Typography>
