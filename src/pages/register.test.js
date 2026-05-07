@@ -5,19 +5,19 @@ import { RegisterPage } from "./register";
 import * as authApi from "../api/authApi";
 
 jest.mock("../api/authApi");
-const addUser = jest.fn();
-const login = jest.fn();
-const navigate = jest.fn();
+const mockAddUser = jest.fn();
+const mockLogin = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock("../context/userContext", () => ({
-  useUser: () => ({ addUser }),
+  useUser: () => ({ addUser: mockAddUser }),
 }));
 jest.mock("../context/authContext", () => ({
-  useAuth: () => ({ login }),
+  useAuth: () => ({ login: mockLogin }),
 }));
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => navigate,
+  useNavigate: () => mockNavigate,
 }));
 
 function renderRegister() {
@@ -64,11 +64,11 @@ describe("RegisterPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /registrarse/i }));
 
     await waitFor(() => expect(authApi.registerUser).toHaveBeenCalled());
-    expect(addUser).toHaveBeenCalledWith({ userName: "nacho" });
-    expect(login).toHaveBeenCalledWith("nacho", "token");
+    expect(mockAddUser).toHaveBeenCalledWith({ userName: "nacho" });
+    expect(mockLogin).toHaveBeenCalledWith("nacho", "token");
 
     jest.runOnlyPendingTimers();
-    expect(navigate).toHaveBeenCalledWith("/homepage");
+    expect(mockNavigate).toHaveBeenCalledWith("/homepage");
     jest.useRealTimers();
   });
 
