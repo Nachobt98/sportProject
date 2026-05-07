@@ -127,6 +127,9 @@ async function listJoinedEvents(userName) {
 }
 
 async function joinUserToEvent(eventId, userName) {
+    if (!eventId || !userName) {
+      return serviceResponse(400, "Faltan parámetros obligatorios");
+    }
   const lookup = await findEventAndUser(eventId, userName);
   if (lookup.status) {
     return lookup;
