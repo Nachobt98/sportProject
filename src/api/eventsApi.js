@@ -56,13 +56,3 @@ export async function getCurrentUserJoinedEvents() {
   const response = await apiFetch("/api/users/me/joined-events");
   return assertOkResponse(response, "No se pudieron cargar los eventos unidos");
 }
-
-export async function getUserCreatedEvents(userName) {
-  const response = await apiFetch(`/api/user/${userName}/events`);
-  return assertOkResponse(response, "No se pudieron cargar los eventos creados");
-}
-
-export async function getUserJoinedEvents(userName) {
-  const response = await apiFetch(`/api/user/${userName}/joinedEvents`);
-  return assertOkResponse(response, "No se pudieron cargar los eventos unidos");
-}
