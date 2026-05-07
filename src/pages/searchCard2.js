@@ -12,7 +12,7 @@ import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
-import { apiFetch } from "../api/client";
+import { getEvents } from "../api/eventsApi";
 
 const cities = [
   "Madrid",
@@ -49,14 +49,16 @@ export function SearchCard2() {
   });
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const fetchEvents = useCallback(async () => {
+    setLoadError("");
     try {
-      const response = await apiFetch("/api/events");
-      const data = await response.json();
+      const data = await getEvents();
       setEvents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching events:", error);
+      setLoadError(error.message || "No se pudieron cargar los eventos.");
     } finally {
       setIsLoading(false);
     }
@@ -171,6 +173,8 @@ export function SearchCard2() {
       <Stack spacing={2}>
         {isLoading ? (
           <Alert severity="info">Cargando eventos...</Alert>
+        ) : loadError ? (
+          <Alert severity="error">{loadError}</Alert>
         ) : filteredEvents.length > 0 ? (
           filteredEvents.map((event) => (
             <CardEvent
