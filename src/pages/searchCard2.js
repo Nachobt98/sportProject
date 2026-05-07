@@ -43,7 +43,7 @@ const sports = [
 function renderEventsContent({
   isLoading,
   loadError,
-  filteredEvents,
+  events,
   onEventChanged,
   onEventRemoved,
 }) {
@@ -55,11 +55,11 @@ function renderEventsContent({
     return <Alert severity="error">{loadError}</Alert>;
   }
 
-  if (filteredEvents.length === 0) {
+  if (events.length === 0) {
     return <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>;
   }
 
-  return filteredEvents.map((event) => (
+  return events.map((event) => (
     <CardEvent
       key={event._id}
       event={event}
@@ -81,16 +81,17 @@ export function SearchCard2() {
   const [loadError, setLoadError] = useState("");
 
   const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
     setLoadError("");
     try {
-      const data = await getEvents();
+      const data = await getEvents(searchCriteria);
       setEvents(Array.isArray(data) ? data : []);
     } catch (error) {
       setLoadError(error.message || "No se pudieron cargar los eventos.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchCriteria]);
 
   useEffect(() => {
     fetchEvents();
@@ -109,17 +110,6 @@ export function SearchCard2() {
       currentEvents.filter((event) => event._id !== eventId)
     );
   };
-
-  const filteredEvents = events.filter((event) => {
-    return (
-      (!searchCriteria.city ||
-        event.city.toLowerCase() === searchCriteria.city.toLowerCase()) &&
-      (!searchCriteria.sport ||
-        event.sport.toLowerCase() === searchCriteria.sport.toLowerCase()) &&
-      (!searchCriteria.date ||
-        new Date(event.date).toISOString().slice(0, 10) === searchCriteria.date)
-    );
-  });
 
   const handleClear = () => {
     setSearchCriteria({ city: "", sport: "", date: "" });
@@ -202,7 +192,7 @@ export function SearchCard2() {
         {renderEventsContent({
           isLoading,
           loadError,
-          filteredEvents,
+          events,
           onEventChanged: handleEventChanged,
           onEventRemoved: handleEventRemoved,
         })}
