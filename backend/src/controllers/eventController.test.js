@@ -108,6 +108,28 @@ describe("eventController", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
+  test("lists current user events from auth token", async () => {
+    const req = { auth: { userName: "nacho" } };
+    const res = createResponse();
+    eventService.listCreatedEvents.mockResolvedValue({ status: 200, body: [{ _id: "created" }] });
+
+    await controller.listCurrentUserEvents(req, res);
+
+    expect(eventService.listCreatedEvents).toHaveBeenCalledWith("nacho");
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test("lists current user joined events from auth token", async () => {
+    const req = { auth: { userName: "nacho" } };
+    const res = createResponse();
+    eventService.listJoinedEvents.mockResolvedValue({ status: 200, body: [{ _id: "joined" }] });
+
+    await controller.listCurrentUserJoinedEvents(req, res);
+
+    expect(eventService.listJoinedEvents).toHaveBeenCalledWith("nacho");
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   test("handles user event listing errors", async () => {
     const req = { params: { userName: "nacho" } };
     const res = createResponse();
@@ -129,19 +151,6 @@ describe("eventController", () => {
 
     await controller.cancelEventJoin(req, res);
     expect(eventService.cancelUserEvent).toHaveBeenCalledWith("event-id", "nacho");
-  });
-
-  test("uses param user for legacy join and cancel routes", async () => {
-    const req = { params: { eventId: "event-id", userName: "legacy" }, auth: { userName: "nacho" } };
-    const res = createResponse();
-    eventService.joinUserToEvent.mockResolvedValue({ status: 200, body: { ok: true } });
-    eventService.cancelUserEvent.mockResolvedValue({ status: 200, body: { ok: true } });
-
-    await controller.joinEventForUser(req, res);
-    await controller.cancelEventJoinForUser(req, res);
-
-    expect(eventService.joinUserToEvent).toHaveBeenCalledWith("event-id", "legacy");
-    expect(eventService.cancelUserEvent).toHaveBeenCalledWith("event-id", "legacy");
   });
 
   test("lists joined events and handles service errors", async () => {
