@@ -3,6 +3,8 @@ const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const envPath = path.resolve(__dirname, "..", ".env");
 if (fs.existsSync(envPath)) {
@@ -21,6 +23,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/sportlife";
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+const JWT_SECRET = process.env.JWT_SECRET || "local-dev-secret-change-me";
+const PASSWORD_HASH_ROUNDS = 10;
 
 mongoose
   .connect(MONGO_URI)
@@ -78,6 +82,57 @@ function toPublicUser(user) {
   const userObject = user.toObject ? user.toObject() : user;
   const { password, ...publicUser } = userObject;
   return publicUser;
+}
+
+function createSessionToken(user) {
+  return jwt.sign(
+    {
+      sub: user._id.toString(),
+      userName: user.userName,
+    },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
+async function hashPassword(password) {
+  return bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
+}
+
+async function verifyPassword(candidatePassword, storedPassword) {
+  if (!storedPassword) {
+    return false;
+  }
+
+  if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$")) {
+    return bcrypt.compare(candidatePassword, storedPassword);
+  }
+
+  return candidatePassword === storedPassword;
+}
+
+function authenticateRequest(req, res, next) {
+  const authorization = req.get("authorization") || "";
+  const [scheme, token] = authorization.split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    return res.status(401).json({ message: "Sesion no valida" });
+  }
+
+  try {
+    req.auth = jwt.verify(token, JWT_SECRET);
+    return next();
+  } catch (error) {
+    return res.status(401).json({ message: "Sesion no valida" });
+  }
+}
+
+function requireSameUser(req, res, next) {
+  if (req.params.userName && req.params.userName !== req.auth.userName) {
+    return res.status(403).json({ message: "No puedes operar sobre otro usuario" });
+  }
+
+  return next();
 }
 
 function isValidObjectId(id) {
@@ -234,7 +289,7 @@ app.post("/api/register", async (req, res) => {
       city: normalizeString(req.body.city),
       email,
       birthdate: req.body.birthdate || undefined,
-      password: req.body.password,
+      password: await hashPassword(req.body.password),
       joinedEvents: [],
     });
 
@@ -242,6 +297,7 @@ app.post("/api/register", async (req, res) => {
     res.status(201).json({
       message: "Usuario registrado exitosamente",
       user: toPublicUser(newUser),
+      token: createSessionToken(newUser),
     });
   } catch (error) {
     console.error(error);
@@ -258,15 +314,26 @@ app.post("/api/login", async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ userName, password }).exec();
+    const user = await User.findOne({ userName }).exec();
     if (!user) {
       return res.status(401).json({ message: "Credenciales no validas" });
+    }
+
+    const isValidPassword = await verifyPassword(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: "Credenciales no validas" });
+    }
+
+    if (!user.password.startsWith("$2a$") && !user.password.startsWith("$2b$")) {
+      user.password = await hashPassword(password);
+      await user.save();
     }
 
     res.status(200).json({
       message: "Inicio de sesion exitoso",
       username: user.userName,
       user: toPublicUser(user),
+      token: createSessionToken(user),
     });
   } catch (error) {
     console.error(error);
@@ -274,7 +341,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.get("/api/user/:userName", async (req, res) => {
+app.get("/api/user/:userName", authenticateRequest, requireSameUser, async (req, res) => {
   const userName = normalizeString(req.params.userName);
   try {
     const user = await User.findOne({ userName }).exec();
@@ -288,9 +355,12 @@ app.get("/api/user/:userName", async (req, res) => {
   }
 });
 
-app.post("/api/events", async (req, res) => {
+app.post("/api/events", authenticateRequest, async (req, res) => {
   try {
-    const { value, error } = buildEventPayload(req.body);
+    const { value, error } = buildEventPayload({
+      ...req.body,
+      creator: req.auth.userName,
+    });
     if (error) {
       return res.status(400).json({ message: error });
     }
@@ -309,7 +379,7 @@ app.post("/api/events", async (req, res) => {
   }
 });
 
-app.get("/api/events", async (req, res) => {
+app.get("/api/events", authenticateRequest, async (req, res) => {
   try {
     const events = await Event.find().sort({ date: 1, _id: 1 }).exec();
     res.status(200).json(events);
@@ -319,7 +389,7 @@ app.get("/api/events", async (req, res) => {
   }
 });
 
-app.get("/api/user/:userName/events", async (req, res) => {
+app.get("/api/user/:userName/events", authenticateRequest, requireSameUser, async (req, res) => {
   const userName = normalizeString(req.params.userName);
   try {
     const user = await User.findOne({ userName }).exec();
@@ -335,7 +405,7 @@ app.get("/api/user/:userName/events", async (req, res) => {
   }
 });
 
-app.post("/api/events/:eventId/participants/:userName", async (req, res) => {
+app.post("/api/events/:eventId/participants/:userName", authenticateRequest, requireSameUser, async (req, res) => {
   try {
     const result = await joinUserToEvent(req.params.eventId, req.params.userName);
     res.status(result.status).json(result.body);
@@ -345,7 +415,7 @@ app.post("/api/events/:eventId/participants/:userName", async (req, res) => {
   }
 });
 
-app.post("/api/user/:userName/joinEvent/:eventId", async (req, res) => {
+app.post("/api/user/:userName/joinEvent/:eventId", authenticateRequest, requireSameUser, async (req, res) => {
   try {
     const result = await joinUserToEvent(req.params.eventId, req.params.userName);
     res.status(result.status).json(result.body);
@@ -355,9 +425,9 @@ app.post("/api/user/:userName/joinEvent/:eventId", async (req, res) => {
   }
 });
 
-app.post("/api/events/:eventId/join", async (req, res) => {
+app.post("/api/events/:eventId/join", authenticateRequest, async (req, res) => {
   try {
-    const result = await joinUserToEvent(req.params.eventId, req.body.userName);
+    const result = await joinUserToEvent(req.params.eventId, req.auth.userName);
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error(error);
@@ -365,7 +435,7 @@ app.post("/api/events/:eventId/join", async (req, res) => {
   }
 });
 
-app.delete("/api/events/:eventId/join/:userName", async (req, res) => {
+app.delete("/api/events/:eventId/join/:userName", authenticateRequest, requireSameUser, async (req, res) => {
   try {
     const result = await cancelUserEvent(req.params.eventId, req.params.userName);
     res.status(result.status).json(result.body);
@@ -375,7 +445,7 @@ app.delete("/api/events/:eventId/join/:userName", async (req, res) => {
   }
 });
 
-app.get("/api/user/:userName/joinedEvents", async (req, res) => {
+app.get("/api/user/:userName/joinedEvents", authenticateRequest, requireSameUser, async (req, res) => {
   const userName = normalizeString(req.params.userName);
   try {
     const user = await User.findOne({ userName }).exec();
@@ -393,7 +463,7 @@ app.get("/api/user/:userName/joinedEvents", async (req, res) => {
   }
 });
 
-app.delete("/api/events/:eventId/participants/:userName", async (req, res) => {
+app.delete("/api/events/:eventId/participants/:userName", authenticateRequest, requireSameUser, async (req, res) => {
   try {
     const result = await cancelUserEvent(req.params.eventId, req.params.userName);
     res.status(result.status).json(result.body);
@@ -403,7 +473,7 @@ app.delete("/api/events/:eventId/participants/:userName", async (req, res) => {
   }
 });
 
-app.delete("/api/events/:eventId", async (req, res) => {
+app.delete("/api/events/:eventId", authenticateRequest, async (req, res) => {
   const { eventId } = req.params;
 
   if (!isValidObjectId(eventId)) {
@@ -411,14 +481,19 @@ app.delete("/api/events/:eventId", async (req, res) => {
   }
 
   try {
-    const deletedEvent = await Event.findByIdAndDelete(eventId).exec();
-    if (!deletedEvent) {
+    const event = await Event.findById(eventId).exec();
+    if (!event) {
       return res.status(404).json({ message: "Evento no encontrado" });
     }
+    if (event.creator !== req.auth.userName) {
+      return res.status(403).json({ message: "Solo el creador puede eliminar este evento" });
+    }
+
+    await Event.findByIdAndDelete(eventId).exec();
 
     await User.updateMany(
-      { joinedEvents: deletedEvent._id },
-      { $pull: { joinedEvents: deletedEvent._id } }
+      { joinedEvents: event._id },
+      { $pull: { joinedEvents: event._id } }
     ).exec();
 
     res.status(200).json({ message: "Evento eliminado correctamente", eventId });
@@ -428,7 +503,7 @@ app.delete("/api/events/:eventId", async (req, res) => {
   }
 });
 
-app.delete("/api/user/:userName/events/:eventId", async (req, res) => {
+app.delete("/api/user/:userName/events/:eventId", authenticateRequest, requireSameUser, async (req, res) => {
   try {
     const result = await cancelUserEvent(req.params.eventId, req.params.userName);
     res.status(result.status).json(result.body);

@@ -43,7 +43,7 @@ export function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        login(data.username);
+        login(data.username, data.token);
         addUser(data.user);
         navigate("/homepage");
       } else {
