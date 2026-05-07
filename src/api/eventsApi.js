@@ -1,0 +1,53 @@
+import { apiFetch } from "./client";
+import { assertOkResponse } from "./response";
+
+export async function getEvents() {
+  const response = await apiFetch("/api/events");
+  return assertOkResponse(response, "No se pudieron cargar los eventos");
+}
+
+export async function createEvent(eventData) {
+  const response = await apiFetch("/api/events", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(eventData),
+  });
+
+  return assertOkResponse(response, "No se pudo crear el evento");
+}
+
+export async function deleteEvent(eventId) {
+  const response = await apiFetch(`/api/events/${eventId}`, {
+    method: "DELETE",
+  });
+
+  return assertOkResponse(response, "No se pudo eliminar el evento");
+}
+
+export async function joinEvent(eventId) {
+  const response = await apiFetch(`/api/events/${eventId}/join`, {
+    method: "POST",
+  });
+
+  return assertOkResponse(response, "No se pudo unir al evento");
+}
+
+export async function cancelEventJoin(eventId) {
+  const response = await apiFetch(`/api/events/${eventId}/join`, {
+    method: "DELETE",
+  });
+
+  return assertOkResponse(response, "No se pudo cancelar la participacion");
+}
+
+export async function getUserCreatedEvents(userName) {
+  const response = await apiFetch(`/api/user/${userName}/events`);
+  return assertOkResponse(response, "No se pudieron cargar los eventos creados");
+}
+
+export async function getUserJoinedEvents(userName) {
+  const response = await apiFetch(`/api/user/${userName}/joinedEvents`);
+  return assertOkResponse(response, "No se pudieron cargar los eventos unidos");
+}
