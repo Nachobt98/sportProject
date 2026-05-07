@@ -22,7 +22,7 @@ import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
 import { useUser } from "../context/userContext";
-import { getUserCreatedEvents, getUserJoinedEvents } from "../api/eventsApi";
+import { getCurrentUserCreatedEvents, getCurrentUserJoinedEvents } from "../api/eventsApi";
 import { updateCurrentUser } from "../api/usersApi";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 
@@ -126,8 +126,8 @@ export function Perfil() {
       setEventsError("");
       try {
         const [created, joined] = await Promise.all([
-          getUserCreatedEvents(users.userName),
-          getUserJoinedEvents(users.userName),
+          getCurrentUserCreatedEvents(),
+          getCurrentUserJoinedEvents(),
         ]);
         setCreatedEvents(Array.isArray(created) ? created : []);
         setJoinedEvents(Array.isArray(joined) ? joined : []);
