@@ -59,7 +59,7 @@ function toDateInputValue(date) {
   return parsedDate.toISOString().slice(0, 10);
 }
 
-function EventsPanel({ title, emptyText, events }) {
+function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
       <Stack spacing={2}>
@@ -69,7 +69,12 @@ function EventsPanel({ title, emptyText, events }) {
         ) : (
           <Stack spacing={1.5}>
             {events.map((event) => (
-              <CardEvent key={event._id} event={event} />
+              <CardEvent
+                key={event._id}
+                event={event}
+                onChanged={onChanged}
+                onRemoved={onRemoved}
+              />
             ))}
           </Stack>
         )}
@@ -153,6 +158,38 @@ export function Perfil() {
     setEditable(false);
   };
 
+  const handleEventChanged = (updatedEvent) => {
+    setCreatedEvents((currentEvents) =>
+      currentEvents.map((event) =>
+        event._id === updatedEvent._id ? updatedEvent : event
+      )
+    );
+    setJoinedEvents((currentEvents) => {
+      const nextEvents = currentEvents.map((event) =>
+        event._id === updatedEvent._id ? updatedEvent : event
+      );
+      const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
+      const shouldBeListed = updatedEvent.participantsList?.includes(users.userName);
+
+      if (shouldBeListed && !isAlreadyListed) {
+        return [...nextEvents, updatedEvent];
+      }
+
+      return nextEvents.filter((event) =>
+        event.participantsList?.includes(users.userName)
+      );
+    });
+  };
+
+  const handleEventRemoved = (eventId) => {
+    setCreatedEvents((currentEvents) =>
+      currentEvents.filter((event) => event._id !== eventId)
+    );
+    setJoinedEvents((currentEvents) =>
+      currentEvents.filter((event) => event._id !== eventId)
+    );
+  };
+
   return (
     <AppShell
       title="Perfil"
@@ -227,6 +264,8 @@ export function Perfil() {
             title="Eventos creados"
             emptyText="Aun no has creado ningun evento."
             events={createdEvents}
+            onChanged={handleEventChanged}
+            onRemoved={handleEventRemoved}
           />
         </Grid>
         <Grid item xs={12} lg={6}>
@@ -234,6 +273,8 @@ export function Perfil() {
             title="Mis eventos"
             emptyText="No te has unido a ningun evento."
             events={joinedEvents}
+            onChanged={handleEventChanged}
+            onRemoved={handleEventRemoved}
           />
         </Grid>
       </Grid>

@@ -56,7 +56,7 @@ export function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        addUser(formData);
+        addUser(data.user);
         setOpenSnackbar(true);
         setTimeout(() => navigate("/"), 1200);
       } else {

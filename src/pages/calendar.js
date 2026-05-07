@@ -22,7 +22,7 @@ function groupEventsByDate(events) {
   }, {});
 }
 
-function EventList({ events, selectedDate, emptyText }) {
+function EventList({ events, selectedDate, emptyText, onChanged, onRemoved }) {
   const groupedEvents = useMemo(() => groupEventsByDate(events), [events]);
   const upcomingDates = Object.keys(groupedEvents)
     .filter((date) => dayjs(date).isSame(selectedDate, "day") || dayjs(date).isAfter(selectedDate, "day"))
@@ -44,7 +44,12 @@ function EventList({ events, selectedDate, emptyText }) {
             {dayjs(date).format("dddd, D [de] MMMM [de] YYYY")}
           </Typography>
           {groupedEvents[date].map((event) => (
-            <CardEvent key={event._id} event={event} />
+            <CardEvent
+              key={event._id}
+              event={event}
+              onChanged={onChanged}
+              onRemoved={onRemoved}
+            />
           ))}
         </Stack>
       ))}
@@ -96,6 +101,38 @@ export function Calendar() {
     [events, selectedDate]
   );
 
+  const handleEventChanged = (updatedEvent) => {
+    setEvents((currentEvents) =>
+      currentEvents.map((event) =>
+        event._id === updatedEvent._id ? updatedEvent : event
+      )
+    );
+    setUserEvents((currentEvents) => {
+      const nextEvents = currentEvents.map((event) =>
+        event._id === updatedEvent._id ? updatedEvent : event
+      );
+      const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
+      const shouldBeListed = updatedEvent.participantsList?.includes(users.userName);
+
+      if (shouldBeListed && !isAlreadyListed) {
+        return [...nextEvents, updatedEvent];
+      }
+
+      return nextEvents.filter((event) =>
+        event.participantsList?.includes(users.userName)
+      );
+    });
+  };
+
+  const handleEventRemoved = (eventId) => {
+    setEvents((currentEvents) =>
+      currentEvents.filter((event) => event._id !== eventId)
+    );
+    setUserEvents((currentEvents) =>
+      currentEvents.filter((event) => event._id !== eventId)
+    );
+  };
+
   return (
     <AppShell
       title="Calendario"
@@ -132,7 +169,12 @@ export function Calendar() {
               ) : (
                 <Stack spacing={1.5}>
                   {selectedEvents.map((event) => (
-                    <CardEvent key={event._id} event={event} />
+                    <CardEvent
+                      key={event._id}
+                      event={event}
+                      onChanged={handleEventChanged}
+                      onRemoved={handleEventRemoved}
+                    />
                   ))}
                 </Stack>
               )}
@@ -156,12 +198,16 @@ export function Calendar() {
               events={events}
               selectedDate={selectedDate}
               emptyText="No hay eventos proximos desde esta fecha."
+              onChanged={handleEventChanged}
+              onRemoved={handleEventRemoved}
             />
           ) : (
             <EventList
               events={userEvents}
               selectedDate={selectedDate}
               emptyText="Todavia no te has unido a eventos proximos."
+              onChanged={handleEventChanged}
+              onRemoved={handleEventRemoved}
             />
           )}
         </Box>

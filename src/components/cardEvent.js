@@ -6,6 +6,7 @@ import {
   CardActions,
   CardContent,
   Chip,
+  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -29,76 +30,104 @@ function formatDate(dateString) {
   });
 }
 
-export function CardEvent({ event }) {
-  const { users, updateUserData } = useUser();
+async function readApiMessage(response) {
+  try {
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    return { message: response.statusText };
+  }
+}
+
+export function CardEvent({ event, onChanged, onRemoved }) {
+  const { users } = useUser();
   const { setEvent } = useEventContext();
   const navigate = useNavigate();
+  const [currentEvent, setCurrentEvent] = useState(event);
   const [isUserJoined, setIsUserJoined] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  useEffect(() => {
+    setCurrentEvent(event);
+  }, [event]);
 
   const participants = useMemo(
-    () => event.participantsList || [],
-    [event.participantsList]
+    () => currentEvent.participantsList || [],
+    [currentEvent.participantsList]
   );
-  const isCreator = event.creator === users.userName;
-  const availableSlots = Math.max(Number(event.participants || 0) - participants.length, 0);
+  const isCreator = currentEvent.creator === users.userName;
+  const availableSlots = Math.max(Number(currentEvent.participants || 0) - participants.length, 0);
 
   useEffect(() => {
     setIsUserJoined(participants.includes(users.userName));
   }, [participants, users.userName]);
 
   const handleInfoClick = () => {
-    setEvent(event);
+    setEvent(currentEvent);
     navigate("/cardDetails");
   };
 
   const handleDeleteClick = async () => {
     try {
-      const response = await apiFetch(`/api/events/${event._id}`, {
+      const response = await apiFetch(`/api/events/${currentEvent._id}`, {
         method: "DELETE",
       });
       if (!response.ok) {
-        console.error("Error al eliminar el evento:", response.statusText);
+        const data = await readApiMessage(response);
+        setFeedback({ severity: "error", message: data.message || "No se pudo eliminar el evento" });
+        return;
       }
+
+      onRemoved?.(currentEvent._id);
+      setFeedback({ severity: "success", message: "Evento eliminado" });
     } catch (error) {
       console.error("Error al eliminar el evento:", error);
+      setFeedback({ severity: "error", message: "No se pudo conectar con el servidor" });
     }
   };
 
   const handleJoinClick = async () => {
     try {
-      const response = await apiFetch(`/api/events/${event._id}/join`, {
+      const response = await apiFetch(`/api/events/${currentEvent._id}/join`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userName: users.userName }),
       });
+      const data = await readApiMessage(response);
       if (response.ok) {
+        setCurrentEvent(data.event);
         setIsUserJoined(true);
-        updateUserData({});
+        onChanged?.(data.event);
       } else {
-        console.error("Error al unirse al evento:", response.statusText);
+        setFeedback({ severity: "error", message: data.message || "No se pudo unir al evento" });
       }
     } catch (error) {
       console.error("Error al unirse al evento:", error);
+      setFeedback({ severity: "error", message: "No se pudo conectar con el servidor" });
     }
   };
 
   const handleCancelClick = async () => {
     try {
       const response = await apiFetch(
-        `/api/events/${event._id}/join/${users.userName}`,
+        `/api/events/${currentEvent._id}/join/${users.userName}`,
         {
           method: "DELETE",
         }
       );
+      const data = await readApiMessage(response);
       if (response.ok) {
+        setCurrentEvent(data.event);
         setIsUserJoined(false);
+        onChanged?.(data.event);
       } else {
-        console.error("Error al cancelar la participacion:", response.statusText);
+        setFeedback({ severity: "error", message: data.message || "No se pudo cancelar la participacion" });
       }
     } catch (error) {
       console.error("Error al cancelar la participacion:", error);
+      setFeedback({ severity: "error", message: "No se pudo conectar con el servidor" });
     }
   };
 
@@ -123,16 +152,16 @@ export function CardEvent({ event }) {
           >
             <Box>
               <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: "wrap" }}>
-                <Chip label={event.sport} size="small" color="primary" />
+                <Chip label={currentEvent.sport} size="small" color="primary" />
                 <Chip
-                  label={`${participants.length}/${event.participants} plazas`}
+                  label={`${participants.length}/${currentEvent.participants} plazas`}
                   size="small"
                   color={availableSlots > 0 ? "secondary" : "default"}
                   variant="outlined"
                 />
               </Stack>
               <Typography variant="h5" color="text.primary">
-                {event.name}
+                {currentEvent.name}
               </Typography>
             </Box>
 
@@ -142,17 +171,17 @@ export function CardEvent({ event }) {
             >
               <Stack direction="row" spacing={1} alignItems="center">
                 <AccessTimeOutlinedIcon fontSize="small" />
-                <Typography variant="body2">{formatDate(event.date)}</Typography>
+                <Typography variant="body2">{formatDate(currentEvent.date)}</Typography>
               </Stack>
               <Stack direction="row" spacing={1} alignItems="center">
                 <PlaceOutlinedIcon fontSize="small" />
-                <Typography variant="body2">{event.city}</Typography>
+                <Typography variant="body2">{currentEvent.city}</Typography>
               </Stack>
             </Stack>
           </Stack>
 
           <Typography variant="body2" color="text.secondary">
-            {event.description}
+            {currentEvent.description}
           </Typography>
         </Stack>
       </CardContent>
@@ -204,6 +233,12 @@ export function CardEvent({ event }) {
           </Button>
         )}
       </CardActions>
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={3500}
+        onClose={() => setFeedback(null)}
+        message={feedback?.message}
+      />
     </Card>
   );
 }

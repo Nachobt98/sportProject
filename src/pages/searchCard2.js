@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -50,21 +50,35 @@ export function SearchCard2() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await apiFetch("/api/events");
-        const data = await response.json();
-        setEvents(data);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEvents();
+  const fetchEvents = useCallback(async () => {
+    try {
+      const response = await apiFetch("/api/events");
+      const data = await response.json();
+      setEvents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  const handleEventChanged = (updatedEvent) => {
+    setEvents((currentEvents) =>
+      currentEvents.map((event) =>
+        event._id === updatedEvent._id ? updatedEvent : event
+      )
+    );
+  };
+
+  const handleEventRemoved = (eventId) => {
+    setEvents((currentEvents) =>
+      currentEvents.filter((event) => event._id !== eventId)
+    );
+  };
 
   const filteredEvents = events.filter((event) => {
     return (
@@ -158,7 +172,14 @@ export function SearchCard2() {
         {isLoading ? (
           <Alert severity="info">Cargando eventos...</Alert>
         ) : filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => <CardEvent key={event._id} event={event} />)
+          filteredEvents.map((event) => (
+            <CardEvent
+              key={event._id}
+              event={event}
+              onChanged={handleEventChanged}
+              onRemoved={handleEventRemoved}
+            />
+          ))
         ) : (
           <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>
         )}

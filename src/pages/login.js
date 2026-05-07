@@ -30,11 +30,6 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const fetchUserByUsername = async (username) => {
-    const response = await apiFetch(`/api/user/${username}`);
-    return response.ok ? response.json() : null;
-  };
-
   const handleLogin = async (values, { setSubmitting }) => {
     setLoginError("");
     try {
@@ -48,9 +43,8 @@ export function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        const user = await fetchUserByUsername(values.userName);
         login(data.username);
-        addUser(user);
+        addUser(data.user);
         navigate("/homepage");
       } else {
         setLoginError(data.message || "Credenciales no validas");
