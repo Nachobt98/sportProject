@@ -5,11 +5,15 @@ import { CardEvent } from "./cardEvent";
 import * as eventsApi from "../api/eventsApi";
 
 jest.mock("../api/eventsApi");
+const mockNavigate = jest.fn();
+
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}));
+
 jest.mock("../context/userContext", () => ({
   useUser: () => ({ users: { userName: "nacho" } }),
-}));
-jest.mock("../context/eventContext", () => ({
-  useEventContext: () => ({ setEvent: jest.fn() }),
 }));
 
 const baseEvent = {
@@ -43,6 +47,14 @@ describe("CardEvent", () => {
     expect(screen.getByText("Padel match")).toBeInTheDocument();
     expect(screen.getByText("Friendly match")).toBeInTheDocument();
     expect(screen.getByText("Padel")).toBeInTheDocument();
+  });
+
+  test("navigates to event detail route", () => {
+    renderCard();
+
+    fireEvent.click(screen.getByRole("button", { name: /detalle/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id");
   });
 
   test("joins an event", async () => {
