@@ -15,8 +15,8 @@ jest.mock("../components/cardEvent", () => ({
   ),
 }));
 
-const setUsers = jest.fn();
-const user = {
+const mockSetUsers = jest.fn();
+const mockUser = {
   firstName: "Nacho",
   lastName: "Bru",
   userName: "nacho",
@@ -26,7 +26,7 @@ const user = {
 };
 
 jest.mock("../context/userContext", () => ({
-  useUser: () => ({ users: user, setUsers }),
+  useUser: () => ({ users: mockUser, setUsers: mockSetUsers }),
 }));
 
 function renderProfile() {
@@ -71,7 +71,7 @@ describe("Perfil", () => {
     fireEvent.change(screen.getByLabelText(/ciudad/i), { target: { name: "city", value: "Madrid" } });
     fireEvent.click(screen.getByRole("button", { name: /guardar/i }));
 
-    await waitFor(() => expect(setUsers).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" })));
+    await waitFor(() => expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" })));
   });
 
   test("updates local event lists through panel callbacks", async () => {
