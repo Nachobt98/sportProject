@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Avatar,
@@ -15,9 +15,9 @@ import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { useEventContext } from "../context/eventContext";
+import { getEventById } from "../api/eventsApi";
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("es-ES", {
@@ -43,21 +43,68 @@ function safeLocationHref(location) {
 }
 
 function CardDetails() {
-  const { eventData } = useEventContext();
+  const { eventId } = useParams();
   const navigate = useNavigate();
+  const [eventData, setEventData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  if (!eventData) {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchEvent() {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const data = await getEventById(eventId);
+        if (isMounted) {
+          setEventData(data.event);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message || "No se pudo cargar el evento.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    if (!eventId) {
+      setIsLoading(false);
+      setLoadError("No se ha indicado ningun evento.");
+      return undefined;
+    }
+
+    fetchEvent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId]);
+
+  if (isLoading) {
+    return (
+      <AppShell title="Detalle de evento" maxWidth="md">
+        <Alert severity="info">Cargando evento...</Alert>
+      </AppShell>
+    );
+  }
+
+  if (loadError || !eventData) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
         <Alert
-          severity="info"
+          severity="error"
           action={
             <Button color="inherit" size="small" onClick={() => navigate("/searchCard2")}>
               Volver
             </Button>
           }
         >
-          No hay ningun evento seleccionado.
+          {loadError || "Evento no encontrado."}
         </Alert>
       </AppShell>
     );

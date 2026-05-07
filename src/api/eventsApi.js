@@ -6,6 +6,11 @@ export async function getEvents() {
   return assertOkResponse(response, "No se pudieron cargar los eventos");
 }
 
+export async function getEventById(eventId) {
+  const response = await apiFetch(`/api/events/${eventId}`);
+  return assertOkResponse(response, "No se pudo cargar el evento");
+}
+
 export async function createEvent(eventData) {
   const response = await apiFetch("/api/events", {
     method: "POST",

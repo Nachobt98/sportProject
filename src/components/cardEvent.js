@@ -17,7 +17,6 @@ import LoginOutlinedIcon from "@mui/icons-material/LoginOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import { useNavigate } from "react-router-dom";
-import { useEventContext } from "../context/eventContext";
 import { useUser } from "../context/userContext";
 import { cancelEventJoin, deleteEvent, joinEvent } from "../api/eventsApi";
 
@@ -32,7 +31,6 @@ function formatDate(dateString) {
 
 export function CardEvent({ event, onChanged, onRemoved }) {
   const { users } = useUser();
-  const { setEvent } = useEventContext();
   const navigate = useNavigate();
   const [currentEvent, setCurrentEvent] = useState(event);
   const [isUserJoined, setIsUserJoined] = useState(false);
@@ -54,8 +52,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
   }, [participants, users.userName]);
 
   const handleInfoClick = () => {
-    setEvent(currentEvent);
-    navigate("/cardDetails");
+    navigate(`/events/${currentEvent._id}`);
   };
 
   const handleDeleteClick = async () => {

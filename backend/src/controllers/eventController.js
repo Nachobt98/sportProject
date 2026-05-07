@@ -63,6 +63,11 @@ async function listUserEvents(req, res) {
   }
 }
 
+const getEventById = createServiceHandler(
+  (req) => eventService.findEventById(req.params.eventId),
+  "Error al obtener el evento"
+);
+
 const joinEvent = createServiceHandler(
   (req) => eventService.joinUserToEvent(req.params.eventId, getAuthenticatedUserName(req)),
   "Error al unir al usuario al evento"
@@ -97,6 +102,7 @@ module.exports = {
   createEvent,
   listEvents,
   listUserEvents,
+  getEventById,
   joinEvent,
   joinEventForUser,
   cancelEventJoin,

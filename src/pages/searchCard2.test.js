@@ -6,7 +6,15 @@ import * as eventsApi from "../api/eventsApi";
 
 jest.mock("../api/eventsApi");
 jest.mock("../components/cardEvent", () => ({
-  CardEvent: ({ event }) => <div>{event.name}</div>,
+  CardEvent: ({ event, onChanged, onRemoved }) => (
+    <div>
+      <span>{event.name}</span>
+      <button onClick={() => onChanged?.({ ...event, name: `${event.name} updated` })}>
+        change {event._id}
+      </button>
+      <button onClick={() => onRemoved?.(event._id)}>remove {event._id}</button>
+    </div>
+  ),
 }));
 
 const mockNavigate = jest.fn();
@@ -63,6 +71,14 @@ describe("SearchCard2", () => {
     expect(await screen.findByText("No se pudieron cargar los eventos")).toBeInTheDocument();
   });
 
+  test("shows an empty state when there are no events", async () => {
+    eventsApi.getEvents.mockResolvedValue([]);
+
+    renderSearch();
+
+    expect(await screen.findByText(/no se encontraron eventos/i)).toBeInTheDocument();
+  });
+
   test("navigates to create event", async () => {
     eventsApi.getEvents.mockResolvedValue([]);
 
@@ -80,5 +96,22 @@ describe("SearchCard2", () => {
     fireEvent.click(screen.getByRole("button", { name: /limpiar/i }));
 
     expect(screen.getByText("Padel Valencia")).toBeInTheDocument();
+  });
+
+  test("filters, updates and removes events", async () => {
+    eventsApi.getEvents.mockResolvedValue(events);
+
+    renderSearch();
+    await waitFor(() => expect(screen.getByText("Padel Valencia")).toBeInTheDocument());
+
+    fireEvent.mouseDown(screen.getByLabelText(/ciudad/i));
+    fireEvent.click(screen.getByRole("option", { name: "Valencia" }));
+    expect(screen.queryByText("Futbol Madrid")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("change 1"));
+    expect(screen.getByText("Padel Valencia updated")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("remove 1"));
+    expect(screen.queryByText("Padel Valencia updated")).not.toBeInTheDocument();
   });
 });

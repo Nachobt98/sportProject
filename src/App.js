@@ -51,7 +51,8 @@ function App() {
               <Route path="/faqPage" element={protectedElement(<FaqPage />)} />
               <Route path="/createEvent" element={protectedElement(<CreateEvent />)} />
               <Route path="/searchCard2" element={protectedElement(<SearchCard2 />)} />
-              <Route path="/cardDetails" element={protectedElement(<CardDetails />)} />
+              <Route path="/events/:eventId" element={protectedElement(<CardDetails />)} />
+              <Route path="/cardDetails" element={<Navigate to="/searchCard2" replace />} />
               <Route path="/contact" element={protectedElement(<Contact />)} />
               <Route path="/calendar" element={protectedElement(<Calendar />)} />
               <Route path="*" element={<Navigate to="/" replace />} />

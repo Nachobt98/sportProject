@@ -58,6 +58,29 @@ describe("eventService", () => {
     Event.mockImplementation((payload) => ({ ...payload, save: jest.fn().mockResolvedValue(undefined) }));
   });
 
+  test("finds events by id", async () => {
+    const event = createEventDoc();
+    Event.findById.mockReturnValue(queryResult(event));
+
+    const result = await service.findEventById("event-id");
+
+    expect(result.status).toBe(200);
+    expect(result.body.event).toBe(event);
+  });
+
+  test("rejects invalid or missing event detail lookups", async () => {
+    mongoose.Types.ObjectId.isValid.mockReturnValue(false);
+    await expect(service.findEventById("bad-id")).resolves.toEqual(
+      expect.objectContaining({ status: 400 })
+    );
+
+    mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+    Event.findById.mockReturnValue(queryResult(null));
+    await expect(service.findEventById("event-id")).resolves.toEqual(
+      expect.objectContaining({ status: 404 })
+    );
+  });
+
   test("builds valid event payloads", () => {
     const result = service.buildEventPayload({
       name: " Padel ",
