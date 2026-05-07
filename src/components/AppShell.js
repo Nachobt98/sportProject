@@ -1,3 +1,4 @@
+import React from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
 
 export function AppShell({ title, subtitle, actions, maxWidth = "lg", children }) {
