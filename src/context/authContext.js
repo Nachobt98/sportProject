@@ -8,7 +8,7 @@ const AuthContext = createContext();
 function getStoredAuth() {
   try {
     return JSON.parse(localStorage.getItem("auth") || "{}") || {};
-  } catch (error) {
+  } catch {
     localStorage.removeItem("auth");
     return {};
   }
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           setUsers(data.user);
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           logout();
         }

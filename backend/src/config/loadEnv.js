@@ -1,5 +1,5 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 function loadLocalEnv() {
   const envPath = path.resolve(__dirname, "..", "..", "..", ".env");

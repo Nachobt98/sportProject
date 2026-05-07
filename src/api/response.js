@@ -1,7 +1,7 @@
 export async function parseApiResponse(response) {
   try {
     return await response.json();
-  } catch (error) {
+  } catch {
     return { message: response.statusText };
   }
 }

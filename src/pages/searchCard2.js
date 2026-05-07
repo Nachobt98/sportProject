@@ -40,6 +40,35 @@ const sports = [
   "Padel",
 ];
 
+function renderEventsContent({
+  isLoading,
+  loadError,
+  filteredEvents,
+  onEventChanged,
+  onEventRemoved,
+}) {
+  if (isLoading) {
+    return <Alert severity="info">Cargando eventos...</Alert>;
+  }
+
+  if (loadError) {
+    return <Alert severity="error">{loadError}</Alert>;
+  }
+
+  if (filteredEvents.length === 0) {
+    return <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>;
+  }
+
+  return filteredEvents.map((event) => (
+    <CardEvent
+      key={event._id}
+      event={event}
+      onChanged={onEventChanged}
+      onRemoved={onEventRemoved}
+    />
+  ));
+}
+
 export function SearchCard2() {
   const navigate = useNavigate();
   const [searchCriteria, setSearchCriteria] = useState({
@@ -170,22 +199,13 @@ export function SearchCard2() {
       </Paper>
 
       <Stack spacing={2}>
-        {isLoading ? (
-          <Alert severity="info">Cargando eventos...</Alert>
-        ) : loadError ? (
-          <Alert severity="error">{loadError}</Alert>
-        ) : filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => (
-            <CardEvent
-              key={event._id}
-              event={event}
-              onChanged={handleEventChanged}
-              onRemoved={handleEventRemoved}
-            />
-          ))
-        ) : (
-          <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>
-        )}
+        {renderEventsContent({
+          isLoading,
+          loadError,
+          filteredEvents,
+          onEventChanged: handleEventChanged,
+          onEventRemoved: handleEventRemoved,
+        })}
       </Stack>
     </AppShell>
   );

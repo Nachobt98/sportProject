@@ -11,7 +11,7 @@ function authenticateRequest(req, res, next) {
   try {
     req.auth = verifySessionToken(token);
     return next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({ message: "Sesion no valida" });
   }
 }
