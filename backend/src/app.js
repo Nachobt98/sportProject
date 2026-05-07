@@ -8,8 +8,8 @@ const userRoutes = require("./routes/userRoutes");
 function createApp() {
   const app = express();
 
-  app.use(express.json());
   app.use(cors({ origin: config.clientOrigin }));
+  app.use(express.json({ limit: "3mb" }));
 
   app.get("/api/health", (req, res) => {
     res.status(200).json({ status: "ok" });
