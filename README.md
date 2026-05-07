@@ -22,7 +22,7 @@ SportLife is a full-stack JavaScript application for creating, discovering and j
 - Editable profile page.
 - Profile image persistence through the current-user API.
 - Created events and joined events panels in the profile.
-- Normalized frontend routes with temporary redirects from legacy URLs.
+- Normalized frontend routes.
 - SonarCloud workflow with tests, coverage and build validation.
 
 ## Project structure
@@ -76,8 +76,6 @@ Tests live next to the implementation files using `*.test.js` naming.
 | `/contact` | Contact page. |
 | `/calendar` | Calendar page. |
 
-The app also keeps temporary redirects from older routes such as `/homepage`, `/registerpage`, `/Perfil`, `/faqPage`, `/createEvent`, `/searchCard2` and `/cardDetails`.
-
 ## Backend API
 
 All backend routes are mounted under `/api`.
@@ -102,7 +100,6 @@ All backend routes are mounted under `/api`.
 |---|---|---:|---|
 | `GET` | `/api/users/me` | Yes | Returns the current user. |
 | `PATCH` | `/api/users/me` | Yes | Updates editable profile fields and profile image. |
-| `GET` | `/api/user/:userName` | Yes + same user | Compatibility endpoint for a specific username. |
 
 ### Events
 
@@ -116,8 +113,6 @@ All backend routes are mounted under `/api`.
 | `DELETE` | `/api/events/:eventId/join` | Yes | Removes the current user from an event. |
 | `GET` | `/api/users/me/events` | Yes | Lists events created by the current user. |
 | `GET` | `/api/users/me/joined-events` | Yes | Lists events joined by the current user. |
-| `GET` | `/api/user/:userName/events` | Yes + same user | Compatibility endpoint for created events. |
-| `GET` | `/api/user/:userName/joinedEvents` | Yes + same user | Compatibility endpoint for joined events. |
 
 ## Environment variables
 
@@ -170,32 +165,29 @@ The SonarCloud workflow runs on pushes to `main` and pull requests. It installs 
 
 The project is in a transitional but increasingly clean state:
 
-- Frontend routes have been normalized.
+- Frontend routes have been normalized and legacy redirects/placeholders have been removed.
 - Event details are URL-driven and reload-safe.
-- Event mutations are token-based instead of username-in-URL based.
+- Current-user and event participation flows are token-based instead of username-in-URL based.
 - Profile data uses `/api/users/me`.
 - Backend code is separated into routes, controllers, services, models and utilities.
 - Tests and SonarCloud act as a quality gate for future PRs.
 
 Known cleanup areas:
 
-- Some compatibility endpoints still exist for user-specific event reads.
-- Some legacy frontend pages/routes still exist as temporary compatibility paths.
 - Some event relationships still use `userName` strings instead of `ObjectId` references.
 - The project is still based on Create React App.
+- Event filtering is still performed on the frontend rather than through backend query parameters.
 
 ## Suggested next priorities
 
-1. Remove remaining legacy frontend redirects and unused pages once confirmed unused.
-2. Remove username-param compatibility endpoints in favor of `/api/users/me/...`.
-3. Improve event and user data modelling with `ObjectId` references and timestamps.
-4. Add event editing: `PATCH /api/events/:eventId` and creator-only edit UI.
-5. Move event filtering/pagination to the backend.
-6. Harden auth and security: rate limiting, better validation and production secrets.
-7. Improve frontend state/data fetching with clearer hooks or React Query.
-8. Improve UX with skeletons, confirmation dialogs and consistent empty states.
-9. Add deployment documentation.
-10. Consider migrating from Create React App to Vite after domain cleanup.
+1. Improve event and user data modelling with `ObjectId` references and timestamps.
+2. Add event editing: `PATCH /api/events/:eventId` and creator-only edit UI.
+3. Move event filtering/pagination to the backend.
+4. Harden auth and security: rate limiting, better validation and production secrets.
+5. Improve frontend state/data fetching with clearer hooks or React Query.
+6. Improve UX with skeletons, confirmation dialogs and consistent empty states.
+7. Add deployment documentation.
+8. Consider migrating from Create React App to Vite after domain cleanup.
 
 ## PR discipline
 
