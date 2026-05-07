@@ -26,6 +26,7 @@
   "scripts": {
     "start": "react-scripts start",
     "server": "node backend/server.js",
+    "seed:dev": "node backend/seedDevUser.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
