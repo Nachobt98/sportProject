@@ -6,7 +6,6 @@ import { Header } from "./components/header";
 import { AuthProvider, useAuth } from "./context/authContext";
 import { EventProvider } from "./context/eventContext";
 import { UserProvider } from "./context/userContext";
-import { Article } from "./pages/articles";
 import { Calendar } from "./pages/calendar";
 import CardDetails from "./pages/CardDetails";
 import { Contact } from "./pages/contact";
@@ -16,7 +15,6 @@ import { Home } from "./pages/home";
 import { LoginPage } from "./pages/login";
 import { Perfil } from "./pages/perfil";
 import { RegisterPage } from "./pages/register";
-import { SearchCard } from "./pages/searchCard";
 import { SearchCard2 } from "./pages/searchCard2";
 import { appTheme } from "./theme";
 
@@ -53,8 +51,6 @@ function App() {
               <Route path="/faq" element={protectedElement(<FaqPage />)} />
               <Route path="/contact" element={protectedElement(<Contact />)} />
               <Route path="/calendar" element={protectedElement(<Calendar />)} />
-              <Route path="/article" element={protectedElement(<Article />)} />
-              <Route path="/searchCard" element={protectedElement(<SearchCard />)} />
 
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
