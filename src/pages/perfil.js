@@ -35,7 +35,7 @@ const profileFields = [
   ["birthdate", "Fecha de nacimiento"],
 ];
 
-const MAX_IMAGE_BYTES = 550000;
+const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 function formatDate(date) {
@@ -146,7 +146,7 @@ export function Perfil() {
     }
 
     if (file.size > MAX_IMAGE_BYTES) {
-      setProfileError("La imagen es demasiado grande. Usa una imagen de menos de 550 KB.");
+      setProfileError("La imagen es demasiado grande. Usa una imagen de menos de 1.5 MB.");
       return;
     }
 
