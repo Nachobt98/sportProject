@@ -48,6 +48,10 @@ function renderSearch() {
   );
 }
 
+async function waitForInitialSearchLoad() {
+  await waitFor(() => expect(eventsApi.getEvents).toHaveBeenCalled());
+}
+
 describe("SearchCard2", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -84,6 +88,7 @@ describe("SearchCard2", () => {
     eventsApi.getEvents.mockResolvedValue([]);
 
     renderSearch();
+    await screen.findByText(/no se encontraron eventos/i);
     fireEvent.click(screen.getByRole("button", { name: /crear evento/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith("/events/new");
@@ -93,7 +98,7 @@ describe("SearchCard2", () => {
     eventsApi.getEvents.mockResolvedValue(events);
 
     renderSearch();
-    await waitFor(() => expect(eventsApi.getEvents).toHaveBeenCalledTimes(1));
+    await waitForInitialSearchLoad();
 
     fireEvent.mouseDown(screen.getByLabelText(/ciudad/i));
     fireEvent.click(screen.getByRole("option", { name: "Valencia" }));

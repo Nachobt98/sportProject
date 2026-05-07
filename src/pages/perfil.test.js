@@ -49,6 +49,11 @@ function renderProfile() {
   );
 }
 
+async function waitForProfileEvents() {
+  await screen.findByText("Created event");
+  await screen.findByText("Joined event");
+}
+
 describe("Perfil", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -68,8 +73,7 @@ describe("Perfil", () => {
 
     expect(screen.getByRole("heading", { name: /perfil/i })).toBeInTheDocument();
     expect(screen.getByText("Nacho Bru")).toBeInTheDocument();
-    expect(await screen.findByText("Created event")).toBeInTheDocument();
-    expect(screen.getByText("Joined event")).toBeInTheDocument();
+    await waitForProfileEvents();
   });
 
   test("renders fallback profile values when user data is incomplete", async () => {
@@ -94,6 +98,8 @@ describe("Perfil", () => {
 
   test("persists profile changes in the backend", async () => {
     renderProfile();
+    await waitForProfileEvents();
+
     fireEvent.click(screen.getByRole("button", { name: /editar perfil/i }));
     fireEvent.change(screen.getByLabelText(/ciudad/i), { target: { name: "city", value: "Madrid" } });
     fireEvent.click(screen.getByRole("button", { name: /guardar/i }));
@@ -109,6 +115,8 @@ describe("Perfil", () => {
     });
 
     const { container } = renderProfile();
+    await waitForProfileEvents();
+
     const input = container.querySelector('input[type="file"]');
     const file = new File(["avatar"], "avatar.png", { type: "image/png" });
 
@@ -123,8 +131,10 @@ describe("Perfil", () => {
     expect(await screen.findByText(/foto de perfil actualizada correctamente/i)).toBeInTheDocument();
   });
 
-  test("ignores empty profile image selections", () => {
+  test("ignores empty profile image selections", async () => {
     const { container } = renderProfile();
+    await waitForProfileEvents();
+
     const input = container.querySelector('input[type="file"]');
 
     fireEvent.change(input, { target: { files: [] } });
@@ -132,8 +142,10 @@ describe("Perfil", () => {
     expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
   });
 
-  test("rejects invalid profile image types", () => {
+  test("rejects invalid profile image types", async () => {
     const { container } = renderProfile();
+    await waitForProfileEvents();
+
     const input = container.querySelector('input[type="file"]');
     const file = new File(["avatar"], "avatar.gif", { type: "image/gif" });
 
@@ -143,8 +155,10 @@ describe("Perfil", () => {
     expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
   });
 
-  test("rejects profile images that are too large", () => {
+  test("rejects profile images that are too large", async () => {
     const { container } = renderProfile();
+    await waitForProfileEvents();
+
     const input = container.querySelector('input[type="file"]');
     const file = new File(["avatar"], "avatar.png", { type: "image/png" });
     Object.defineProperty(file, "size", { value: 2 * 1024 * 1024 });
@@ -159,6 +173,8 @@ describe("Perfil", () => {
     usersApi.updateCurrentUser.mockRejectedValue(new Error("No se pudo actualizar el perfil"));
 
     renderProfile();
+    await waitForProfileEvents();
+
     fireEvent.click(screen.getByRole("button", { name: /editar perfil/i }));
     fireEvent.click(screen.getByRole("button", { name: /guardar/i }));
 
@@ -167,7 +183,7 @@ describe("Perfil", () => {
 
   test("updates local event lists through panel callbacks", async () => {
     renderProfile();
-    await screen.findByText("Joined event");
+    await waitForProfileEvents();
 
     fireEvent.click(screen.getAllByText("change event")[0]);
     fireEvent.click(screen.getAllByText("remove event")[0]);
@@ -177,7 +193,7 @@ describe("Perfil", () => {
 
   test("removes joined events when the updated participants no longer include the user", async () => {
     renderProfile();
-    await screen.findByText("Joined event");
+    await waitForProfileEvents();
 
     fireEvent.click(screen.getAllByText("leave event")[1]);
 
