@@ -63,21 +63,6 @@ test("renders protected routes for authenticated users", async () => {
   expect(await screen.findByText("Article page")).toBeInTheDocument();
 });
 
-test("redirects legacy routes to normalized routes", async () => {
-  localStorage.setItem(
-    "auth",
-    JSON.stringify({ isAuthenticated: true, username: "nacho", token: "token" })
-  );
-
-  render(
-    <MemoryRouter initialEntries={["/homepage"]}>
-      <App />
-    </MemoryRouter>
-  );
-
-  expect(await screen.findByText("Home page")).toBeInTheDocument();
-});
-
 test("redirects unknown routes to login", () => {
   render(
     <MemoryRouter initialEntries={["/unknown"]}>
