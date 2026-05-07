@@ -34,10 +34,6 @@ function protectedElement(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>;
 }
 
-function legacyRedirect(path) {
-  return <Navigate to={path} replace />;
-}
-
 function App() {
   return (
     <EventProvider>
@@ -59,8 +55,6 @@ function App() {
               <Route path="/calendar" element={protectedElement(<Calendar />)} />
               <Route path="/article" element={protectedElement(<Article />)} />
               <Route path="/searchCard" element={protectedElement(<SearchCard />)} />
-
-              <Route path="/homepage" element={legacyRedirect("/home")} />
 
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
