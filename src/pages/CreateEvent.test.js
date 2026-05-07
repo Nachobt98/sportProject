@@ -5,14 +5,14 @@ import { CreateEvent } from "./CreateEvent";
 import * as eventsApi from "../api/eventsApi";
 
 jest.mock("../api/eventsApi");
-const navigate = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock("../context/userContext", () => ({
   useUser: () => ({ users: { userName: "nacho" } }),
 }));
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => navigate,
+  useNavigate: () => mockNavigate,
 }));
 
 function renderCreateEvent() {
@@ -64,7 +64,7 @@ describe("CreateEvent", () => {
       creator: "nacho",
     })));
     jest.runOnlyPendingTimers();
-    expect(navigate).toHaveBeenCalledWith("/searchCard2");
+    expect(mockNavigate).toHaveBeenCalledWith("/searchCard2");
     jest.useRealTimers();
   });
 
