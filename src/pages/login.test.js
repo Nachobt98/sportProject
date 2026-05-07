@@ -55,7 +55,7 @@ describe("LoginPage", () => {
     await waitFor(() => expect(authApi.loginUser).toHaveBeenCalled());
     expect(mockLogin).toHaveBeenCalledWith("nacho", "token");
     expect(mockAddUser).toHaveBeenCalledWith({ userName: "nacho" });
-    expect(mockNavigate).toHaveBeenCalledWith("/homepage");
+    expect(mockNavigate).toHaveBeenCalledWith("/home");
   });
 
   test("shows login errors", async () => {
