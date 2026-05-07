@@ -14,22 +14,8 @@ router.delete("/events/:eventId", ...authenticated, eventController.deleteEvent)
 router.post("/events/:eventId/join", ...authenticated, eventController.joinEvent);
 router.delete("/events/:eventId/join", ...authenticated, eventController.cancelEventJoin);
 
-const legacyJoinRoutes = [
-  "/events/:eventId/participants/:userName",
-  "/user/:userName/joinEvent/:eventId",
-];
-legacyJoinRoutes.forEach((path) => {
-  router.post(path, ...sameUser, eventController.joinEventForUser);
-});
-
-const legacyCancelRoutes = [
-  "/events/:eventId/join/:userName",
-  "/events/:eventId/participants/:userName",
-  "/user/:userName/events/:eventId",
-];
-legacyCancelRoutes.forEach((path) => {
-  router.delete(path, ...sameUser, eventController.cancelEventJoinForUser);
-});
+router.get("/users/me/events", ...authenticated, eventController.listCurrentUserEvents);
+router.get("/users/me/joined-events", ...authenticated, eventController.listCurrentUserJoinedEvents);
 
 router.get("/user/:userName/events", ...sameUser, eventController.listUserEvents);
 router.get("/user/:userName/joinedEvents", ...sameUser, eventController.listJoinedEvents);
