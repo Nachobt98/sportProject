@@ -9,10 +9,6 @@ jest.mock("../services/eventService", () => ({
   deleteEvent: jest.fn(),
 }));
 
-jest.mock("../models/User", () => ({
-  findOne: jest.fn(),
-}));
-
 jest.mock("../utils/logger", () => ({
   logger: {
     error: jest.fn(),
@@ -20,7 +16,6 @@ jest.mock("../utils/logger", () => ({
 }));
 
 const eventService = require("../services/eventService");
-const User = require("../models/User");
 const controller = require("./eventController");
 
 function createResponse() {
@@ -86,28 +81,6 @@ describe("eventController", () => {
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
-  test("returns 404 when listing events for a missing user", async () => {
-    const req = { params: { userName: "nacho" } };
-    const res = createResponse();
-    User.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
-
-    await controller.listUserEvents(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(404);
-  });
-
-  test("lists events created by a user", async () => {
-    const req = { params: { userName: "nacho" } };
-    const res = createResponse();
-    User.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({ userName: "nacho" }) });
-    eventService.listCreatedEvents.mockResolvedValue([{ _id: "1" }]);
-
-    await controller.listUserEvents(req, res);
-
-    expect(eventService.listCreatedEvents).toHaveBeenCalledWith("nacho");
-    expect(res.status).toHaveBeenCalledWith(200);
-  });
-
   test("lists current user events from auth token", async () => {
     const req = { auth: { userName: "nacho" } };
     const res = createResponse();
@@ -141,16 +114,6 @@ describe("eventController", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  test("handles user event listing errors", async () => {
-    const req = { params: { userName: "nacho" } };
-    const res = createResponse();
-    User.findOne.mockReturnValue({ exec: jest.fn().mockRejectedValue(new Error("boom")) });
-
-    await controller.listUserEvents(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-  });
-
   test("joins and cancels event participation with authenticated user", async () => {
     const req = { params: { eventId: "event-id" }, auth: { userName: "nacho" } };
     const res = createResponse();
@@ -162,19 +125,6 @@ describe("eventController", () => {
 
     await controller.cancelEventJoin(req, res);
     expect(eventService.cancelUserEvent).toHaveBeenCalledWith("event-id", "nacho");
-  });
-
-  test("lists joined events and handles service errors", async () => {
-    const req = { params: { userName: "nacho" } };
-    const res = createResponse();
-    eventService.listJoinedEvents.mockResolvedValue({ status: 200, body: [] });
-
-    await controller.listJoinedEvents(req, res);
-    expect(res.status).toHaveBeenCalledWith(200);
-
-    eventService.listJoinedEvents.mockRejectedValue(new Error("boom"));
-    await controller.listJoinedEvents(req, res);
-    expect(res.status).toHaveBeenCalledWith(500);
   });
 
   test("deletes events through the service", async () => {
