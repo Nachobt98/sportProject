@@ -2,7 +2,7 @@ const User = require("../models/User");
 const { normalizeString } = require("../utils/strings");
 const { toPublicUser } = require("../utils/users");
 
-const MAX_PROFILE_IMAGE_LENGTH = 750000;
+const MAX_PROFILE_IMAGE_LENGTH = 2100000;
 const PROFILE_IMAGE_PATTERN = /^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/;
 
 const editableUserFields = [
