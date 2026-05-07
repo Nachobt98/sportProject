@@ -11,6 +11,31 @@ function serviceResponse(status, message, extraBody = {}) {
   return { status, body: { message, ...extraBody } };
 }
 
+function buildEventFilters(filters = {}) {
+  const query = {};
+  const city = normalizeString(filters.city);
+  const sport = normalizeString(filters.sport);
+
+  if (city) {
+    query.city = city;
+  }
+
+  if (sport) {
+    query.sport = sport;
+  }
+
+  if (filters.date) {
+    const start = new Date(filters.date);
+    if (!Number.isNaN(start.getTime())) {
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      query.date = { $gte: start, $lt: end };
+    }
+  }
+
+  return query;
+}
+
 function buildEventPayload(payload) {
   const missingFields = validateRequiredFields(payload, [
     "name",
@@ -105,8 +130,8 @@ async function createEvent(payload, creatorUserName) {
   return serviceResponse(201, "Evento creado exitosamente", { event: newEvent });
 }
 
-async function listEvents() {
-  return Event.find().sort({ date: 1, _id: 1 }).exec();
+async function listEvents(filters = {}) {
+  return Event.find(buildEventFilters(filters)).sort({ date: 1, _id: 1 }).exec();
 }
 
 async function listCreatedEvents(userName) {
@@ -127,9 +152,9 @@ async function listJoinedEvents(userName) {
 }
 
 async function joinUserToEvent(eventId, userName) {
-    if (!eventId || !userName) {
-      return serviceResponse(400, "Faltan parámetros obligatorios");
-    }
+  if (!eventId || !userName) {
+    return serviceResponse(400, "Faltan parámetros obligatorios");
+  }
   const lookup = await findEventAndUser(eventId, userName);
   if (lookup.status) {
     return lookup;
@@ -194,6 +219,7 @@ async function deleteEvent(eventId, authUserName) {
 }
 
 module.exports = {
+  buildEventFilters,
   buildEventPayload,
   findEventById,
   createEvent,
