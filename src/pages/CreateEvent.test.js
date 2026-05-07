@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { CreateEvent } from "./CreateEvent";
 import * as eventsApi from "../api/eventsApi";
@@ -68,7 +68,9 @@ describe("CreateEvent", () => {
       participants: 4,
       creator: "nacho",
     })));
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
     expect(mockNavigate).toHaveBeenCalledWith("/events");
     jest.useRealTimers();
   });
