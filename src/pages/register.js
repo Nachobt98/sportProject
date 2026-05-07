@@ -15,7 +15,7 @@ import avatar from "../img/avatar.png";
 import { AuthLayout } from "../components/AuthLayout";
 import { useUser } from "../context/userContext";
 import { useAuth } from "../context/authContext";
-import { apiFetch } from "../api/client";
+import { registerUser } from "../api/authApi";
 
 const validationSchema = Yup.object().shape({
   firstName: Yup.string().required("Nombre requerido"),
@@ -48,26 +48,14 @@ export function RegisterPage() {
     setSubmitError("");
     const formData = { ...values, profileImage };
     try {
-      const response = await apiFetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        addUser(data.user);
-        login(data.user.userName, data.token);
-        setOpenSnackbar(true);
-        setTimeout(() => navigate("/homepage"), 1200);
-      } else {
-        setSubmitError(data.message || "No se pudo completar el registro.");
-      }
+      const data = await registerUser(formData);
+      addUser(data.user);
+      login(data.user.userName, data.token);
+      setOpenSnackbar(true);
+      setTimeout(() => navigate("/homepage"), 1200);
     } catch (error) {
       console.error("Error al enviar el formulario de registro:", error);
-      setSubmitError("No se pudo conectar con el servidor.");
+      setSubmitError(error.message || "No se pudo conectar con el servidor.");
     } finally {
       setSubmitting(false);
     }
