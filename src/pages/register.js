@@ -17,6 +17,9 @@ import { useUser } from "../context/userContext";
 import { useAuth } from "../context/authContext";
 import { registerUser } from "../api/authApi";
 
+const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 const validationSchema = Yup.object().shape({
   firstName: Yup.string().required("Nombre requerido"),
   lastName: Yup.string().required("Apellidos requeridos"),
@@ -43,6 +46,36 @@ export function RegisterPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [profileImage, setProfileImage] = useState(avatar);
+
+  const handleProfileImageChange = (event) => {
+    setSubmitError("");
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      setProfileImage(avatar);
+      return;
+    }
+
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      setSubmitError("La imagen debe ser JPG, PNG o WEBP.");
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      setSubmitError("La imagen es demasiado grande. Usa una imagen de menos de 1.5 MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImage(reader.result || avatar);
+    };
+    reader.onerror = () => {
+      setSubmitError("No se pudo leer la imagen seleccionada.");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     setSubmitError("");
@@ -111,8 +144,8 @@ export function RegisterPage() {
                   <input
                     hidden
                     type="file"
-                    accept="image/*"
-                    onChange={(event) => setProfileImage(event.target.files[0] || avatar)}
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleProfileImageChange}
                   />
                 </Button>
               </Stack>

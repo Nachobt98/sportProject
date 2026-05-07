@@ -4,9 +4,7 @@ import { ThemeProvider } from "@mui/material";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Header } from "./components/header";
 import { AuthProvider, useAuth } from "./context/authContext";
-import { EventProvider } from "./context/eventContext";
 import { UserProvider } from "./context/userContext";
-import { Article } from "./pages/articles";
 import { Calendar } from "./pages/calendar";
 import CardDetails from "./pages/CardDetails";
 import { Contact } from "./pages/contact";
@@ -16,7 +14,6 @@ import { Home } from "./pages/home";
 import { LoginPage } from "./pages/login";
 import { Perfil } from "./pages/perfil";
 import { RegisterPage } from "./pages/register";
-import { SearchCard } from "./pages/searchCard";
 import { SearchCard2 } from "./pages/searchCard2";
 import { appTheme } from "./theme";
 
@@ -34,46 +31,30 @@ function protectedElement(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>;
 }
 
-function legacyRedirect(path) {
-  return <Navigate to={path} replace />;
-}
-
 function App() {
   return (
-    <EventProvider>
-      <UserProvider>
-        <AuthProvider>
-          <ThemeProvider theme={appTheme}>
-            <Header />
-            <Routes>
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/home" element={protectedElement(<Home />)} />
-              <Route path="/profile" element={protectedElement(<Perfil />)} />
-              <Route path="/events" element={protectedElement(<SearchCard2 />)} />
-              <Route path="/events/new" element={protectedElement(<CreateEvent />)} />
-              <Route path="/events/:eventId" element={protectedElement(<CardDetails />)} />
-              <Route path="/faq" element={protectedElement(<FaqPage />)} />
-              <Route path="/contact" element={protectedElement(<Contact />)} />
-              <Route path="/calendar" element={protectedElement(<Calendar />)} />
-              <Route path="/article" element={protectedElement(<Article />)} />
-              <Route path="/searchCard" element={protectedElement(<SearchCard />)} />
+    <UserProvider>
+      <AuthProvider>
+        <ThemeProvider theme={appTheme}>
+          <Header />
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/home" element={protectedElement(<Home />)} />
+            <Route path="/profile" element={protectedElement(<Perfil />)} />
+            <Route path="/events" element={protectedElement(<SearchCard2 />)} />
+            <Route path="/events/new" element={protectedElement(<CreateEvent />)} />
+            <Route path="/events/:eventId" element={protectedElement(<CardDetails />)} />
+            <Route path="/faq" element={protectedElement(<FaqPage />)} />
+            <Route path="/contact" element={protectedElement(<Contact />)} />
+            <Route path="/calendar" element={protectedElement(<Calendar />)} />
 
-              <Route path="/registerpage" element={legacyRedirect("/register")} />
-              <Route path="/homepage" element={legacyRedirect("/home")} />
-              <Route path="/Perfil" element={legacyRedirect("/profile")} />
-              <Route path="/faqPage" element={legacyRedirect("/faq")} />
-              <Route path="/createEvent" element={legacyRedirect("/events/new")} />
-              <Route path="/searchCard2" element={legacyRedirect("/events")} />
-              <Route path="/cardDetails" element={legacyRedirect("/events")} />
-
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-          </ThemeProvider>
-        </AuthProvider>
-      </UserProvider>
-    </EventProvider>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </ThemeProvider>
+      </AuthProvider>
+    </UserProvider>
   );
 }
 
