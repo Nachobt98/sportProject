@@ -3,6 +3,7 @@ import {
   cancelEventJoin,
   createEvent,
   deleteEvent,
+  getEventById,
   getEvents,
   getUserCreatedEvents,
   getUserJoinedEvents,
@@ -24,6 +25,12 @@ describe("eventsApi", () => {
     mockJsonResponse([{ _id: "1" }]);
     await expect(getEvents()).resolves.toEqual([{ _id: "1" }]);
     expect(client.apiFetch).toHaveBeenCalledWith("/api/events");
+  });
+
+  test("gets event details", async () => {
+    mockJsonResponse({ event: { _id: "123" } });
+    await expect(getEventById("123")).resolves.toEqual({ event: { _id: "123" } });
+    expect(client.apiFetch).toHaveBeenCalledWith("/api/events/123");
   });
 
   test("creates events", async () => {
