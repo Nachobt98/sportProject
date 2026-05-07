@@ -43,7 +43,7 @@ export function Header() {
         backdropFilter: "blur(12px)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth={false}>
         <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 }, gap: 2 }}>
           <Button
             component={Link}
