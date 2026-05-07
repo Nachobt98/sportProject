@@ -36,7 +36,7 @@ export function LoginPage() {
       const data = await loginUser(values);
       login(data.username, data.token);
       addUser(data.user);
-      navigate("/homepage");
+      navigate("/home");
     } catch (error) {
       setLoginError(error.message || "No se pudo conectar con el servidor.");
     } finally {
@@ -106,7 +106,7 @@ export function LoginPage() {
               </Button>
               <Typography variant="body2" color="text.secondary">
                 No tienes cuenta?{" "}
-                <MuiLink component={RouterLink} to="/registerpage">
+                <MuiLink component={RouterLink} to="/register">
                   Registrate aqui
                 </MuiLink>
               </Typography>
