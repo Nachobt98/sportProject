@@ -11,10 +11,6 @@ function getAuthenticatedUserName(req) {
   return req.auth.userName;
 }
 
-function getParamUserName(req) {
-  return req.params.userName;
-}
-
 function createServiceHandler(serviceCall, errorMessage) {
   return async function handleServiceRequest(req, res) {
     try {
@@ -83,18 +79,8 @@ const joinEvent = createServiceHandler(
   "Error al unir al usuario al evento"
 );
 
-const joinEventForUser = createServiceHandler(
-  (req) => eventService.joinUserToEvent(req.params.eventId, getParamUserName(req)),
-  "Error al agregar usuario al evento"
-);
-
 const cancelEventJoin = createServiceHandler(
   (req) => eventService.cancelUserEvent(req.params.eventId, getAuthenticatedUserName(req)),
-  "Error al cancelar la participacion"
-);
-
-const cancelEventJoinForUser = createServiceHandler(
-  (req) => eventService.cancelUserEvent(req.params.eventId, getParamUserName(req)),
   "Error al cancelar la participacion"
 );
 
@@ -116,9 +102,7 @@ module.exports = {
   listCurrentUserJoinedEvents,
   getEventById,
   joinEvent,
-  joinEventForUser,
   cancelEventJoin,
-  cancelEventJoinForUser,
   listJoinedEvents,
   deleteEvent,
 };
