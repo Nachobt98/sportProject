@@ -85,7 +85,7 @@ describe("SearchCard2", () => {
     renderSearch();
     fireEvent.click(screen.getByRole("button", { name: /crear evento/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/createEvent");
+    expect(mockNavigate).toHaveBeenCalledWith("/events/new");
   });
 
   test("clears filters", async () => {
