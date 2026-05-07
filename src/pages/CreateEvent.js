@@ -1,346 +1,199 @@
 import React, { useState } from "react";
-import { MenuItem } from "@mui/material";
 import {
+  Alert,
   Button,
-  Grid,
+  MenuItem,
+  Paper,
+  Snackbar,
+  Stack,
   TextField,
   Typography,
-  Paper,
-  Container,
-  Snackbar,
 } from "@mui/material";
-import { makeStyles } from "@mui/styles";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { useNavigate } from "react-router-dom";
-import img3 from "../img/img3.jpg";
-import { useUser } from "../context/userContext";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { AppShell } from "../components/AppShell";
+import { useUser } from "../context/userContext";
 import { apiFetch } from "../api/client";
-const useStyles = makeStyles((theme) => ({
-  root: {
-    height: "140vh",
-    backgroundImage: `url(${img3})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paper: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: theme.spacing(3),
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // Fondo tenue
-    borderRadius: theme.spacing(2), // Bordes redondeados
-  },
-  form: {
-    width: "100%", // Fix IE11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-  error: {
-    color: "#a93131",
-  },
-  snackbar: {
-    [theme.breakpoints.down("sm")]: {
-      bottom: 90,
-    },
-  },
-}));
+
+const validationSchema = Yup.object().shape({
+  name: Yup.string().required("Nombre es requerido"),
+  description: Yup.string().required("Descripcion es requerida"),
+  sport: Yup.string().required("Deporte es requerido"),
+  city: Yup.string().required("Ciudad es requerida"),
+  location: Yup.string().required("Ubicacion es requerida"),
+  locationName: Yup.string().required("Direccion es requerida"),
+  date: Yup.date().required("Fecha de evento es requerida"),
+  participants: Yup.string().required("Participantes es requerido"),
+});
+
+const participantOptions = Array.from({ length: 20 }, (_, index) => index + 1);
 
 export function CreateEvent() {
   const { users } = useUser();
-  const classes = useStyles();
+  const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
+
   const handleSnackbarClose = (event, reason) => {
     if (reason === "clickaway") {
       return;
     }
     setOpenSnackbar(false);
   };
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    sport: "",
-    date: "",
-    city: "",
-    locationName: "",
-    location: "",
-    participants: "",
-  });
-
-  const validationSchema = Yup.object().shape({
-    name: Yup.string().required("Nombre es requerido"),
-    description: Yup.string().required("Descripcion es requerida"),
-    sport: Yup.string().required("Deporte es requerido"),
-    city: Yup.string().required("Ciudad es requerido"),
-    location: Yup.string().required("Ubicacion es requerido"),
-    locationName: Yup.string().required("Direccion es requerido"),
-    date: Yup.date().required("Fecha de Evento es requerida"),
-    participants: Yup.string().required("Participantes es requerido"),
-  });
 
   return (
-    <Grid container component="main" className={classes.root}>
-      <Container component="main" maxWidth="sm">
-        <Paper elevation={3} className={classes.paper}>
-          <Typography
-            variant="h2"
-            color="secondary"
-            align="center"
-            sx={{ background: "none" }}
-            gutterBottom
-          >
-            SportLife
-          </Typography>
-          <Formik
-            initialValues={{
-              name: "",
-              description: "",
-              sport: "",
-              date: "",
-              location: "",
-              city: "",
-              participants: "",
-            }}
-            validationSchema={validationSchema}
-            onSubmit={async (values, { setSubmitting }) => {
-              try {
-                const eventData = { ...values, creator: users.userName };
-                const response = await apiFetch("/api/events", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(eventData),
-                });
-                if (response.ok) {
-                  setOpenSnackbar(true);
-                  setTimeout(() => {
-                    navigate("/searchCard2");
-                  }, 1000);
-                } else {
-                  // Maneja errores si la respuesta no es OK
-                  console.error("Error al crear evento:", response.statusText);
-                }
-                setSubmitting(false);
-              } catch (error) {
-                console.error(error);
-                // Maneja errores si la solicitud falla
+    <AppShell
+      title="Crear evento"
+      subtitle="Define la actividad, plazas disponibles y punto de encuentro para que otras personas puedan unirse."
+      maxWidth="md"
+    >
+      <Paper
+        sx={{
+          p: { xs: 2, md: 3 },
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Formik
+          initialValues={{
+            name: "",
+            description: "",
+            sport: "",
+            date: "",
+            location: "",
+            locationName: "",
+            city: "",
+            participants: "",
+          }}
+          validationSchema={validationSchema}
+          onSubmit={async (values, { setSubmitting }) => {
+            try {
+              const eventData = {
+                ...values,
+                participants: Number(values.participants),
+                creator: users.userName,
+              };
+              const response = await apiFetch("/api/events", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(eventData),
+              });
+
+              if (response.ok) {
+                setOpenSnackbar(true);
+                setTimeout(() => {
+                  navigate("/searchCard2");
+                }, 900);
+              } else {
+                console.error("Error al crear evento:", response.statusText);
               }
-            }}
-          >
-            {(formikProps) => (
-              <Form className={classes.form}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Nombre del evento
-                    </Typography>
+            } catch (error) {
+              console.error(error);
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+        >
+          {(formikProps) => (
+            <Form>
+              <Stack spacing={2.5}>
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                  <Stack spacing={0.75} sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2">Nombre del evento</Typography>
                     <Field
-                      type="text"
                       name="name"
                       as={TextField}
-                      variant="outlined"
-                      required
                       fullWidth
-                      id="name"
                       autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, name: e.target.value });
-                      }}
                     />
-                    <ErrorMessage
-                      name="name"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Descripcion
-                    </Typography>
+                    <ErrorMessage name="name" component={Alert} severity="error" />
+                  </Stack>
+                  <Stack spacing={0.75} sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2">Deporte</Typography>
                     <Field
-                      fullWidth
-                      multiline
-                      rows={4}
-                      type="text"
-                      name="description"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      id="description"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="description"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Deporte
-                    </Typography>
-                    <Field
-                      type="text"
                       name="sport"
                       as={TextField}
-                      variant="outlined"
-                      required
                       fullWidth
-                      id="sport"
                       autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, sport: e.target.value });
-                      }}
                     />
-                    <ErrorMessage
-                      name="sport"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Ciudad
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="city"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="city"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, city: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="city"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Ubicacion
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="location"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="location"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, location: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="location"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Direccion
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="locationName"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="locationName"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({
-                          ...formData,
-                          locationName: e.target.value,
-                        });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="locationName"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Fecha del evento
-                    </Typography>
-                    <Field
-                      type="date"
-                      name="date"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="date"
-                      autoComplete="off"
-                      InputLabelProps={{ shrink: true }}
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, date: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="date"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                </Grid>
-                <Grid item xs={12} sx={{ marginBottom: "50px" }}>
-                  <Typography variant="h5" color="textSecondary" gutterBottom>
-                    Número de Participantes
-                  </Typography>
+                    <ErrorMessage name="sport" component={Alert} severity="error" />
+                  </Stack>
+                </Stack>
+
+                <Stack spacing={0.75}>
+                  <Typography variant="subtitle2">Descripcion</Typography>
                   <Field
-                    type="select"
-                    name="participants"
+                    name="description"
                     as={TextField}
-                    select
-                    variant="outlined"
-                    required
                     fullWidth
-                    id="participants"
+                    multiline
+                    rows={4}
                     autoComplete="off"
-                    onChange={(e) => {
-                      formikProps.handleChange(e);
-                      setFormData({
-                        ...formData,
-                        participants: e.target.value,
-                      });
-                    }}
-                  >
-                    {[
-                      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                      18, 19, 20,
-                    ].map((value) => (
+                  />
+                  <ErrorMessage
+                    name="description"
+                    component={Alert}
+                    severity="error"
+                  />
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                  <Stack spacing={0.75} sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2">Ciudad</Typography>
+                    <Field name="city" as={TextField} fullWidth autoComplete="off" />
+                    <ErrorMessage name="city" component={Alert} severity="error" />
+                  </Stack>
+                  <Stack spacing={0.75} sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2">Fecha</Typography>
+                    <Field
+                      name="date"
+                      as={TextField}
+                      type="date"
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <ErrorMessage name="date" component={Alert} severity="error" />
+                  </Stack>
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                  <Stack spacing={0.75} sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2">Ubicacion</Typography>
+                    <Field
+                      name="location"
+                      as={TextField}
+                      fullWidth
+                      autoComplete="off"
+                    />
+                    <ErrorMessage
+                      name="location"
+                      component={Alert}
+                      severity="error"
+                    />
+                  </Stack>
+                  <Stack spacing={0.75} sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2">Direccion</Typography>
+                    <Field
+                      name="locationName"
+                      as={TextField}
+                      fullWidth
+                      autoComplete="off"
+                    />
+                    <ErrorMessage
+                      name="locationName"
+                      component={Alert}
+                      severity="error"
+                    />
+                  </Stack>
+                </Stack>
+
+                <Stack spacing={0.75}>
+                  <Typography variant="subtitle2">Numero de participantes</Typography>
+                  <Field name="participants" as={TextField} select fullWidth>
+                    {participantOptions.map((value) => (
                       <MenuItem key={value} value={value}>
                         {value}
                       </MenuItem>
@@ -348,32 +201,34 @@ export function CreateEvent() {
                   </Field>
                   <ErrorMessage
                     name="participants"
-                    component="div"
-                    className={classes.error}
+                    component={Alert}
+                    severity="error"
                   />
-                </Grid>
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  color="secondary"
-                  className={classes.submit}
-                >
-                  Crear Evento
-                </Button>
-              </Form>
-            )}
-          </Formik>
-        </Paper>
-      </Container>
+                </Stack>
+
+                <Stack direction="row" justifyContent="flex-end">
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={<SaveOutlinedIcon />}
+                    disabled={formikProps.isSubmitting}
+                  >
+                    Crear evento
+                  </Button>
+                </Stack>
+              </Stack>
+            </Form>
+          )}
+        </Formik>
+      </Paper>
+
       <Snackbar
         open={openSnackbar}
-        autoHideDuration={6000}
+        autoHideDuration={3000}
         onClose={handleSnackbarClose}
-        message="Registro exitoso. ¡Bienvenido a SportLife!"
-        anchorOrigin={{ vertical: "center", horizontal: "center" }}
-        className={classes.snackbar}
+        message="Evento creado correctamente"
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
-    </Grid>
+    </AppShell>
   );
 }
