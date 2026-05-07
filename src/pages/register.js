@@ -14,6 +14,7 @@ import * as Yup from "yup";
 import avatar from "../img/avatar.png";
 import { AuthLayout } from "../components/AuthLayout";
 import { useUser } from "../context/userContext";
+import { useAuth } from "../context/authContext";
 import { apiFetch } from "../api/client";
 
 const validationSchema = Yup.object().shape({
@@ -37,6 +38,7 @@ const validationSchema = Yup.object().shape({
 
 export function RegisterPage() {
   const { addUser } = useUser();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -57,8 +59,9 @@ export function RegisterPage() {
 
       if (response.ok) {
         addUser(data.user);
+        login(data.user.userName, data.token);
         setOpenSnackbar(true);
-        setTimeout(() => navigate("/"), 1200);
+        setTimeout(() => navigate("/homepage"), 1200);
       } else {
         setSubmitError(data.message || "No se pudo completar el registro.");
       }
