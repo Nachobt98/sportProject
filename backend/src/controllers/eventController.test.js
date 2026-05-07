@@ -111,12 +111,23 @@ describe("eventController", () => {
   test("lists current user events from auth token", async () => {
     const req = { auth: { userName: "nacho" } };
     const res = createResponse();
-    eventService.listCreatedEvents.mockResolvedValue({ status: 200, body: [{ _id: "created" }] });
+    eventService.listCreatedEvents.mockResolvedValue([{ _id: "created" }]);
 
     await controller.listCurrentUserEvents(req, res);
 
     expect(eventService.listCreatedEvents).toHaveBeenCalledWith("nacho");
     expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith([{ _id: "created" }]);
+  });
+
+  test("handles current user event listing errors", async () => {
+    const req = { auth: { userName: "nacho" } };
+    const res = createResponse();
+    eventService.listCreatedEvents.mockRejectedValue(new Error("boom"));
+
+    await controller.listCurrentUserEvents(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 
   test("lists current user joined events from auth token", async () => {
