@@ -5,6 +5,10 @@ import { DropdownMenu } from "./dropDownMenu";
 
 const mockLogout = jest.fn();
 const mockDeleteUser = jest.fn();
+let mockUsers = {
+  userName: "nacho",
+  profileImage: "data:image/png;base64,AAAA",
+};
 
 jest.mock("../context/authContext", () => ({
   useAuth: () => ({ logout: mockLogout }),
@@ -12,18 +16,15 @@ jest.mock("../context/authContext", () => ({
 
 jest.mock("../context/userContext", () => ({
   useUser: () => ({
-    users: {
-      userName: "nacho",
-      profileImage: "data:image/png;base64,AAAA",
-    },
+    users: mockUsers,
     deleteUser: mockDeleteUser,
   }),
 }));
 
-function renderMenu() {
+function renderMenu(navItems = [{ label: "Eventos", path: "/events", icon: <span /> }]) {
   return render(
     <MemoryRouter>
-      <DropdownMenu navItems={[{ label: "Eventos", path: "/events", icon: <span /> }]} />
+      <DropdownMenu navItems={navItems} />
     </MemoryRouter>
   );
 }
@@ -31,6 +32,10 @@ function renderMenu() {
 describe("DropdownMenu", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUsers = {
+      userName: "nacho",
+      profileImage: "data:image/png;base64,AAAA",
+    };
   });
 
   test("uses the user avatar as trigger", () => {
@@ -45,9 +50,20 @@ describe("DropdownMenu", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /abrir menu de usuario/i }));
     expect(screen.getByText("Mi perfil")).toBeInTheDocument();
+    expect(screen.getByText("FAQ")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Logout"));
     expect(mockDeleteUser).toHaveBeenCalled();
     expect(mockLogout).toHaveBeenCalled();
+  });
+
+  test("renders initials fallback when the user has no image", () => {
+    mockUsers = { userName: "dev", profileImage: "" };
+
+    renderMenu([]);
+
+    expect(screen.getByText("DE")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /abrir menu de usuario/i }));
+    expect(screen.getByText("Mi perfil")).toBeInTheDocument();
   });
 });
