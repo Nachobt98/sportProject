@@ -3,8 +3,10 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Perfil } from "./perfil";
 import * as eventsApi from "../api/eventsApi";
+import * as usersApi from "../api/usersApi";
 
 jest.mock("../api/eventsApi");
+jest.mock("../api/usersApi");
 jest.mock("../components/cardEvent", () => ({
   CardEvent: ({ event, onChanged, onRemoved }) => (
     <div>
@@ -23,6 +25,7 @@ const mockUser = {
   email: "nacho@example.com",
   city: "Valencia",
   birthdate: "1998-10-20T00:00:00.000Z",
+  profileImage: "data:image/png;base64,AAAA",
 };
 
 jest.mock("../context/userContext", () => ({
@@ -46,6 +49,7 @@ describe("Perfil", () => {
     eventsApi.getUserJoinedEvents.mockResolvedValue([
       { _id: "joined-id", name: "Joined event", participantsList: ["nacho"], creator: "other" },
     ]);
+    usersApi.updateCurrentUser.mockResolvedValue({ user: { ...mockUser, city: "Madrid" } });
   });
 
   test("renders profile information and events", async () => {
@@ -65,13 +69,25 @@ describe("Perfil", () => {
     expect(await screen.findByText("No se pudieron cargar los eventos")).toBeInTheDocument();
   });
 
-  test("opens and saves profile dialog locally", async () => {
+  test("persists profile changes in the backend", async () => {
     renderProfile();
     fireEvent.click(screen.getByRole("button", { name: /editar perfil/i }));
     fireEvent.change(screen.getByLabelText(/ciudad/i), { target: { name: "city", value: "Madrid" } });
     fireEvent.click(screen.getByRole("button", { name: /guardar/i }));
 
-    await waitFor(() => expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" })));
+    await waitFor(() => expect(usersApi.updateCurrentUser).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" })));
+    expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" }));
+    expect(await screen.findByText(/perfil actualizado correctamente/i)).toBeInTheDocument();
+  });
+
+  test("shows profile update errors", async () => {
+    usersApi.updateCurrentUser.mockRejectedValue(new Error("No se pudo actualizar el perfil"));
+
+    renderProfile();
+    fireEvent.click(screen.getByRole("button", { name: /editar perfil/i }));
+    fireEvent.click(screen.getByRole("button", { name: /guardar/i }));
+
+    expect(await screen.findByText("No se pudo actualizar el perfil")).toBeInTheDocument();
   });
 
   test("updates local event lists through panel callbacks", async () => {
