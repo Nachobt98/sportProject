@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { RegisterPage } from "./register";
 import * as authApi from "../api/authApi";
@@ -41,7 +41,7 @@ describe("RegisterPage", () => {
   });
 
   function createFile({ type = "image/png", size = 1000 } = {}) {
-    const file = new File([new Array(size).fill('a').join('')], "test.png", { type });
+    const file = new File([new Array(size).fill("a").join("")], "test.png", { type });
     Object.defineProperty(file, "size", { value: size });
     return file;
   }
@@ -51,7 +51,6 @@ describe("RegisterPage", () => {
     const file = createFile({ type: "image/png", size: 1000 });
     const input = container.querySelector('input[type="file"]');
     fireEvent.change(input, { target: { files: [file] } });
-    // No error should be shown
     expect(screen.queryByText(/la imagen debe ser/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/la imagen es demasiado grande/i)).not.toBeInTheDocument();
   });
@@ -76,10 +75,11 @@ describe("RegisterPage", () => {
     const { container } = renderRegister();
     const file = createFile({ type: "image/png", size: 1000 });
     const input = container.querySelector('input[type="file"]');
-    // Mock FileReader to trigger error
     const originalFileReader = window.FileReader;
     function MockFileReader() {
-      this.readAsDataURL = function () { this.onerror(); };
+      this.readAsDataURL = function () {
+        this.onerror();
+      };
       setTimeout(() => this.onerror && this.onerror(), 0);
     }
     window.FileReader = MockFileReader;
@@ -115,7 +115,9 @@ describe("RegisterPage", () => {
     expect(mockAddUser).toHaveBeenCalledWith({ userName: "nacho" });
     expect(mockLogin).toHaveBeenCalledWith("nacho", "token");
 
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
     expect(mockNavigate).toHaveBeenCalledWith("/home");
     jest.useRealTimers();
   });
