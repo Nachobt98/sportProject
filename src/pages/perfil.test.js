@@ -32,6 +32,13 @@ jest.mock("../context/userContext", () => ({
   useUser: () => ({ users: mockUser, setUsers: mockSetUsers }),
 }));
 
+class MockFileReader {
+  readAsDataURL() {
+    this.result = "data:image/png;base64,BBBB";
+    this.onloadend();
+  }
+}
+
 function renderProfile() {
   return render(
     <MemoryRouter>
@@ -43,6 +50,7 @@ function renderProfile() {
 describe("Perfil", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    global.FileReader = MockFileReader;
     eventsApi.getUserCreatedEvents.mockResolvedValue([
       { _id: "created-id", name: "Created event", participantsList: [], creator: "nacho" },
     ]);
@@ -78,6 +86,49 @@ describe("Perfil", () => {
     await waitFor(() => expect(usersApi.updateCurrentUser).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" })));
     expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" }));
     expect(await screen.findByText(/perfil actualizado correctamente/i)).toBeInTheDocument();
+  });
+
+  test("saves profile image immediately after selecting a valid file", async () => {
+    usersApi.updateCurrentUser.mockResolvedValue({
+      user: { ...mockUser, profileImage: "data:image/png;base64,BBBB" },
+    });
+
+    const { container } = renderProfile();
+    const input = container.querySelector('input[type="file"]');
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() =>
+      expect(usersApi.updateCurrentUser).toHaveBeenCalledWith(
+        expect.objectContaining({ profileImage: "data:image/png;base64,BBBB" })
+      )
+    );
+    expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ profileImage: "data:image/png;base64,BBBB" }));
+    expect(await screen.findByText(/foto de perfil actualizada correctamente/i)).toBeInTheDocument();
+  });
+
+  test("rejects invalid profile image types", () => {
+    const { container } = renderProfile();
+    const input = container.querySelector('input[type="file"]');
+    const file = new File(["avatar"], "avatar.gif", { type: "image/gif" });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(screen.getByText(/la imagen debe ser jpg, png o webp/i)).toBeInTheDocument();
+    expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
+  });
+
+  test("rejects profile images that are too large", () => {
+    const { container } = renderProfile();
+    const input = container.querySelector('input[type="file"]');
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+    Object.defineProperty(file, "size", { value: 2 * 1024 * 1024 });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(screen.getByText(/menos de 1.5 mb/i)).toBeInTheDocument();
+    expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
   });
 
   test("shows profile update errors", async () => {
