@@ -9,10 +9,10 @@ jest.mock("../components/cardEvent", () => ({
   CardEvent: ({ event }) => <div>{event.name}</div>,
 }));
 
-const navigate = jest.fn();
+const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => navigate,
+  useNavigate: () => mockNavigate,
 }));
 
 const events = [
@@ -69,7 +69,7 @@ describe("SearchCard2", () => {
     renderSearch();
     fireEvent.click(screen.getByRole("button", { name: /crear evento/i }));
 
-    expect(navigate).toHaveBeenCalledWith("/createEvent");
+    expect(mockNavigate).toHaveBeenCalledWith("/createEvent");
   });
 
   test("clears filters", async () => {
