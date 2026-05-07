@@ -36,7 +36,7 @@ const profileFields = [
 ];
 
 const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function formatDate(date) {
   if (!date) {
@@ -172,7 +172,7 @@ export function Perfil() {
       return;
     }
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
       setProfileError("La imagen debe ser JPG, PNG o WEBP.");
       return;
     }
