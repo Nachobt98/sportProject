@@ -10,8 +10,8 @@ const eventSchema = new mongoose.Schema(
     location: { type: String, required: true, trim: true },
     city: { type: String, required: true, trim: true },
     participants: { type: Number, required: true, min: 1 },
-    participantsList: [{ type: String, ref: "User" }],
-    creator: { type: String, ref: "User", required: true },
+    participantsList: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    creator: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }
 );
