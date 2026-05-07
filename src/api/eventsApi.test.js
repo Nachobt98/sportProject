@@ -7,8 +7,6 @@ import {
   getCurrentUserJoinedEvents,
   getEventById,
   getEvents,
-  getUserCreatedEvents,
-  getUserJoinedEvents,
   joinEvent,
 } from "./eventsApi";
 
@@ -64,14 +62,5 @@ describe("eventsApi", () => {
 
     await getCurrentUserJoinedEvents();
     expect(client.apiFetch).toHaveBeenLastCalledWith("/api/users/me/joined-events");
-  });
-
-  test("keeps compatible user event list clients", async () => {
-    mockJsonResponse([]);
-    await getUserCreatedEvents("nacho");
-    expect(client.apiFetch).toHaveBeenLastCalledWith("/api/user/nacho/events");
-
-    await getUserJoinedEvents("nacho");
-    expect(client.apiFetch).toHaveBeenLastCalledWith("/api/user/nacho/joinedEvents");
   });
 });
