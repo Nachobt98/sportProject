@@ -341,6 +341,20 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+app.get("/api/session", authenticateRequest, async (req, res) => {
+  try {
+    const user = await User.findOne({ userName: req.auth.userName }).exec();
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.status(200).json({ user: toPublicUser(user) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al validar la sesion" });
+  }
+});
+
 app.get("/api/user/:userName", authenticateRequest, requireSameUser, async (req, res) => {
   const userName = normalizeString(req.params.userName);
   try {
