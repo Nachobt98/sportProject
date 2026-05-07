@@ -1,152 +1,105 @@
 import React from "react";
-import { Button, Container, Grid, TextField, Typography } from "@mui/material";
+import { Alert, Button, Grid, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material";
 import LocalPhoneRoundedIcon from "@mui/icons-material/LocalPhoneRounded";
-import { makeStyles } from "@mui/styles";
-import img8 from "../img/img8.jpg";
-import { Formik, Form, Field } from "formik";
+import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
+import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
+import { Field, Form, Formik } from "formik";
 import * as Yup from "yup";
-const useStyles = makeStyles((theme) => ({
-  background: {
-    backgroundImage: `url(${img8})`,
-    backgroundSize: "cover",
-    height: "2300px",
-  },
-  root: {
-    paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    height: "2300px",
-  },
-  grid: {
-    marginLeft: "20rem",
-    marginRight: "20rem",
-    marginBottom: "10rem",
-  },
+import { AppShell } from "../components/AppShell";
 
-  gridDetails: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    alignContent: "center",
-  },
-  gridemail: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    alignContent: "center",
-    gap: "20px",
-  },
-  iconBackground: {
-    width: 100,
-    height: 100,
-    borderRadius: "50%",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#c59c00",
-  },
-}));
+const validationSchema = Yup.object().shape({
+  name: Yup.string().required("Nombre requerido"),
+  email: Yup.string().email("Correo no valido").required("Correo requerido"),
+  message: Yup.string().required("Mensaje requerido"),
+});
+
 export function Contact() {
-  const classes = useStyles();
-  const validationSchema = Yup.object().shape({
-    name: Yup.string().required("Nombre es requerido"),
-    email: Yup.string().required("Correo es requerido"),
-    message: Yup.string().required("Mensaje es requerido"),
-  });
   return (
-    <Grid className={classes.background}>
-      <Container
-        className={classes.root}
-        maxWidth="100%"
-        sx={{ marginTop: "40px" }}
-      >
-        <Typography
-          variant="h2"
-          color="secondary"
-          align="center"
-          gutterBottom
-          sx={{ background: "none" }}
-        >
-          CONTACTANOS
-        </Typography>
-        <Grid className={classes.grid}>
-          <Formik
-            initialValues={{
-              name: "",
-              email: "",
-              message: "",
-            }}
-            validationSchema={validationSchema}
-            onSubmit={(values, { resetForm }) => {
-              console.log("Formulario de contacto enviado", values);
-              resetForm();
-            }}
-          >
-            {(formikProps) => (
-              <Form className={classes.form}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="h5">Nombre</Typography>
+    <AppShell
+      title="Contacto"
+      subtitle="Envia una consulta o avisanos si necesitas ayuda con un evento."
+    >
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+            <Formik
+              initialValues={{ name: "", email: "", message: "" }}
+              validationSchema={validationSchema}
+              onSubmit={(values, { resetForm, setStatus }) => {
+                console.log("Formulario de contacto enviado", values);
+                setStatus("Mensaje preparado correctamente.");
+                resetForm();
+              }}
+            >
+              {({ errors, touched, status }) => (
+                <Form>
+                  <Stack spacing={2.5}>
+                    {status && <Alert severity="success">{status}</Alert>}
                     <Field
-                      type="text"
+                      as={TextField}
+                      fullWidth
+                      label="Nombre"
                       name="name"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="name"
-                      autoComplete="off"
+                      error={Boolean(touched.name && errors.name)}
+                      helperText={touched.name && errors.name}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PersonOutlineRoundedIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                      }}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5">Correo electronico</Typography>
                     <Field
-                      type="email"
+                      as={TextField}
+                      fullWidth
+                      label="Correo electronico"
                       name="email"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
+                      type="email"
+                      error={Boolean(touched.email && errors.email)}
+                      helperText={touched.email && errors.email}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <MailOutlineRoundedIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                      }}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5">Mensaje</Typography>
                     <Field
                       as={TextField}
-                      name="message"
                       fullWidth
                       multiline
-                      rows={4}
-                      variant="outlined"
-                      style={{ marginBottom: "10px" }}
+                      rows={5}
+                      label="Mensaje"
+                      name="message"
+                      error={Boolean(touched.message && errors.message)}
+                      helperText={touched.message && errors.message}
                     />
-                  </Grid>
-                </Grid>
-                <Grid sx={{ marginTop: "2rem" }}>
-                  <Button
-                    type="submit"
-                    fullWidth
-                    variant="contained"
-                    color="secondary"
-                    className={classes.submit}
-                  >
-                    Enviar
-                  </Button>
-                </Grid>
-              </Form>
-            )}
-          </Formik>
+                    <Button type="submit" variant="contained" size="large">
+                      Enviar mensaje
+                    </Button>
+                  </Stack>
+                </Form>
+              )}
+            </Formik>
+          </Paper>
         </Grid>
-        <Grid className={classes.gridemail}>
-          <div className={classes.iconBackground}>
-            <LocalPhoneRoundedIcon sx={{ width: 80, height: 80 }} />
-          </div>
-          <Typography variant="h5" color="secondary">
-            93 767 786 7867
-          </Typography>
+        <Grid item xs={12} md={4}>
+          <Paper variant="outlined" sx={{ p: 3, height: "100%" }}>
+            <Stack spacing={2}>
+              <Typography variant="h5">Soporte</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Para dudas rapidas sobre eventos, participantes o acceso, usa el formulario y revisaremos el caso.
+              </Typography>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <LocalPhoneRoundedIcon color="primary" />
+                <Typography variant="subtitle1">93 767 786 7867</Typography>
+              </Stack>
+            </Stack>
+          </Paper>
         </Grid>
-      </Container>
-    </Grid>
+      </Grid>
+    </AppShell>
   );
 }
