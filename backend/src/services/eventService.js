@@ -7,6 +7,10 @@ function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+function serviceResponse(status, message, extraBody = {}) {
+  return { status, body: { message, ...extraBody } };
+}
+
 function buildEventPayload(payload) {
   const missingFields = validateRequiredFields(payload, [
     "name",
@@ -49,6 +53,32 @@ function buildEventPayload(payload) {
   };
 }
 
+async function findEventAndUser(eventId, userName) {
+  if (!isValidObjectId(eventId)) {
+    return serviceResponse(400, "El identificador del evento no es valido");
+  }
+
+  const normalizedUserName = normalizeString(userName);
+  if (!normalizedUserName) {
+    return serviceResponse(400, "El nombre de usuario es requerido");
+  }
+
+  const [event, user] = await Promise.all([
+    Event.findById(eventId).exec(),
+    User.findOne({ userName: normalizedUserName }).exec(),
+  ]);
+
+  if (!event) {
+    return serviceResponse(404, "Evento no encontrado");
+  }
+
+  if (!user) {
+    return serviceResponse(404, "Usuario no encontrado");
+  }
+
+  return { event, user, userName: normalizedUserName };
+}
+
 async function createEvent(payload, creatorUserName) {
   const { value, error } = buildEventPayload({
     ...payload,
@@ -56,17 +86,17 @@ async function createEvent(payload, creatorUserName) {
   });
 
   if (error) {
-    return { status: 400, body: { message: error } };
+    return serviceResponse(400, error);
   }
 
   const creator = await User.findOne({ userName: value.creator }).exec();
   if (!creator) {
-    return { status: 404, body: { message: "Usuario creador no encontrado" } };
+    return serviceResponse(404, "Usuario creador no encontrado");
   }
 
   const newEvent = new Event(value);
   await newEvent.save();
-  return { status: 201, body: { message: "Evento creado exitosamente", event: newEvent } };
+  return serviceResponse(201, "Evento creado exitosamente", { event: newEvent });
 }
 
 async function listEvents() {
@@ -80,7 +110,7 @@ async function listCreatedEvents(userName) {
 async function listJoinedEvents(userName) {
   const user = await User.findOne({ userName }).exec();
   if (!user) {
-    return { status: 404, body: { message: "Usuario no encontrado" } };
+    return serviceResponse(404, "Usuario no encontrado");
   }
 
   const joinedEvents = await Event.find({ _id: { $in: user.joinedEvents } })
@@ -91,64 +121,37 @@ async function listJoinedEvents(userName) {
 }
 
 async function joinUserToEvent(eventId, userName) {
-  if (!isValidObjectId(eventId)) {
-    return { status: 400, body: { message: "El identificador del evento no es valido" } };
+  const lookup = await findEventAndUser(eventId, userName);
+  if (lookup.status) {
+    return lookup;
   }
 
-  const normalizedUserName = normalizeString(userName);
-  if (!normalizedUserName) {
-    return { status: 400, body: { message: "El nombre de usuario es requerido" } };
-  }
+  const { event, user, userName: normalizedUserName } = lookup;
 
-  const [event, user] = await Promise.all([
-    Event.findById(eventId).exec(),
-    User.findOne({ userName: normalizedUserName }).exec(),
-  ]);
-
-  if (!event) {
-    return { status: 404, body: { message: "Evento no encontrado" } };
-  }
-  if (!user) {
-    return { status: 404, body: { message: "Usuario no encontrado" } };
-  }
   if (event.creator === normalizedUserName) {
-    return { status: 400, body: { message: "El creador no puede unirse a su propio evento" } };
+    return serviceResponse(400, "El creador no puede unirse a su propio evento");
   }
   if (event.participantsList.includes(normalizedUserName)) {
-    return { status: 409, body: { message: "El usuario ya participa en este evento" } };
+    return serviceResponse(409, "El usuario ya participa en este evento");
   }
   if (event.participantsList.length >= event.participants) {
-    return { status: 409, body: { message: "El evento ya no tiene plazas disponibles" } };
+    return serviceResponse(409, "El evento ya no tiene plazas disponibles");
   }
 
   event.participantsList.push(normalizedUserName);
   user.joinedEvents.addToSet(event._id);
 
   await Promise.all([event.save(), user.save()]);
-  return { status: 200, body: { message: "Usuario unido al evento exitosamente", event } };
+  return serviceResponse(200, "Usuario unido al evento exitosamente", { event });
 }
 
 async function cancelUserEvent(eventId, userName) {
-  if (!isValidObjectId(eventId)) {
-    return { status: 400, body: { message: "El identificador del evento no es valido" } };
+  const lookup = await findEventAndUser(eventId, userName);
+  if (lookup.status) {
+    return lookup;
   }
 
-  const normalizedUserName = normalizeString(userName);
-  if (!normalizedUserName) {
-    return { status: 400, body: { message: "El nombre de usuario es requerido" } };
-  }
-
-  const [event, user] = await Promise.all([
-    Event.findById(eventId).exec(),
-    User.findOne({ userName: normalizedUserName }).exec(),
-  ]);
-
-  if (!event) {
-    return { status: 404, body: { message: "Evento no encontrado" } };
-  }
-  if (!user) {
-    return { status: 404, body: { message: "Usuario no encontrado" } };
-  }
+  const { event, user, userName: normalizedUserName } = lookup;
 
   event.participantsList = event.participantsList.filter(
     (participant) => participant !== normalizedUserName
@@ -158,20 +161,20 @@ async function cancelUserEvent(eventId, userName) {
   );
 
   await Promise.all([event.save(), user.save()]);
-  return { status: 200, body: { message: "Usuario eliminado del evento exitosamente", event } };
+  return serviceResponse(200, "Usuario eliminado del evento exitosamente", { event });
 }
 
 async function deleteEvent(eventId, authUserName) {
   if (!isValidObjectId(eventId)) {
-    return { status: 400, body: { message: "El identificador del evento no es valido" } };
+    return serviceResponse(400, "El identificador del evento no es valido");
   }
 
   const event = await Event.findById(eventId).exec();
   if (!event) {
-    return { status: 404, body: { message: "Evento no encontrado" } };
+    return serviceResponse(404, "Evento no encontrado");
   }
   if (event.creator !== authUserName) {
-    return { status: 403, body: { message: "Solo el creador puede eliminar este evento" } };
+    return serviceResponse(403, "Solo el creador puede eliminar este evento");
   }
 
   await Event.findByIdAndDelete(eventId).exec();
@@ -180,10 +183,11 @@ async function deleteEvent(eventId, authUserName) {
     { $pull: { joinedEvents: event._id } }
   ).exec();
 
-  return { status: 200, body: { message: "Evento eliminado correctamente", eventId } };
+  return serviceResponse(200, "Evento eliminado correctamente", { eventId });
 }
 
 module.exports = {
+  buildEventPayload,
   createEvent,
   listEvents,
   listCreatedEvents,
