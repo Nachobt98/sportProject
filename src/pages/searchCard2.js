@@ -12,7 +12,7 @@ import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
-import { apiFetch } from "../api/client";
+import { getEvents } from "../api/eventsApi";
 
 const cities = [
   "Madrid",
@@ -40,6 +40,35 @@ const sports = [
   "Padel",
 ];
 
+function renderEventsContent({
+  isLoading,
+  loadError,
+  filteredEvents,
+  onEventChanged,
+  onEventRemoved,
+}) {
+  if (isLoading) {
+    return <Alert severity="info">Cargando eventos...</Alert>;
+  }
+
+  if (loadError) {
+    return <Alert severity="error">{loadError}</Alert>;
+  }
+
+  if (filteredEvents.length === 0) {
+    return <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>;
+  }
+
+  return filteredEvents.map((event) => (
+    <CardEvent
+      key={event._id}
+      event={event}
+      onChanged={onEventChanged}
+      onRemoved={onEventRemoved}
+    />
+  ));
+}
+
 export function SearchCard2() {
   const navigate = useNavigate();
   const [searchCriteria, setSearchCriteria] = useState({
@@ -49,14 +78,15 @@ export function SearchCard2() {
   });
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const fetchEvents = useCallback(async () => {
+    setLoadError("");
     try {
-      const response = await apiFetch("/api/events");
-      const data = await response.json();
+      const data = await getEvents();
       setEvents(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching events:", error);
+      setLoadError(error.message || "No se pudieron cargar los eventos.");
     } finally {
       setIsLoading(false);
     }
@@ -169,20 +199,13 @@ export function SearchCard2() {
       </Paper>
 
       <Stack spacing={2}>
-        {isLoading ? (
-          <Alert severity="info">Cargando eventos...</Alert>
-        ) : filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => (
-            <CardEvent
-              key={event._id}
-              event={event}
-              onChanged={handleEventChanged}
-              onRemoved={handleEventRemoved}
-            />
-          ))
-        ) : (
-          <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>
-        )}
+        {renderEventsContent({
+          isLoading,
+          loadError,
+          filteredEvents,
+          onEventChanged: handleEventChanged,
+          onEventRemoved: handleEventRemoved,
+        })}
       </Stack>
     </AppShell>
   );

@@ -19,7 +19,7 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "../context/eventContext";
 import { useUser } from "../context/userContext";
-import { apiFetch } from "../api/client";
+import { cancelEventJoin, deleteEvent, joinEvent } from "../api/eventsApi";
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("es-ES", {
@@ -28,15 +28,6 @@ function formatDate(dateString) {
     month: "short",
     day: "numeric",
   });
-}
-
-async function readApiMessage(response) {
-  try {
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    return { message: response.statusText };
-  }
 }
 
 export function CardEvent({ event, onChanged, onRemoved }) {
@@ -69,65 +60,33 @@ export function CardEvent({ event, onChanged, onRemoved }) {
 
   const handleDeleteClick = async () => {
     try {
-      const response = await apiFetch(`/api/events/${currentEvent._id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        const data = await readApiMessage(response);
-        setFeedback({ severity: "error", message: data.message || "No se pudo eliminar el evento" });
-        return;
-      }
-
+      await deleteEvent(currentEvent._id);
       onRemoved?.(currentEvent._id);
       setFeedback({ severity: "success", message: "Evento eliminado" });
     } catch (error) {
-      console.error("Error al eliminar el evento:", error);
-      setFeedback({ severity: "error", message: "No se pudo conectar con el servidor" });
+      setFeedback({ severity: "error", message: error.message || "No se pudo conectar con el servidor" });
     }
   };
 
   const handleJoinClick = async () => {
     try {
-      const response = await apiFetch(`/api/events/${currentEvent._id}/join`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userName: users.userName }),
-      });
-      const data = await readApiMessage(response);
-      if (response.ok) {
-        setCurrentEvent(data.event);
-        setIsUserJoined(true);
-        onChanged?.(data.event);
-      } else {
-        setFeedback({ severity: "error", message: data.message || "No se pudo unir al evento" });
-      }
+      const data = await joinEvent(currentEvent._id);
+      setCurrentEvent(data.event);
+      setIsUserJoined(true);
+      onChanged?.(data.event);
     } catch (error) {
-      console.error("Error al unirse al evento:", error);
-      setFeedback({ severity: "error", message: "No se pudo conectar con el servidor" });
+      setFeedback({ severity: "error", message: error.message || "No se pudo conectar con el servidor" });
     }
   };
 
   const handleCancelClick = async () => {
     try {
-      const response = await apiFetch(
-        `/api/events/${currentEvent._id}/join/${users.userName}`,
-        {
-          method: "DELETE",
-        }
-      );
-      const data = await readApiMessage(response);
-      if (response.ok) {
-        setCurrentEvent(data.event);
-        setIsUserJoined(false);
-        onChanged?.(data.event);
-      } else {
-        setFeedback({ severity: "error", message: data.message || "No se pudo cancelar la participacion" });
-      }
+      const data = await cancelEventJoin(currentEvent._id);
+      setCurrentEvent(data.event);
+      setIsUserJoined(false);
+      onChanged?.(data.event);
     } catch (error) {
-      console.error("Error al cancelar la participacion:", error);
-      setFeedback({ severity: "error", message: "No se pudo conectar con el servidor" });
+      setFeedback({ severity: "error", message: error.message || "No se pudo conectar con el servidor" });
     }
   };
 

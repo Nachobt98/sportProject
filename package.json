@@ -29,7 +29,8 @@
     "server": "node backend/server.js",
     "seed:dev": "node backend/seedDevUser.js",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "jest",
+    "test:coverage": "jest --coverage --passWithNoTests",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -55,6 +56,7 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1"
+    "@testing-library/user-event": "^14.6.1",
+    "jest": "^27.5.1"
   }
 }

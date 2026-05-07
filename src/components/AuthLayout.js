@@ -1,3 +1,4 @@
+import React from "react";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 
 export function AuthLayout({ title, subtitle, children }) {

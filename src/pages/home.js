@@ -1,3 +1,4 @@
+import React from "react";
 import { Avatar, Box, Card, CardContent, Grid, Stack, Typography } from "@mui/material";
 import { Carousel } from "../components/carousel";
 import { AppShell } from "../components/AppShell";

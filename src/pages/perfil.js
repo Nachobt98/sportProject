@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -18,10 +19,10 @@ import {
 } from "@mui/material";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
-import { apiFetch } from "../api/client";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
 import { useUser } from "../context/userContext";
+import { getUserCreatedEvents, getUserJoinedEvents } from "../api/eventsApi";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 
 const profileFields = [
@@ -87,6 +88,7 @@ export function Perfil() {
   const { users, setUsers } = useUser();
   const [createdEvents, setCreatedEvents] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
+  const [eventsError, setEventsError] = useState("");
   const [editable, setEditable] = useState(false);
   const [editedData, setEditedData] = useState({ ...users });
   const inputRef = useRef(null);
@@ -102,30 +104,21 @@ export function Perfil() {
       return;
     }
 
-    async function fetchUserEvents() {
+    async function fetchProfileEvents() {
+      setEventsError("");
       try {
-        const response = await apiFetch(`/api/user/${users.userName}/events`);
-        const data = await response.json();
-        setCreatedEvents(Array.isArray(data) ? data : []);
+        const [created, joined] = await Promise.all([
+          getUserCreatedEvents(users.userName),
+          getUserJoinedEvents(users.userName),
+        ]);
+        setCreatedEvents(Array.isArray(created) ? created : []);
+        setJoinedEvents(Array.isArray(joined) ? joined : []);
       } catch (error) {
-        console.error("Error fetching user events:", error);
+        setEventsError(error.message || "No se pudieron cargar los eventos del perfil.");
       }
     }
 
-    async function fetchJoinedEvents() {
-      try {
-        const response = await apiFetch(`/api/user/${users.userName}/joinedEvents`);
-        if (response.ok) {
-          const data = await response.json();
-          setJoinedEvents(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        console.error("Error al obtener los eventos unidos del usuario:", error);
-      }
-    }
-
-    fetchUserEvents();
-    fetchJoinedEvents();
+    fetchProfileEvents();
   }, [users.userName]);
 
   const handleChange = (event) => {
@@ -200,6 +193,7 @@ export function Perfil() {
         </Button>
       }
     >
+      {eventsError && <Alert severity="error">{eventsError}</Alert>}
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12} md="auto">

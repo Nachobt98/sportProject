@@ -1,12 +1,21 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../api/client";
+import { getCurrentSession } from "../api/authApi";
 import { useUser } from "./userContext";
 
 const AuthContext = createContext();
 
+function getStoredAuth() {
+  try {
+    return JSON.parse(localStorage.getItem("auth") || "{}") || {};
+  } catch {
+    localStorage.removeItem("auth");
+    return {};
+  }
+}
+
 export const AuthProvider = ({ children }) => {
-  const storedAuth = JSON.parse(localStorage.getItem("auth")) || {};
+  const storedAuth = getStoredAuth();
   const initialAuth = storedAuth.isAuthenticated && storedAuth.token
     ? storedAuth
     : {
@@ -44,19 +53,11 @@ export const AuthProvider = ({ children }) => {
 
     async function validateSession() {
       try {
-        const response = await apiFetch("/api/session");
-        if (!isMounted) {
-          return;
+        const data = await getCurrentSession();
+        if (isMounted) {
+          setUsers(data.user);
         }
-
-        if (!response.ok) {
-          logout();
-          return;
-        }
-
-        const data = await response.json();
-        setUsers(data.user);
-      } catch (error) {
+      } catch {
         if (isMounted) {
           logout();
         }

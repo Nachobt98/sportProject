@@ -15,7 +15,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { AppShell } from "../components/AppShell";
 import { useUser } from "../context/userContext";
-import { apiFetch } from "../api/client";
+import { createEvent } from "../api/eventsApi";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Nombre es requerido"),
@@ -34,6 +34,7 @@ export function CreateEvent() {
   const { users } = useUser();
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const handleSnackbarClose = (event, reason) => {
     if (reason === "clickaway") {
@@ -68,30 +69,20 @@ export function CreateEvent() {
           }}
           validationSchema={validationSchema}
           onSubmit={async (values, { setSubmitting }) => {
+            setSubmitError("");
             try {
               const eventData = {
                 ...values,
                 participants: Number(values.participants),
                 creator: users.userName,
               };
-              const response = await apiFetch("/api/events", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(eventData),
-              });
-
-              if (response.ok) {
-                setOpenSnackbar(true);
-                setTimeout(() => {
-                  navigate("/searchCard2");
-                }, 900);
-              } else {
-                console.error("Error al crear evento:", response.statusText);
-              }
+              await createEvent(eventData);
+              setOpenSnackbar(true);
+              setTimeout(() => {
+                navigate("/searchCard2");
+              }, 900);
             } catch (error) {
-              console.error(error);
+              setSubmitError(error.message || "No se pudo crear el evento");
             } finally {
               setSubmitting(false);
             }
@@ -100,12 +91,14 @@ export function CreateEvent() {
           {(formikProps) => (
             <Form>
               <Stack spacing={2.5}>
+                {submitError && <Alert severity="error">{submitError}</Alert>}
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                   <Stack spacing={0.75} sx={{ flex: 1 }}>
                     <Typography variant="subtitle2">Nombre del evento</Typography>
                     <Field
                       name="name"
                       as={TextField}
+                      label="Nombre del evento"
                       fullWidth
                       autoComplete="off"
                     />
@@ -116,6 +109,7 @@ export function CreateEvent() {
                     <Field
                       name="sport"
                       as={TextField}
+                      label="Deporte"
                       fullWidth
                       autoComplete="off"
                     />
@@ -128,6 +122,7 @@ export function CreateEvent() {
                   <Field
                     name="description"
                     as={TextField}
+                    label="Descripcion"
                     fullWidth
                     multiline
                     rows={4}
@@ -143,7 +138,7 @@ export function CreateEvent() {
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                   <Stack spacing={0.75} sx={{ flex: 1 }}>
                     <Typography variant="subtitle2">Ciudad</Typography>
-                    <Field name="city" as={TextField} fullWidth autoComplete="off" />
+                    <Field name="city" as={TextField} label="Ciudad" fullWidth autoComplete="off" />
                     <ErrorMessage name="city" component={Alert} severity="error" />
                   </Stack>
                   <Stack spacing={0.75} sx={{ flex: 1 }}>
@@ -151,6 +146,7 @@ export function CreateEvent() {
                     <Field
                       name="date"
                       as={TextField}
+                      label="Fecha"
                       type="date"
                       fullWidth
                       InputLabelProps={{ shrink: true }}
@@ -165,6 +161,7 @@ export function CreateEvent() {
                     <Field
                       name="location"
                       as={TextField}
+                      label="Ubicacion"
                       fullWidth
                       autoComplete="off"
                     />
@@ -179,6 +176,7 @@ export function CreateEvent() {
                     <Field
                       name="locationName"
                       as={TextField}
+                      label="Direccion"
                       fullWidth
                       autoComplete="off"
                     />
@@ -192,7 +190,7 @@ export function CreateEvent() {
 
                 <Stack spacing={0.75}>
                   <Typography variant="subtitle2">Numero de participantes</Typography>
-                  <Field name="participants" as={TextField} select fullWidth>
+                  <Field name="participants" as={TextField} label="Numero de participantes" select fullWidth>
                     {participantOptions.map((value) => (
                       <MenuItem key={value} value={value}>
                         {value}

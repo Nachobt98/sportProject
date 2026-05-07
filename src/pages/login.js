@@ -16,7 +16,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { AuthLayout } from "../components/AuthLayout";
 import { useUser } from "../context/userContext";
 import { useAuth } from "../context/authContext";
-import { apiFetch } from "../api/client";
+import { loginUser } from "../api/authApi";
 
 const validationSchema = Yup.object().shape({
   userName: Yup.string().required("Usuario requerido"),
@@ -33,25 +33,12 @@ export function LoginPage() {
   const handleLogin = async (values, { setSubmitting }) => {
     setLoginError("");
     try {
-      const response = await apiFetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.username, data.token);
-        addUser(data.user);
-        navigate("/homepage");
-      } else {
-        setLoginError(data.message || "Credenciales no validas");
-      }
+      const data = await loginUser(values);
+      login(data.username, data.token);
+      addUser(data.user);
+      navigate("/homepage");
     } catch (error) {
-      console.error("Error al iniciar sesion:", error);
-      setLoginError("No se pudo conectar con el servidor.");
+      setLoginError(error.message || "No se pudo conectar con el servidor.");
     } finally {
       setSubmitting(false);
     }
@@ -76,6 +63,7 @@ export function LoginPage() {
                 <Field
                   name="userName"
                   as={TextField}
+                  label="Usuario"
                   fullWidth
                   autoComplete="username"
                   error={Boolean(formikProps.touched.userName && formikProps.errors.userName)}
@@ -87,6 +75,7 @@ export function LoginPage() {
                 <Field
                   name="password"
                   as={TextField}
+                  label="Contrasena"
                   type={showPassword ? "text" : "password"}
                   fullWidth
                   autoComplete="current-password"
