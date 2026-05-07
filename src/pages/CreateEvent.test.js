@@ -1,6 +1,6 @@
 import React from "react";
 import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { CreateEvent } from "./CreateEvent";
 import * as eventsApi from "../api/eventsApi";
 
@@ -15,10 +15,26 @@ jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
-function renderCreateEvent() {
+const baseEvent = {
+  _id: "event-id",
+  name: "Padel match",
+  description: "Friendly match",
+  sport: "Padel",
+  date: "2026-01-01T00:00:00.000Z",
+  city: "Valencia",
+  location: "Court 1",
+  locationName: "Club Valencia",
+  creator: "nacho",
+  participants: 4,
+};
+
+function renderCreateEvent(path = "/events/new") {
   return render(
-    <MemoryRouter>
-      <CreateEvent />
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/events/new" element={<CreateEvent />} />
+        <Route path="/events/:eventId/edit" element={<CreateEvent />} />
+      </Routes>
     </MemoryRouter>
   );
 }
@@ -73,6 +89,48 @@ describe("CreateEvent", () => {
     });
     expect(mockNavigate).toHaveBeenCalledWith("/events");
     jest.useRealTimers();
+  });
+
+  test("loads and updates an existing event", async () => {
+    jest.useFakeTimers();
+    eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
+    eventsApi.updateEvent.mockResolvedValue({ event: { ...baseEvent, name: "Updated match" } });
+
+    const { container } = renderCreateEvent("/events/event-id/edit");
+
+    expect(await screen.findByRole("heading", { name: /editar evento/i })).toBeInTheDocument();
+    expect(container.querySelector('[name="name"]')).toHaveValue("Padel match");
+
+    fillField(container, "name", "Updated match");
+    fireEvent.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+    await waitFor(() => expect(eventsApi.updateEvent).toHaveBeenCalledWith("event-id", expect.objectContaining({
+      name: "Updated match",
+      participants: 4,
+      creator: "nacho",
+    })));
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id");
+    jest.useRealTimers();
+  });
+
+  test("blocks editing when the current user is not the creator", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, creator: "other-user" } });
+
+    renderCreateEvent("/events/event-id/edit");
+
+    expect(await screen.findByText("Solo el creador puede editar este evento.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /guardar cambios/i })).not.toBeInTheDocument();
+  });
+
+  test("shows loading errors in edit mode", async () => {
+    eventsApi.getEventById.mockRejectedValue(new Error("Evento no encontrado"));
+
+    renderCreateEvent("/events/event-id/edit");
+
+    expect(await screen.findByText("Evento no encontrado")).toBeInTheDocument();
   });
 
   test("shows validation errors for empty form", async () => {
