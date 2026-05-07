@@ -1,5 +1,6 @@
 jest.mock("../services/eventService", () => ({
   createEvent: jest.fn(),
+  findEventById: jest.fn(),
   listEvents: jest.fn(),
   listCreatedEvents: jest.fn(),
   listJoinedEvents: jest.fn(),
@@ -63,6 +64,17 @@ describe("eventController", () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith([{ _id: "1" }]);
+  });
+
+  test("gets event details by id", async () => {
+    const req = { params: { eventId: "event-id" } };
+    const res = createResponse();
+    eventService.findEventById.mockResolvedValue({ status: 200, body: { event: { _id: "event-id" } } });
+
+    await controller.getEventById(req, res);
+
+    expect(eventService.findEventById).toHaveBeenCalledWith("event-id");
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   test("handles list event errors", async () => {
