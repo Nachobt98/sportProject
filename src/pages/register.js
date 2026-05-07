@@ -1,106 +1,50 @@
 import React, { useState } from "react";
 import {
+  Alert,
   Button,
-  Grid,
-  TextField,
-  Typography,
-  Paper,
-  Container,
   Link as MuiLink,
   Snackbar,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import img3 from "../img/img3.jpg";
-import { useUser } from "../context/userContext";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import avatar from "../img/avatar.png";
+import { AuthLayout } from "../components/AuthLayout";
+import { useUser } from "../context/userContext";
 import { apiFetch } from "../api/client";
-const useStyles = makeStyles((theme) => ({
-  root: {
-    height: "110vh",
-    backgroundImage: `url(${img3})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paper: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: theme.spacing(3),
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // Fondo tenue
-    borderRadius: theme.spacing(2), // Bordes redondeados
-  },
-  form: {
-    width: "100%", // Fix IE11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    marginBottom: "10px",
-  },
-  error: {
-    color: "#a93131",
-  },
-  snackbar: {
-    [theme.breakpoints.down("sm")]: {
-      bottom: 90,
-    },
-  },
-}));
+
+const validationSchema = Yup.object().shape({
+  firstName: Yup.string().required("Nombre requerido"),
+  lastName: Yup.string().required("Apellidos requeridos"),
+  userName: Yup.string()
+    .required("Usuario requerido")
+    .min(3, "El usuario debe tener al menos 3 caracteres")
+    .max(20, "El usuario no debe tener mas de 20 caracteres"),
+  city: Yup.string().required("Ciudad requerida"),
+  email: Yup.string().email("Email no valido").required("Email requerido"),
+  password: Yup.string()
+    .required("Contrasena requerida")
+    .min(6, "La contrasena debe tener al menos 6 caracteres")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Debe contener una minuscula, una mayuscula y un numero"
+    ),
+  birthdate: Yup.date().required("Fecha de nacimiento requerida"),
+});
 
 export function RegisterPage() {
   const { addUser } = useUser();
-  const classes = useStyles();
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setOpenSnackbar(false);
-  };
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    userName: "",
-    city: "",
-    email: "",
-    birthdate: "",
-    password: "",
-    profileImage: avatar,
-  });
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setFormData({
-      ...formData,
-      profileImage: file,
-    });
-  };
-  const validationSchema = Yup.object().shape({
-    firstName: Yup.string().required("Nombre es requerido"),
-    lastName: Yup.string().required("Apellidos son requeridos"),
-    userName: Yup.string()
-      .required("Nombre de Usuario es requerido")
-      .min(3, "El nombre de usuario debe tener al menos 3 caracteres")
-      .max(20, "El nombre de usuario no debe tener más de 20 caracteres"),
-    city: Yup.string().required("Ciudad es requerida"),
-    email: Yup.string()
-      .email("Correo electrónico no válido")
-      .required("Email es requerido"),
-    password: Yup.string()
-      .required("Contraseña es requerida")
-      .min(6, "La contraseña debe tener al menos 6 caracteres")
-      .matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "La contraseña debe contener al menos una minúscula, una mayúscula y un número"
-      ),
-    birthdate: Yup.date().required("Fecha de Nacimiento es requerida"),
-  });
-  const handleSubmit = async (formData) => {
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [profileImage, setProfileImage] = useState(avatar);
+
+  const handleSubmit = async (values, { setSubmitting }) => {
+    setSubmitError("");
+    const formData = { ...values, profileImage };
     try {
       const response = await apiFetch("/api/register", {
         method: "POST",
@@ -109,264 +53,122 @@ export function RegisterPage() {
         },
         body: JSON.stringify(formData),
       });
-
       const data = await response.json();
 
       if (response.ok) {
         addUser(formData);
         setOpenSnackbar(true);
-        setTimeout(() => {
-          navigate("/");
-        }, 3000);
+        setTimeout(() => navigate("/"), 1200);
       } else {
-        console.error("Error de registro:", data.message);
+        setSubmitError(data.message || "No se pudo completar el registro.");
       }
     } catch (error) {
       console.error("Error al enviar el formulario de registro:", error);
+      setSubmitError("No se pudo conectar con el servidor.");
+    } finally {
+      setSubmitting(false);
     }
   };
+
   return (
-    <Grid container component="main" className={classes.root}>
-      <Container component="main" maxWidth="sm">
-        <Paper elevation={3} className={classes.paper}>
-          <Typography
-            variant="h2"
-            color="secondary"
-            align="center"
-            gutterBottom
-            sx={{ background: "none" }}
-          >
-            SportLife
-          </Typography>
-          <Formik
-            initialValues={{
-              firstName: "",
-              lastName: "",
-              userName: "",
-              city: "",
-              email: "",
-              birthdate: "",
-              password: "",
-            }}
-            validationSchema={validationSchema}
-            onSubmit={handleSubmit}
-          >
-            {(formikProps) => (
-              <Form className={classes.form}>
-                <Grid container spacing={2} sx={{ marginBottom: "20px" }}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Nombre
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="firstName"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="firstName"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, firstName: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="firstName"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Apellidos
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="lastName"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="lastName"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, lastName: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="lastName"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Nombre de Usuario
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="userName"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="userName"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, userName: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="userName"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Ciudad
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="city"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="city"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, city: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="city"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Email
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="email"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="email"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, email: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="email"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Contraseña
-                    </Typography>
-                    <Field
-                      type="password"
-                      name="password"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="password"
-                      autoComplete="off"
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, password: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="password"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Fecha de Nacimiento
-                    </Typography>
-                    <Field
-                      type="date"
-                      name="birthdate"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="birthdate"
-                      autoComplete="off"
-                      InputLabelProps={{ shrink: true }}
-                      onChange={(e) => {
-                        formikProps.handleChange(e);
-                        setFormData({ ...formData, birthdate: e.target.value });
-                      }}
-                    />
-                    <ErrorMessage
-                      name="birthdate"
-                      component="div"
-                      className={classes.error}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary" gutterBottom>
-                      Foto de Perfil
-                    </Typography>
-
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </Grid>
-                </Grid>
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  color="secondary"
-                  className={classes.submit}
-                  sx={{ marginBottom: "10px" }}
-                >
-                  Registrarse
+    <AuthLayout
+      title="Crea tu cuenta"
+      subtitle="Registra tus datos para crear y unirte a eventos deportivos."
+    >
+      <Formik
+        initialValues={{
+          firstName: "",
+          lastName: "",
+          userName: "",
+          city: "",
+          email: "",
+          birthdate: "",
+          password: "",
+        }}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+      >
+        {(formikProps) => (
+          <Form>
+            <Stack spacing={2}>
+              {submitError && <Alert severity="error">{submitError}</Alert>}
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <FieldControl name="firstName" label="Nombre" formik={formikProps} />
+                <FieldControl name="lastName" label="Apellidos" formik={formikProps} />
+              </Stack>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <FieldControl name="userName" label="Usuario" formik={formikProps} />
+                <FieldControl name="city" label="Ciudad" formik={formikProps} />
+              </Stack>
+              <FieldControl name="email" label="Email" formik={formikProps} />
+              <FieldControl
+                name="password"
+                label="Contrasena"
+                type="password"
+                formik={formikProps}
+              />
+              <FieldControl
+                name="birthdate"
+                label="Fecha de nacimiento"
+                type="date"
+                formik={formikProps}
+                inputLabelProps={{ shrink: true }}
+              />
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2">Foto de perfil</Typography>
+                <Button variant="outlined" component="label">
+                  Seleccionar imagen
+                  <input
+                    hidden
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => setProfileImage(event.target.files[0] || avatar)}
+                  />
                 </Button>
-                <MuiLink
-                  component={RouterLink}
-                  to="/"
-                  variant="body2"
-                  color="secondary"
-                >
-                  ¿Ya tienes una cuenta? Inicia sesión
+              </Stack>
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                disabled={formikProps.isSubmitting}
+              >
+                Registrarse
+              </Button>
+              <Typography variant="body2" color="text.secondary">
+                Ya tienes una cuenta?{" "}
+                <MuiLink component={RouterLink} to="/">
+                  Inicia sesion
                 </MuiLink>
-              </Form>
-            )}
-          </Formik>
-        </Paper>
-      </Container>
+              </Typography>
+            </Stack>
+          </Form>
+        )}
+      </Formik>
       <Snackbar
         open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        message="Registro exitoso. ¡Bienvenido a SportLife!"
-        anchorOrigin={{ vertical: "center", horizontal: "center" }}
-        className={classes.snackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+        message="Registro exitoso"
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
-    </Grid>
+    </AuthLayout>
+  );
+}
+
+function FieldControl({ name, label, type = "text", formik, inputLabelProps }) {
+  return (
+    <Stack spacing={0.75} sx={{ flex: 1 }}>
+      <Typography variant="subtitle2">{label}</Typography>
+      <Field
+        name={name}
+        as={TextField}
+        type={type}
+        fullWidth
+        autoComplete="off"
+        InputLabelProps={inputLabelProps}
+        error={Boolean(formik.touched[name] && formik.errors[name])}
+        helperText={formik.touched[name] && formik.errors[name]}
+      />
+    </Stack>
   );
 }

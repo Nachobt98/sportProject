@@ -1,86 +1,54 @@
+import { Avatar, Box, Card, CardContent, Grid, Stack, Typography } from "@mui/material";
 import { Carousel } from "../components/carousel";
-import { Grid, Avatar, Typography } from "@mui/material";
+import { AppShell } from "../components/AppShell";
 import avatar2 from "../img/avatar2.jpeg";
 import avatar3 from "../img/avatar3.jpg";
 import avatar4 from "../img/pexels-stefan-stefancik-91227.jpg";
-import { makeStyles } from "@mui/styles";
-const useStyles = makeStyles((theme) => ({
-  grid: {
-    display: "flex",
-    flexDirection: "row",
+
+const testimonials = [
+  {
+    name: "Nacho Bru Tarin",
+    image: avatar2,
+    text: "Desde que encontre eventos deportivos aqui, entrenar dejo de depender solo de la motivacion. He conocido gente nueva y mantengo una rutina mucho mas activa.",
   },
-  testimonio: {
-    textAlign: "center",
-    padding: theme.spacing(2),
-    width: "30%",
+  {
+    name: "Adrian Perez Lopez",
+    image: avatar4,
+    text: "Ahora cada fin de semana encuentro partidos, carreras o actividades cerca. La comunidad hace que sea mucho mas facil seguir moviendose.",
   },
-  avatar: {
-    width: theme.spacing(10),
-    height: theme.spacing(10),
-    margin: "auto",
+  {
+    name: "Raul Fernandez Iglesias",
+    image: avatar3,
+    text: "La plataforma me ayudo a descubrir actividades distintas y a conectar con personas que tambien quieren vivir de forma mas activa.",
   },
-}));
+];
+
 export function Home() {
-  const classes = useStyles();
-
   return (
-    <Grid>
+    <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
       <Carousel />
-      <Grid className={classes.grid}>
-        <Grid item xs={12} sm={6} md={3} className={classes.testimonio}>
-          <Typography variant="body1" color="secondary">
-            <Grid marginBottom={4}>
-              {
-                "¡Saludos, equipo deportivo! No puedo expresar con palabras cuánto ha cambiado mi vida desde que me uní a esta plataforma. Antes solía luchar con la motivación para mantenerme activo, pero ahora, gracias a los eventos deportivos que encuentro aquí, ¡no puedo esperar para salir y moverme! He conocido a personas increíbles, he mejorado mi estado físico y mental, y he descubierto una pasión por el deporte que nunca supe que tenía. ¡Estoy agradecido todos los días por esta comunidad que me ha ayudado a transformar mi vida!"
-              }
+      <AppShell
+        title="Comunidad deportiva local"
+        subtitle="Encuentra planes activos, conoce participantes y organiza eventos con una experiencia mas ordenada."
+      >
+        <Grid container spacing={2.5}>
+          {testimonials.map((testimonial) => (
+            <Grid item xs={12} md={4} key={testimonial.name}>
+              <Card sx={{ height: "100%", border: "1px solid", borderColor: "divider" }}>
+                <CardContent>
+                  <Stack spacing={2} alignItems="flex-start">
+                    <Avatar src={testimonial.image} sx={{ width: 64, height: 64 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {testimonial.text}
+                    </Typography>
+                    <Typography variant="subtitle1">{testimonial.name}</Typography>
+                  </Stack>
+                </CardContent>
+              </Card>
             </Grid>
-            <Avatar
-              alt={"Nacho Bru Tarin"}
-              src={avatar2}
-              className={classes.avatar}
-            />
-            <Typography variant="h6" color={"black"}>
-              {" Nacho Bru Tarin"}
-            </Typography>
-          </Typography>
+          ))}
         </Grid>
-
-        <Grid item xs={12} sm={6} md={3} className={classes.testimonio}>
-          <Typography variant="body1" color="secondary">
-            <Grid marginBottom={4}>
-              {
-                " Antes, solía ser bastante sedentario, pero desde que empecé a unirme a eventos deportivos aquí, ¡mi vida ha dado un giro de 180 grados! Ahora, cada fin de semana estoy participando en carreras, partidos de fútbol y otros eventos emocionantes. Me siento más saludable, más enérgico y más conectado con mi comunidad. ¡Gracias a todos los organizadores y participantes por hacer de esto una experiencia tan increíble!"
-              }
-            </Grid>
-
-            <Avatar
-              alt={"Adrian Perez Lopez"}
-              src={avatar4}
-              className={classes.avatar}
-            />
-            <Typography variant="h6" color={"black"}>
-              {" Adrian Perez Lopez"}
-            </Typography>
-          </Typography>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3} className={classes.testimonio}>
-          <Typography variant="body1" color="secondary">
-            <Grid marginBottom={4}>
-              {
-                "¡Hola, amigos deportistas! Quiero compartirles cómo este sitio web ha tenido un impacto tan positivo en mi vida. Antes, estaba atrapado en una rutina monótona y poco saludable, pero desde que me sumergí en los eventos deportivos aquí, ¡mi vida ha tomado un giro totalmente nuevo! Ahora, cada semana estoy emocionado de participar en diferentes actividades, desde partidos de baloncesto hasta sesiones de yoga al aire libre. Me siento más fuerte, más feliz y más conectado con mi cuerpo y mi entorno. ¡Gracias a esta comunidad por inspirarme a vivir una vida más activa y vibrante!"
-              }
-            </Grid>
-            <Avatar
-              alt={"Raul Fernandez Iglesias"}
-              src={avatar3}
-              className={classes.avatar}
-            />
-            <Typography variant="h6" color={"black"}>
-              {"Raul Fernandez Iglesias"}
-            </Typography>
-          </Typography>
-        </Grid>
-      </Grid>
-    </Grid>
+      </AppShell>
+    </Box>
   );
 }

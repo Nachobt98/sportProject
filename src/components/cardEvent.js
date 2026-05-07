@@ -1,73 +1,72 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Box,
   Button,
   Card,
   CardActions,
   CardContent,
-  CardHeader,
-  Grid,
+  Chip,
+  Stack,
   Typography,
 } from "@mui/material";
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import LoginOutlinedIcon from "@mui/icons-material/LoginOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "../context/eventContext";
-import { makeStyles } from "@mui/styles";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import { useEffect } from "react";
 import { useUser } from "../context/userContext";
 import { apiFetch } from "../api/client";
-const useStyles = makeStyles((theme) => ({
-  eventCard: {
-    marginBottom: theme.spacing(3),
-    backgroundColor: "rgb(245, 245, 245, 0.8)",
-    border: "3px solid",
-    borderRadius: "15px",
-    borderColor: "#c59c00",
-  },
-}));
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString("es-ES", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function CardEvent({ event }) {
   const { users, updateUserData } = useUser();
-  const formatDate = (dateString) => {
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
-    const date = new Date(dateString);
-    let formattedDate = date.toLocaleDateString("es-ES", options);
-
-    // Capitalizar primera letra de weekday y month
-    const words = formattedDate.split(" ");
-    words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1); // Capitalizar primera letra de weekday
-    words[3] = words[3].charAt(0).toUpperCase() + words[3].slice(1); // Capitalizar primera letra de month
-    formattedDate = words.join(" ");
-
-    return formattedDate;
-  };
-  const classes = useStyles();
   const { setEvent } = useEventContext();
   const navigate = useNavigate();
-  const handleInfoClick = (event) => {
+  const [isUserJoined, setIsUserJoined] = useState(false);
+
+  const participants = useMemo(
+    () => event.participantsList || [],
+    [event.participantsList]
+  );
+  const isCreator = event.creator === users.userName;
+  const availableSlots = Math.max(Number(event.participants || 0) - participants.length, 0);
+
+  useEffect(() => {
+    setIsUserJoined(participants.includes(users.userName));
+  }, [participants, users.userName]);
+
+  const handleInfoClick = () => {
     setEvent(event);
     navigate("/cardDetails");
   };
-  const handleDeleteClick = async (eventId) => {
+
+  const handleDeleteClick = async () => {
     try {
-      const response = await apiFetch(`/api/events/${eventId}`, {
+      const response = await apiFetch(`/api/events/${event._id}`, {
         method: "DELETE",
       });
-      if (response.ok) {
-        console.log("Evento eliminado exitosamente");
-      } else {
+      if (!response.ok) {
         console.error("Error al eliminar el evento:", response.statusText);
       }
     } catch (error) {
       console.error("Error al eliminar el evento:", error);
     }
   };
-  const handleJoinClick = async (eventId) => {
+
+  const handleJoinClick = async () => {
     try {
-      const response = await apiFetch(`/api/events/${eventId}/join`, {
+      const response = await apiFetch(`/api/events/${event._id}/join`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,22 +77,17 @@ export function CardEvent({ event }) {
         setIsUserJoined(true);
         updateUserData({});
       } else {
-        console.error(
-          "Error al unir al usuario al evento:",
-          response.statusText
-        );
+        console.error("Error al unirse al evento:", response.statusText);
       }
-
-      // Aquí puedes realizar alguna acción adicional si es necesario, como actualizar la lista de eventos.
     } catch (error) {
-      console.error("Error al unir al usuario al evento:", error);
+      console.error("Error al unirse al evento:", error);
     }
   };
 
-  const handleCancelClick = async (eventId) => {
+  const handleCancelClick = async () => {
     try {
       const response = await apiFetch(
-        `/api/events/${eventId}/join/${users.userName}`,
+        `/api/events/${event._id}/join/${users.userName}`,
         {
           method: "DELETE",
         }
@@ -101,102 +95,112 @@ export function CardEvent({ event }) {
       if (response.ok) {
         setIsUserJoined(false);
       } else {
-        console.error(
-          "Error al cancelar la participacion en el evento:",
-          response.statusText
-        );
+        console.error("Error al cancelar la participacion:", response.statusText);
       }
-
     } catch (error) {
-      console.error(
-        "Error al eliminar el evento o al usuario del evento:",
-        error
-      );
+      console.error("Error al cancelar la participacion:", error);
     }
   };
 
-  const isCreator = event.creator === users.userName;
-
-  const [isUserJoined, setIsUserJoined] = useState(false);
-
-  useEffect(() => {
-    setIsUserJoined((event.participantsList || []).includes(users.userName));
-  }, [event.participantsList, users.userName]);
   return (
-    <Card key={event.id} className={classes.eventCard}>
-      <Grid
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <CardHeader title={event.sport} subheader={event.city} />
-        <Grid
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            marginRight: "30px",
-            gap: "10px",
-          }}
-        >
-          <AccessTimeOutlinedIcon />
-          {formatDate(event.date)}
-        </Grid>
-      </Grid>
+    <Card
+      sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        transition: "border-color 160ms ease, box-shadow 160ms ease",
+        "&:hover": {
+          borderColor: "primary.light",
+          boxShadow: "0 12px 32px rgba(15, 23, 42, 0.1)",
+        },
+      }}
+    >
+      <CardContent sx={{ p: 2.5 }}>
+        <Stack spacing={2}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            justifyContent="space-between"
+          >
+            <Box>
+              <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: "wrap" }}>
+                <Chip label={event.sport} size="small" color="primary" />
+                <Chip
+                  label={`${participants.length}/${event.participants} plazas`}
+                  size="small"
+                  color={availableSlots > 0 ? "secondary" : "default"}
+                  variant="outlined"
+                />
+              </Stack>
+              <Typography variant="h5" color="text.primary">
+                {event.name}
+              </Typography>
+            </Box>
 
-      <CardContent>
-        <Typography variant="h5" sx={{ color: "black" }}>
-          {event.name}
-        </Typography>
-        <Typography variant="body1" sx={{ color: "black" }}>
-          {event.description}
-        </Typography>
+            <Stack
+              spacing={0.75}
+              sx={{ color: "text.secondary", minWidth: { sm: 190 } }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                <AccessTimeOutlinedIcon fontSize="small" />
+                <Typography variant="body2">{formatDate(event.date)}</Typography>
+              </Stack>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <PlaceOutlinedIcon fontSize="small" />
+                <Typography variant="body2">{event.city}</Typography>
+              </Stack>
+            </Stack>
+          </Stack>
+
+          <Typography variant="body2" color="text.secondary">
+            {event.description}
+          </Typography>
+        </Stack>
       </CardContent>
+
       <CardActions
         sx={{
-          display: "flex",
+          px: 2.5,
+          pb: 2.5,
+          pt: 0,
           justifyContent: "space-between",
-          marginRight: "10px",
-          marginLeft: "10px",
+          gap: 1,
+          flexWrap: "wrap",
         }}
       >
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={() => handleInfoClick(event)}
-        >
-          INFO
+        <Button startIcon={<InfoOutlinedIcon />} onClick={handleInfoClick}>
+          Detalle
         </Button>
+
         {!isCreator && !isUserJoined && (
           <Button
             variant="contained"
-            color="secondary"
-            onClick={() => handleJoinClick(event._id)}
+            startIcon={<LoginOutlinedIcon />}
+            onClick={handleJoinClick}
+            disabled={availableSlots === 0}
           >
-            UNIRSE
+            Unirse
           </Button>
         )}
 
         {!isCreator && isUserJoined && (
           <Button
-            variant="contained"
+            variant="outlined"
             color="secondary"
-            onClick={() => handleCancelClick(event._id)}
+            startIcon={<LogoutOutlinedIcon />}
+            onClick={handleCancelClick}
           >
-            CANCELAR EVENTO
+            Cancelar
           </Button>
         )}
 
         {isCreator && (
           <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => handleDeleteClick(event._id)}
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteOutlineOutlinedIcon />}
+            onClick={handleDeleteClick}
           >
-            DELETE
+            Eliminar
           </Button>
         )}
       </CardActions>

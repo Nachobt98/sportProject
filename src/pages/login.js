@@ -1,81 +1,43 @@
 import React, { useState } from "react";
 import {
+  Alert,
   Button,
-  Grid,
-  TextField,
-  Typography,
-  Paper,
-  Container,
   IconButton,
   InputAdornment,
   Link as MuiLink,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import img3 from "../img/img3.jpg";
-import { useUser } from "../context/userContext";
-import { useAuth } from "../context/authContext";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { AuthLayout } from "../components/AuthLayout";
+import { useUser } from "../context/userContext";
+import { useAuth } from "../context/authContext";
 import { apiFetch } from "../api/client";
-const useStyles = makeStyles((theme) => ({
-  root: {
-    height: "100vh",
-    backgroundImage: `url(${img3})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paper: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: theme.spacing(3),
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // Fondo tenue
-    borderRadius: theme.spacing(2), // Bordes redondeados
-  },
-  form: {
-    width: "100%", // Fix IE11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-}));
+
 const validationSchema = Yup.object().shape({
-  userName: Yup.string().required("Username es requerido"),
-  password: Yup.string().required("Contraseña es requerida"),
+  userName: Yup.string().required("Usuario requerido"),
+  password: Yup.string().required("Contrasena requerida"),
 });
 
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const { addUser } = useUser();
   const { login } = useAuth();
   const navigate = useNavigate();
+
   const fetchUserByUsername = async (username) => {
-    try {
-      const response = await apiFetch(`/api/user/${username}`);
-
-      if (response.ok) {
-        const user = await response.json();
-
-        return user;
-      } else {
-        console.error("Usuario no encontrado");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error al obtener el usuario:", error);
-      return null;
-    }
+    const response = await apiFetch(`/api/user/${username}`);
+    return response.ok ? response.json() : null;
   };
 
-  const handleLogin = async (values) => {
+  const handleLogin = async (values, { setSubmitting }) => {
+    setLoginError("");
     try {
-      // Envía los datos de inicio de sesión al backend
       const response = await apiFetch("/api/login", {
         method: "POST",
         headers: {
@@ -83,136 +45,92 @@ export function LoginPage() {
         },
         body: JSON.stringify(values),
       });
-
       const data = await response.json();
 
       if (response.ok) {
         const user = await fetchUserByUsername(values.userName);
-        login(data.username); // Almacena el nombre de usuario autenticado en el contexto de autenticación
+        login(data.username);
         addUser(user);
-        navigate("/homepage"); // Redirige al usuario a la página principal
+        navigate("/homepage");
       } else {
-        console.error("Credenciales no válidas");
+        setLoginError(data.message || "Credenciales no validas");
       }
     } catch (error) {
-      console.error("Error al iniciar sesión:", error);
+      console.error("Error al iniciar sesion:", error);
+      setLoginError("No se pudo conectar con el servidor.");
+    } finally {
+      setSubmitting(false);
     }
   };
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
 
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
-  const classes = useStyles();
   return (
-    <Grid container component="main" className={classes.root}>
-      <Container component="main" maxWidth="xs">
-        <Paper elevation={3} className={classes.paper}>
-          <Typography
-            variant="h2"
-            color="secondary"
-            align="center"
-            sx={{ background: "none" }}
-          >
-            SportLife
-          </Typography>
-          <Formik
-            initialValues={{
-              userName: "",
-              password: "",
-            }}
-            validationSchema={validationSchema}
-            onSubmit={handleLogin}
-          >
-            {(formikProps) => (
-              <Form className={classes.form}>
-                <Grid container spacing={2} sx={{ marginBottom: "20px" }}>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary">
-                      Username
-                    </Typography>
-                    <Field
-                      type="text"
-                      name="userName"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      id="userName"
-                      autoComplete="off"
-                      onChange={formikProps.handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="h5" color="textSecondary">
-                      Contraseña
-                    </Typography>
-                    <Field
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      as={TextField}
-                      variant="outlined"
-                      required
-                      fullWidth
-                      autoComplete="current-password"
-                      onChange={formikProps.handleChange}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={handleClickShowPassword}
-                              onMouseDown={handleMouseDownPassword}
-                              edge="end"
-                            >
-                              {showPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <MuiLink
-                      component={RouterLink}
-                      to="/forgotpassword"
-                      variant="body2"
-                      color="secondary"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </MuiLink>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <MuiLink
-                      component={RouterLink}
-                      to="/registerpage"
-                      variant="body2"
-                      color="secondary"
-                    >
-                      Regístrate aquí
-                    </MuiLink>
-                  </Grid>
-                </Grid>
-
-                <Button
-                  type="submit"
+    <AuthLayout
+      title="Inicia sesion"
+      subtitle="Accede a tus eventos, calendario y perfil deportivo."
+    >
+      <Formik
+        initialValues={{ userName: "", password: "" }}
+        validationSchema={validationSchema}
+        onSubmit={handleLogin}
+      >
+        {(formikProps) => (
+          <Form>
+            <Stack spacing={2.5}>
+              {loginError && <Alert severity="error">{loginError}</Alert>}
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2">Usuario</Typography>
+                <Field
+                  name="userName"
+                  as={TextField}
                   fullWidth
-                  variant="contained"
-                  color="secondary"
-                  className={classes.submit}
-                >
-                  LogIn
-                </Button>
-              </Form>
-            )}
-          </Formik>
-        </Paper>
-      </Container>
-    </Grid>
+                  autoComplete="username"
+                  error={Boolean(formikProps.touched.userName && formikProps.errors.userName)}
+                  helperText={formikProps.touched.userName && formikProps.errors.userName}
+                />
+              </Stack>
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2">Contrasena</Typography>
+                <Field
+                  name="password"
+                  as={TextField}
+                  type={showPassword ? "text" : "password"}
+                  fullWidth
+                  autoComplete="current-password"
+                  error={Boolean(formikProps.touched.password && formikProps.errors.password)}
+                  helperText={formikProps.touched.password && formikProps.errors.password}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((value) => !value)}
+                          onMouseDown={(event) => event.preventDefault()}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Stack>
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                disabled={formikProps.isSubmitting}
+              >
+                Entrar
+              </Button>
+              <Typography variant="body2" color="text.secondary">
+                No tienes cuenta?{" "}
+                <MuiLink component={RouterLink} to="/registerpage">
+                  Registrate aqui
+                </MuiLink>
+              </Typography>
+            </Stack>
+          </Form>
+        )}
+      </Formik>
+    </AuthLayout>
   );
 }

@@ -1,168 +1,124 @@
-import AppBar from "@mui/material/AppBar";
-import { Button, Grid, Toolbar } from "@mui/material";
-import Typography from "@mui/material/Typography";
+import {
+  AppBar,
+  Box,
+  Button,
+  Container,
+  Stack,
+  Toolbar,
+  Typography,
+} from "@mui/material";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import ContactSupportOutlinedIcon from "@mui/icons-material/ContactSupportOutlined";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { DropdownMenu } from "./dropDownMenu";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import ContactSupportOutlinedIcon from "@mui/icons-material/ContactSupportOutlined";
-import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
-import CreateOutlinedIcon from "@mui/icons-material/CreateOutlined";
+
+const navItems = [
+  { label: "Calendario", path: "/calendar", icon: <CalendarMonthOutlinedIcon /> },
+  { label: "Eventos", path: "/searchCard2", icon: <SearchOutlinedIcon /> },
+  { label: "Crear", path: "/createEvent", icon: <AddCircleOutlineIcon /> },
+  { label: "Contacto", path: "/contact", icon: <ContactSupportOutlinedIcon /> },
+];
+
 export function Header() {
   const { isAuthenticated, username } = useAuth();
   const location = useLocation();
 
-  // Verificar si estás en la página de inicio de sesión
-  const isLoginPage = location.pathname === "/";
-  const isRegisterPage = location.pathname === "/registerpage";
-
-  // Si es la página de inicio de sesión, no mostrar el Header
-  if (isLoginPage || isRegisterPage) {
+  if (location.pathname === "/" || location.pathname === "/registerpage") {
     return null;
   }
-  const isButtonActive = (pathname) => {
-    return location.pathname === pathname
-      ? { borderBottom: "3px solid #c59c00" }
-      : {};
-  };
+
   return (
     <AppBar
-      sx={{ height: "8%", justifyContent: "center", background: "#fafafa" }}
+      position="fixed"
+      elevation={0}
+      sx={{
+        bgcolor: "rgba(255, 255, 255, 0.92)",
+        color: "text.primary",
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        backdropFilter: "blur(12px)",
+      }}
     >
-      <Toolbar>
-        <Grid
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            width: "100%",
-          }}
-        >
-          <Grid
+      <Container maxWidth="lg">
+        <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 }, gap: 2 }}>
+          <Button
+            component={Link}
+            to="/homepage"
+            color="inherit"
             sx={{
-              display: "flex",
-              flexDirection: "row",
+              px: 0,
+              minWidth: "auto",
+              "&:hover": { bgcolor: "transparent" },
             }}
           >
-            <Grid mr={20}>
-              <Button
-                variant="text"
-                color="inherit"
-                component={Link}
-                to="/homepage"
-              >
-                <Typography variant="h4" fontWeight={600} color="secondary">
-                  SportLife
-                </Typography>
-              </Button>
-            </Grid>
-            <Grid item container gap={4}>
-              <Button
-                component={Link}
-                to="/calendar"
-                sx={{
-                  ...isButtonActive("/calendar"),
-                  color: "#fff",
-                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
-                }}
-              >
-                <ArticleOutlinedIcon color="secondary" />
-                <Typography variant="h6" fontWeight={600} color="secondary">
-                  Calendario
-                </Typography>
-              </Button>
-              <Button
-                component={Link}
-                to="/searchCard2"
-                sx={{
-                  ...isButtonActive("/searchCard2"),
-                  color: "#fff",
-                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
-                }}
-              >
-                <SearchOutlinedIcon color="secondary" />
-                <Typography variant="h6" fontWeight={600} color="secondary">
-                  Busqueda
-                </Typography>
-              </Button>
-              <Button
-                component={Link}
-                to="/contact"
-                sx={{
-                  ...isButtonActive("/contact"),
-                  color: "#fff",
-                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
-                }}
-              >
-                <ContactSupportOutlinedIcon color="secondary" />
-                <Typography variant="h6" fontWeight={600} color="secondary">
-                  Contacto
-                </Typography>
-              </Button>
-              <Button
-                component={Link}
-                to="/createEvent"
-                sx={{
-                  ...isButtonActive("/createEvent"),
-                  color: "#fff",
-                  "&:hover": { backgroundColor: "rgba(197, 156, 0, 0.1)" },
-                }}
-              >
-                <CreateOutlinedIcon color="secondary" />
-                <Typography variant="h6" fontWeight={600} color="secondary">
-                  Crear Evento
-                </Typography>
-              </Button>
-            </Grid>
-          </Grid>
-          {!isAuthenticated ? (
-            <Grid
-              sx={{
-                display: "flex",
-                flexDirection: "row",
-              }}
-            >
-              <Link to="/">
+            <Typography variant="h5" color="primary" fontWeight={800}>
+              SportLife
+            </Typography>
+          </Button>
+
+          <Stack
+            direction="row"
+            spacing={0.5}
+            sx={{
+              display: { xs: "none", md: "flex" },
+              flex: 1,
+              ml: 3,
+            }}
+          >
+            {navItems.map((item) => {
+              const active = location.pathname === item.path;
+
+              return (
                 <Button
-                  variant="contained"
-                  color="secondary"
-                  sx={{ background: "secondary", margin: "10px" }}
+                  key={item.path}
+                  component={Link}
+                  to={item.path}
+                  startIcon={item.icon}
+                  color={active ? "primary" : "inherit"}
+                  sx={{
+                    px: 1.5,
+                    bgcolor: active ? "rgba(29, 78, 216, 0.08)" : "transparent",
+                    color: active ? "primary.main" : "text.secondary",
+                    "&:hover": {
+                      bgcolor: "rgba(29, 78, 216, 0.08)",
+                      color: "primary.main",
+                    },
+                  }}
                 >
-                  <Typography variant="h6" fontWeight={600}>
-                    LogIn
-                  </Typography>
+                  {item.label}
                 </Button>
-              </Link>
-              {/* Enlace de Registro */}
-              <Button
-                component={Link}
-                to="/registerpage" // Ajusta la ruta de registro según tu configuración
-                variant="contained"
-                color="secondary"
-                sx={{ background: "secondary", margin: "10px" }}
-              >
-                <Typography variant="h6" fontWeight={600}>
-                  Registro
-                </Typography>
+              );
+            })}
+          </Stack>
+
+          <Box sx={{ flex: { xs: 1, md: 0 } }} />
+
+          {!isAuthenticated ? (
+            <Stack direction="row" spacing={1}>
+              <Button component={Link} to="/" variant="outlined">
+                Login
               </Button>
-            </Grid>
+              <Button component={Link} to="/registerpage" variant="contained">
+                Registro
+              </Button>
+            </Stack>
           ) : (
-            <Grid
-              sx={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="h5" fontWeight={600} color="secondary">
-                Bienvenido, {username}!
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ display: { xs: "none", sm: "block" } }}
+              >
+                {username}
               </Typography>
-              <DropdownMenu />
-            </Grid>
+              <DropdownMenu navItems={navItems} />
+            </Stack>
           )}
-        </Grid>
-      </Toolbar>
+        </Toolbar>
+      </Container>
     </AppBar>
   );
 }

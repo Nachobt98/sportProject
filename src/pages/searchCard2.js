@@ -1,36 +1,38 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Button,
-  Container,
-  Grid,
   MenuItem,
+  Paper,
+  Stack,
   TextField,
-  Typography,
 } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
 import { useNavigate } from "react-router-dom";
-import { makeStyles } from "@mui/styles";
-import img8 from "../img/img8.jpg";
-import "../styles/styles.css";
+import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
 import { apiFetch } from "../api/client";
+
 const cities = [
   "Madrid",
   "Barcelona",
   "Valencia",
   "Sevilla",
   "Zaragoza",
-  "Málaga",
+  "Malaga",
   "Murcia",
   "Palma",
   "Las Palmas",
   "Bilbao",
 ];
+
 const sports = [
   "Futbol",
   "Baloncesto",
   "Tenis",
   "Atletismo",
-  "Natación",
+  "Natacion",
   "Ciclismo",
   "Voleibol",
   "Golf",
@@ -38,208 +40,129 @@ const sports = [
   "Padel",
 ];
 
-const useStyles = makeStyles((theme) => ({
-  grid: {
-    backgroundImage: `url(${img8})`,
-    backgroundSize: "cover",
-    height: "2300px",
-  },
-  root: {
-    paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    height: "2300px",
-  },
-  searchContainer: {
-    marginBottom: theme.spacing(3),
-  },
-  eventCard: {
-    marginBottom: theme.spacing(3),
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-  },
-  noResultsText: {
-    textAlign: "center",
-    color: "black",
-    marginTop: theme.spacing(2),
-  },
-  optionPointer: {
-    cursor: "pointer",
-  },
-}));
-
 export function SearchCard2() {
-  const classes = useStyles();
+  const navigate = useNavigate();
   const [searchCriteria, setSearchCriteria] = useState({
     city: "",
     sport: "",
     date: "",
   });
-  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
-  const [filteredEvents, setFilteredEvents] = useState([]);
-  const fetchEvents = async () => {
-    try {
-      const response = await apiFetch("/api/events");
-      const data = await response.json();
-      setEvents(data);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    }
-  };
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await apiFetch("/api/events");
+        const data = await response.json();
+        setEvents(data);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchEvents();
   }, []);
 
-  useEffect(() => {
-    const filtered = events.filter((event) => {
-      return (
-        (!searchCriteria.city ||
-          event.city.toLowerCase() === searchCriteria.city.toLowerCase()) &&
-        (!searchCriteria.sport ||
-          event.sport.toLowerCase() === searchCriteria.sport.toLowerCase()) &&
-        (!searchCriteria.date ||
-          new Date(event.date).toISOString().slice(0, 10) ===
-            searchCriteria.date)
-      );
-    });
-
-    setFilteredEvents(filtered);
-  }, [events, searchCriteria]);
+  const filteredEvents = events.filter((event) => {
+    return (
+      (!searchCriteria.city ||
+        event.city.toLowerCase() === searchCriteria.city.toLowerCase()) &&
+      (!searchCriteria.sport ||
+        event.sport.toLowerCase() === searchCriteria.sport.toLowerCase()) &&
+      (!searchCriteria.date ||
+        new Date(event.date).toISOString().slice(0, 10) === searchCriteria.date)
+    );
+  });
 
   const handleClear = () => {
     setSearchCriteria({ city: "", sport: "", date: "" });
   };
+
   return (
-    <Grid className={classes.grid}>
-      <Container
-        className={classes.root}
-        maxWidth="md"
-        sx={{ marginTop: "40px" }}
+    <AppShell
+      title="Eventos"
+      subtitle="Busca actividades deportivas por ciudad, deporte o fecha y gestiona tu participacion desde una lista mas clara."
+      actions={
+        <Button
+          variant="contained"
+          startIcon={<AddCircleOutlineIcon />}
+          onClick={() => navigate("/createEvent")}
+        >
+          Crear evento
+        </Button>
+      }
+    >
+      <Paper
+        sx={{
+          p: { xs: 2, md: 2.5 },
+          border: "1px solid",
+          borderColor: "divider",
+        }}
       >
-        <Typography
-          variant="h2"
-          color="secondary"
-          align="center"
-          gutterBottom
-          sx={{ background: "none" }}
-        >
-          Buscar Eventos
-        </Typography>
-
-        <Grid container spacing={2} className={classes.searchContainer}>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Ciudad"
-              variant="outlined"
-              select
-              value={searchCriteria.city}
-              onChange={(e) =>
-                setSearchCriteria({ ...searchCriteria, city: e.target.value })
-              }
-              InputLabelProps={{ shrink: true, style: { color: "#FFD700" } }}
-              InputProps={{
-                style: { color: "#FFD700" },
-              }}
-              className={classes.optionPointer}
-            >
-              {cities.map((city) => (
-                <MenuItem key={city} value={city}>
-                  {city}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Deporte"
-              variant="outlined"
-              select
-              value={searchCriteria.sport}
-              onChange={(e) =>
-                setSearchCriteria({ ...searchCriteria, sport: e.target.value })
-              }
-              InputLabelProps={{ shrink: true, style: { color: "#FFD700" } }}
-              InputProps={{
-                style: { color: "#FFD700" },
-              }}
-              className={classes.optionPointer}
-            >
-              {sports.map((sport) => (
-                <MenuItem key={sport} value={sport}>
-                  {sport}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Fecha"
-              type="date"
-              variant="outlined"
-              value={searchCriteria.date}
-              onChange={(e) =>
-                setSearchCriteria({ ...searchCriteria, date: e.target.value })
-              }
-              InputLabelProps={{ shrink: true, style: { color: "#FFD700" } }}
-              InputProps={{
-                style: { color: "#FFD700" },
-              }}
-            />
-          </Grid>
-        </Grid>
-
-        {/* Botones de búsqueda y limpieza */}
-        <Grid
-          container
-          spacing={2}
-          sx={{
-            justifyContent: "center",
-          }}
-        >
-          <Grid item xs={12} sm={6}>
-            <Button
-              variant="outlined"
-              color="secondary"
-              fullWidth
-              onClick={handleClear}
-            >
-              Limpiar búsqueda
-            </Button>
-          </Grid>
-        </Grid>
-
-        {/* Botón para crear evento */}
-        <Grid
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginTop: "20px",
-          }}
-        >
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => navigate("/createEvent")}
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          <TextField
+            fullWidth
+            label="Ciudad"
+            select
+            value={searchCriteria.city}
+            onChange={(event) =>
+              setSearchCriteria({ ...searchCriteria, city: event.target.value })
+            }
           >
-            Crear evento
+            {cities.map((city) => (
+              <MenuItem key={city} value={city}>
+                {city}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            fullWidth
+            label="Deporte"
+            select
+            value={searchCriteria.sport}
+            onChange={(event) =>
+              setSearchCriteria({ ...searchCriteria, sport: event.target.value })
+            }
+          >
+            {sports.map((sport) => (
+              <MenuItem key={sport} value={sport}>
+                {sport}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            fullWidth
+            label="Fecha"
+            type="date"
+            value={searchCriteria.date}
+            InputLabelProps={{ shrink: true }}
+            onChange={(event) =>
+              setSearchCriteria({ ...searchCriteria, date: event.target.value })
+            }
+          />
+          <Button
+            variant="outlined"
+            startIcon={<RestartAltOutlinedIcon />}
+            onClick={handleClear}
+            sx={{ minWidth: { md: 150 } }}
+          >
+            Limpiar
           </Button>
-        </Grid>
+        </Stack>
+      </Paper>
 
-        {/* Resultados de la búsqueda */}
-        <Grid marginTop={10} sx={{ maxHeight: "1000px" }}>
-          {filteredEvents.length > 0 ? (
-            filteredEvents.map((event) => <CardEvent event={event} />)
-          ) : (
-            // Mensaje si no se encuentran resultados
-            <Typography variant="body1" className={classes.noResultsText}>
-              No se encontraron eventos.
-            </Typography>
-          )}
-        </Grid>
-      </Container>
-    </Grid>
+      <Stack spacing={2}>
+        {isLoading ? (
+          <Alert severity="info">Cargando eventos...</Alert>
+        ) : filteredEvents.length > 0 ? (
+          filteredEvents.map((event) => <CardEvent key={event._id} event={event} />)
+        ) : (
+          <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>
+        )}
+      </Stack>
+    </AppShell>
   );
 }

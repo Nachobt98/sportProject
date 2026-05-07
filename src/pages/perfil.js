@@ -1,366 +1,269 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Grid,
-  Typography,
-  TextField,
-  Button,
   Avatar,
-  Divider,
+  Box,
+  Button,
   Dialog,
-  DialogTitle,
+  DialogActions,
   DialogContent,
+  DialogTitle,
+  Divider,
+  Grid,
+  IconButton,
+  Paper,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import { makeStyles } from "@mui/styles";
-import { useUser } from "../context/userContext";
-import img3 from "../img/img3.jpg";
-import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
-import { CardEvent } from "../components/cardEvent";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { apiFetch } from "../api/client";
+import { AppShell } from "../components/AppShell";
+import { CardEvent } from "../components/cardEvent";
+import { useUser } from "../context/userContext";
+import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    backgroundImage: `url(${img3})`,
-    backgroundSize: "cover",
-    marginTop: "60px",
-    width: "100%",
-    height: "2000px",
-    borderRadius: theme.spacing(2),
-    backdropFilter: "blur(10px)",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
-  dialog: {
-    backdropFilter: "blur(10px)",
-  },
-  avatar: {
-    width: 150,
-    height: 150,
-    marginBottom: theme.spacing(2),
-  },
-  userData: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: theme.spacing(2),
-    marginTop: theme.spacing(2),
-  },
-  button: {
-    marginTop: theme.spacing(2),
-  },
-  editButton: {
-    marginTop: theme.spacing(1),
-  },
-  divider: {
-    margin: theme.spacing(2, 0),
-    backgroundColor: "#262626",
-  },
-  blurredBackground: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    filter: "blur(5px)",
-    zIndex: -1,
-  },
-  profileContainer: {
-    height: "150vh",
-    backgroundImage: img3,
-    backgroundSize: "cover",
-    display: "flex",
-  },
-}));
+const profileFields = [
+  ["firstName", "Nombre"],
+  ["lastName", "Apellidos"],
+  ["userName", "Usuario"],
+  ["city", "Ciudad"],
+  ["email", "Email"],
+  ["birthdate", "Fecha de nacimiento"],
+];
+
+function formatDate(date) {
+  if (!date) {
+    return "Sin completar";
+  }
+
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Sin completar";
+  }
+
+  return parsedDate.toLocaleDateString("es-ES");
+}
+
+function toDateInputValue(date) {
+  if (!date) {
+    return "";
+  }
+
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+}
+
+function EventsPanel({ title, emptyText, events }) {
+  return (
+    <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+      <Stack spacing={2}>
+        <Typography variant="h5">{title}</Typography>
+        {events.length === 0 ? (
+          <Typography color="text.secondary">{emptyText}</Typography>
+        ) : (
+          <Stack spacing={1.5}>
+            {events.map((event) => (
+              <CardEvent key={event._id} event={event} />
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Paper>
+  );
+}
 
 export function Perfil() {
-  const [events, setEvents] = useState([]);
   const { users, setUsers } = useUser();
+  const [createdEvents, setCreatedEvents] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
+  const [editable, setEditable] = useState(false);
+  const [editedData, setEditedData] = useState({ ...users });
+  const inputRef = useRef(null);
+
   useEffect(() => {
-    setEditedData({ ...users });
+    setEditedData({ ...users, birthdate: toDateInputValue(users.birthdate) });
   }, [users]);
+
   useEffect(() => {
     if (!users.userName) {
+      setCreatedEvents([]);
+      setJoinedEvents([]);
       return;
     }
 
-    const fetchUserEvents = async () => {
+    async function fetchUserEvents() {
       try {
         const response = await apiFetch(`/api/user/${users.userName}/events`);
         const data = await response.json();
-        setEvents(data);
+        setCreatedEvents(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching user events:", error);
       }
-    };
+    }
 
-    const fetchJoinedEvents = async () => {
+    async function fetchJoinedEvents() {
       try {
-        const response = await apiFetch(
-          `/api/user/${users.userName}/joinedEvents`
-        );
+        const response = await apiFetch(`/api/user/${users.userName}/joinedEvents`);
         if (response.ok) {
           const data = await response.json();
-          setJoinedEvents(data);
-        } else {
-          console.error(
-            "Error al obtener los eventos unidos del usuario:",
-            response.statusText
-          );
+          setJoinedEvents(Array.isArray(data) ? data : []);
         }
       } catch (error) {
-        console.error(
-          "Error al obtener los eventos unidos del usuario:",
-          error
-        );
+        console.error("Error al obtener los eventos unidos del usuario:", error);
       }
-    };
+    }
 
-    fetchJoinedEvents();
     fetchUserEvents();
+    fetchJoinedEvents();
   }, [users.userName]);
 
-  const classes = useStyles();
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setEditedData((previousData) => ({ ...previousData, [name]: value }));
+  };
 
-  const [editable, setEditable] = useState(false);
-  const [editedData, setEditedData] = useState({ ...users });
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
 
-  const handleEdit = () => {
-    setEditable(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditedData((previousData) => ({
+        ...previousData,
+        profileImage: reader.result,
+      }));
+      setUsers({
+        ...users,
+        profileImage: reader.result,
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = () => {
-    // Actualiza los datos editados en el contexto de usuario
-    console.log(editedData);
-    setUsers(editedData);
-    console.log(users);
+    setUsers({ ...users, ...editedData });
     setEditable(false);
   };
-  const inputRef = useRef(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditedData((prevData) => ({ ...prevData, [name]: value }));
-  };
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditedData((prevData) => ({
-          ...prevData,
-          profileImage: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const formattedDate = new Date(users.birthdate).toLocaleDateString();
-
-  const handleEditPhoto = () => {
-    // Abrir el explorador de archivos al hacer clic en "Editar Foto"
-    if (inputRef.current) {
-      inputRef.current.click();
-    }
-  };
   return (
-    <Grid className={classes.profileContainer}>
-      <Grid className={classes.root}>
-        <Grid align="center" style={{ marginTop: "30px" }}>
-          <Avatar
-            className={classes.avatar}
-            src={editedData.profileImage || perfil}
-            style={
-              !editedData.profileImage ? { backgroundColor: "#bdbdbd" } : {}
-            }
-            sx={{ width: 100, height: 100 }}
+    <AppShell
+      title="Perfil"
+      subtitle="Gestiona tus datos locales y revisa tu actividad dentro de la plataforma."
+      actions={
+        <Button startIcon={<EditRoundedIcon />} variant="contained" onClick={() => setEditable(true)}>
+          Editar perfil
+        </Button>
+      }
+    >
+      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+        <Grid container spacing={3} alignItems="center">
+          <Grid item xs={12} md="auto">
+            <Box sx={{ position: "relative", width: 128, height: 128 }}>
+              <Avatar
+                src={editedData.profileImage || perfil}
+                sx={{ width: 128, height: 128, border: "1px solid", borderColor: "divider" }}
+              />
+              <Tooltip title="Editar foto">
+                <IconButton
+                  color="primary"
+                  onClick={() => inputRef.current?.click()}
+                  sx={{
+                    position: "absolute",
+                    right: 0,
+                    bottom: 0,
+                    bgcolor: "background.paper",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    "&:hover": { bgcolor: "background.paper" },
+                  }}
+                >
+                  <PhotoCameraRoundedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+            </Box>
+          </Grid>
+          <Grid item xs={12} md>
+            <Stack spacing={1}>
+              <Typography variant="h4">
+                {[users.firstName, users.lastName].filter(Boolean).join(" ") || users.userName || "Usuario"}
+              </Typography>
+              <Typography color="text.secondary">{users.email || "Email sin completar"}</Typography>
+              <Divider sx={{ my: 1 }} />
+              <Grid container spacing={2}>
+                {profileFields.map(([field, label]) => (
+                  <Grid item xs={12} sm={6} md={4} key={field}>
+                    <Typography variant="caption" color="text.secondary">
+                      {label}
+                    </Typography>
+                    <Typography variant="body1">
+                      {field === "birthdate" ? formatDate(users.birthdate) : users[field] || "Sin completar"}
+                    </Typography>
+                  </Grid>
+                ))}
+              </Grid>
+            </Stack>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} lg={6}>
+          <EventsPanel
+            title="Eventos creados"
+            emptyText="Aun no has creado ningun evento."
+            events={createdEvents}
           />
-
-          <Button
-            variant="contained"
-            color="secondary"
-            className={classes.editButton}
-            onClick={handleEditPhoto}
-          >
-            Editar Foto
-          </Button>
-
-          {/* Input para seleccionar el archivo */}
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            style={{ display: "none" }}
+        </Grid>
+        <Grid item xs={12} lg={6}>
+          <EventsPanel
+            title="Mis eventos"
+            emptyText="No te has unido a ningun evento."
+            events={joinedEvents}
           />
-        </Grid>
-
-        <Grid style={{ margin: "50px" }}>
-          <Divider className={classes.divider} />
-          <Typography variant="h4" color="secondary" gutterBottom>
-            Datos Personales
-          </Typography>
-          <Grid className={classes.userData}>
-            <div>
-              <Typography
-                color="secondary"
-                style={{ marginBottom: "5px", background: "none" }}
-              >
-                <strong>Nombre:</strong> {users.firstName}
-              </Typography>
-              <Typography
-                color="secondary"
-                style={{ marginBottom: "5px", background: "none" }}
-              >
-                <strong>Apellidos:</strong> {users.lastName}
-              </Typography>
-              <Typography
-                color="secondary"
-                style={{ marginBottom: "5px", background: "none" }}
-              >
-                <strong>Nombre de Usuario:</strong> {users.userName}
-              </Typography>
-            </div>
-            <div>
-              <Typography
-                color="secondary"
-                style={{ marginBottom: "5px", background: "none" }}
-              >
-                <strong>Ciudad:</strong> {users.city}
-              </Typography>
-              <Typography
-                color="secondary"
-                style={{ marginBottom: "5px", background: "none" }}
-              >
-                <strong>Email:</strong> {users.email}
-              </Typography>
-              <Typography
-                color="secondary"
-                style={{ marginBottom: "5px", background: "none" }}
-              >
-                <strong>Fecha de Nacimiento:</strong> {formattedDate}
-              </Typography>
-            </div>
-          </Grid>
-
-          {!editable && (
-            <Button
-              variant="contained"
-              color="secondary"
-              className={classes.button}
-              onClick={handleEdit}
-            >
-              Editar
-            </Button>
-          )}
-        </Grid>
-
-        <Grid style={{ margin: "50px" }}>
-          <Divider className={classes.divider} />
-          <Typography variant="h4" color="secondary" gutterBottom>
-            Eventos creados
-          </Typography>
-          <Grid style={{ maxHeight: "500px", overflowY: "scroll" }}>
-            {events.length === 0 ? (
-              <Typography
-                variant="body1"
-                color="secondary"
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                Aún no has creado ningún evento
-              </Typography>
-            ) : (
-              events.map((event) => <CardEvent event={event} />)
-            )}
-          </Grid>
-        </Grid>
-        <Grid style={{ margin: "50px" }}>
-          <Divider className={classes.divider} />
-          <Typography variant="h4" color="secondary" gutterBottom>
-            Mis eventos
-          </Typography>
-          <Grid style={{ maxHeight: "500px", overflowY: "scroll" }}>
-            {joinedEvents.length === 0 ? (
-              <Typography
-                variant="body1"
-                color="secondary"
-                sx={{ display: "flex", justifyContent: "center" }}
-              >
-                No te has unido a ningun evento
-              </Typography>
-            ) : (
-              joinedEvents.map((event) => <CardEvent event={event} />)
-            )}
-          </Grid>
         </Grid>
       </Grid>
 
-      <Dialog
-        open={editable}
-        onClose={() => setEditable(false)}
-        className={classes.dialog}
-      >
-        <DialogTitle>Editar Datos Personales</DialogTitle>
+      <Dialog open={editable} onClose={() => setEditable(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Editar datos personales</DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            label="Nombre"
-            name="firstName"
-            value={editedData.firstName}
-            onChange={handleChange}
-            style={{ marginTop: "5px", marginBottom: "10px" }}
-          />
-          <TextField
-            fullWidth
-            label="Apellidos"
-            name="lastName"
-            value={editedData.lastName}
-            onChange={handleChange}
-            style={{ marginBottom: "10px" }}
-          />
-          <TextField
-            fullWidth
-            label="Nombre de Usuario"
-            name="userName"
-            value={editedData.userName}
-            onChange={handleChange}
-            style={{ marginBottom: "10px" }}
-          />
-          <TextField
-            fullWidth
-            label="Ciudad"
-            name="city"
-            value={editedData.city}
-            onChange={handleChange}
-            style={{ marginBottom: "10px" }}
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            name="email"
-            value={editedData.email}
-            onChange={handleChange}
-            style={{ marginBottom: "10px" }}
-          />
-          <TextField
-            fullWidth
-            label="Fecha de Nacimiento"
-            name="birthdate"
-            value={formattedDate}
-            onChange={handleChange}
-            style={{ marginBottom: "10px" }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            className={classes.button}
-            onClick={handleSave}
-          >
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField label="Nombre" name="firstName" value={editedData.firstName || ""} onChange={handleChange} />
+            <TextField label="Apellidos" name="lastName" value={editedData.lastName || ""} onChange={handleChange} />
+            <TextField label="Nombre de usuario" name="userName" value={editedData.userName || ""} onChange={handleChange} />
+            <TextField label="Ciudad" name="city" value={editedData.city || ""} onChange={handleChange} />
+            <TextField label="Email" name="email" type="email" value={editedData.email || ""} onChange={handleChange} />
+            <TextField
+              label="Fecha de nacimiento"
+              name="birthdate"
+              type="date"
+              value={editedData.birthdate || ""}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditable(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSave}>
             Guardar
           </Button>
-        </DialogContent>
+        </DialogActions>
       </Dialog>
-    </Grid>
+    </AppShell>
   );
 }
