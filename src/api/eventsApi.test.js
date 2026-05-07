@@ -27,6 +27,18 @@ describe("eventsApi", () => {
     expect(client.apiFetch).toHaveBeenCalledWith("/api/events");
   });
 
+  test("gets filtered events", async () => {
+    mockJsonResponse([{ _id: "1" }]);
+    await expect(getEvents({ city: "Valencia", sport: "Padel", date: "2026-01-01" })).resolves.toEqual([{ _id: "1" }]);
+    expect(client.apiFetch).toHaveBeenCalledWith("/api/events?city=Valencia&sport=Padel&date=2026-01-01");
+  });
+
+  test("ignores empty event filters", async () => {
+    mockJsonResponse([]);
+    await getEvents({ city: "", sport: "Padel", date: "" });
+    expect(client.apiFetch).toHaveBeenCalledWith("/api/events?sport=Padel");
+  });
+
   test("gets event details", async () => {
     mockJsonResponse({ event: { _id: "123" } });
     await expect(getEventById("123")).resolves.toEqual({ event: { _id: "123" } });
