@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 const UserContext = createContext();
 
@@ -7,56 +7,49 @@ export const UserProvider = ({ children }) => {
     JSON.parse(localStorage.getItem("user")) || {}
   );
 
-  const setUsers = (user) => {
+  const setUsers = useCallback((user) => {
     setUsersState(user);
     localStorage.setItem("user", JSON.stringify(user));
-  };
+  }, []);
 
-  const addUser = (user) => {
+  const addUser = useCallback((user) => {
     setUsers(user);
-  };
-  const deleteUser = () => {
-    setUsers({});
+  }, [setUsers]);
+
+  const deleteUser = useCallback(() => {
+    setUsersState({});
     localStorage.removeItem("user");
-  };
-  const getUserData = () => {
+  }, []);
+
+  const getUserData = useCallback(() => {
     return users;
-  };
+  }, [users]);
 
-  const updateUserData = (newData) => {
-    console.log("newData", newData);
+  const updateUserData = useCallback((newData) => {
+    setUsersState((prevUserData) => {
+      const updatedUser = newData.userName !== undefined
+        ? { ...prevUserData, userName: newData.userName }
+        : { ...prevUserData, ...newData };
 
-    // Verificar si newData contiene un nuevo nombre de usuario
-    if (newData.userName !== undefined) {
-      // Realizar cualquier validación necesaria para el nombre de usuario
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  }, []);
 
-      // Actualizar el estado solo con el nuevo nombre de usuario
-      setUsersState((prevUserData) => {
-        const updatedUser = { ...prevUserData, userName: newData.userName };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        return updatedUser;
-      });
-    } else {
-      // Si no hay cambios en el nombre de usuario, actualizar todos los datos del usuario
-      setUsersState((prevUserData) => {
-        const updatedUser = { ...prevUserData, ...newData };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        return updatedUser;
-      });
-    }
-  };
+  const contextValue = useMemo(
+    () => ({
+      users,
+      addUser,
+      setUsers,
+      getUserData,
+      updateUserData,
+      deleteUser,
+    }),
+    [users, addUser, setUsers, getUserData, updateUserData, deleteUser]
+  );
 
   return (
-    <UserContext.Provider
-      value={{
-        users,
-        addUser,
-        setUsers,
-        getUserData,
-        updateUserData,
-        deleteUser,
-      }}
-    >
+    <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );
