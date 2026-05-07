@@ -7,6 +7,16 @@ const DEFAULT_EVENT_PAGE = 1;
 const DEFAULT_EVENT_LIMIT = 10;
 const MAX_EVENT_LIMIT = 50;
 
+const EVENT_REQUIRED_FIELDS = [
+  "name",
+  "description",
+  "sport",
+  "date",
+  "locationName",
+  "location",
+  "city",
+];
+
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
@@ -88,16 +98,8 @@ function toPublicEvent(event) {
   };
 }
 
-function buildEventPayload(payload, creatorId) {
-  const missingFields = validateRequiredFields(payload, [
-    "name",
-    "description",
-    "sport",
-    "date",
-    "locationName",
-    "location",
-    "city",
-  ]);
+function buildEditableEventPayload(payload) {
+  const missingFields = validateRequiredFields(payload, EVENT_REQUIRED_FIELDS);
 
   if (missingFields.length > 0) {
     return { error: `Faltan campos obligatorios: ${missingFields.join(", ")}` };
@@ -123,6 +125,20 @@ function buildEventPayload(payload, creatorId) {
       location: normalizeString(payload.location),
       city: normalizeString(payload.city),
       participants,
+    },
+  };
+}
+
+function buildEventPayload(payload, creatorId) {
+  const { value, error } = buildEditableEventPayload(payload);
+
+  if (error) {
+    return { error };
+  }
+
+  return {
+    value: {
+      ...value,
       creator: creatorId,
       participantsList: [],
     },
@@ -299,6 +315,40 @@ async function cancelUserEvent(eventId, userName) {
   return serviceResponse(200, "Usuario eliminado del evento exitosamente", { event: toPublicEvent(updatedEvent) });
 }
 
+async function updateEvent(eventId, payload, authUserName) {
+  const lookup = await findEventAndUser(eventId, authUserName);
+  if (lookup.status) {
+    return lookup;
+  }
+
+  const { event, user } = lookup;
+  if (event.creator.toString() !== user._id.toString()) {
+    return serviceResponse(403, "Solo el creador puede editar este evento");
+  }
+
+  const { value, error } = buildEditableEventPayload(payload);
+  if (error) {
+    return serviceResponse(400, error);
+  }
+
+  if (value.participants < event.participantsList.length) {
+    return serviceResponse(
+      400,
+      "El numero de participantes no puede ser menor que los usuarios ya unidos"
+    );
+  }
+
+  Object.assign(event, value);
+  await event.save();
+
+  const updatedEvent = await Event.findById(event._id)
+    .populate("creator", "userName profileImage")
+    .populate("participantsList", "userName profileImage")
+    .exec();
+
+  return serviceResponse(200, "Evento actualizado correctamente", { event: toPublicEvent(updatedEvent) });
+}
+
 async function deleteEvent(eventId, authUserName) {
   const lookup = await findEventAndUser(eventId, authUserName);
   if (lookup.status) {
@@ -322,6 +372,7 @@ async function deleteEvent(eventId, authUserName) {
 module.exports = {
   buildEventFilters,
   buildEventPagination,
+  buildEditableEventPayload,
   buildEventPayload,
   toPublicEvent,
   findEventById,
@@ -331,5 +382,6 @@ module.exports = {
   listJoinedEvents,
   joinUserToEvent,
   cancelUserEvent,
+  updateEvent,
   deleteEvent,
 };
