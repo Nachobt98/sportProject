@@ -28,6 +28,12 @@ function renderRegister() {
   );
 }
 
+function fillField(container, name, value) {
+  fireEvent.change(container.querySelector(`[name="${name}"]`), {
+    target: { name, value },
+  });
+}
+
 describe("RegisterPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -47,14 +53,14 @@ describe("RegisterPage", () => {
       token: "token",
     });
 
-    renderRegister();
-    fireEvent.change(screen.getByRole("textbox", { name: "" }), { target: { name: "firstName", value: "Nacho" } });
-    fireEvent.change(screen.getAllByRole("textbox")[1], { target: { name: "lastName", value: "Bru" } });
-    fireEvent.change(screen.getAllByRole("textbox")[2], { target: { name: "userName", value: "nacho" } });
-    fireEvent.change(screen.getAllByRole("textbox")[3], { target: { name: "city", value: "Valencia" } });
-    fireEvent.change(screen.getAllByRole("textbox")[4], { target: { name: "email", value: "nacho@example.com" } });
-    fireEvent.change(screen.getByLabelText(/contrasena/i), { target: { name: "password", value: "Input123" } });
-    fireEvent.change(screen.getByLabelText(/fecha de nacimiento/i), { target: { name: "birthdate", value: "1998-10-20" } });
+    const { container } = renderRegister();
+    fillField(container, "firstName", "Nacho");
+    fillField(container, "lastName", "Bru");
+    fillField(container, "userName", "nacho");
+    fillField(container, "city", "Valencia");
+    fillField(container, "email", "nacho@example.com");
+    fillField(container, "password", "Input123");
+    fillField(container, "birthdate", "1998-10-20");
     fireEvent.click(screen.getByRole("button", { name: /registrarse/i }));
 
     await waitFor(() => expect(authApi.registerUser).toHaveBeenCalled());
@@ -66,9 +72,7 @@ describe("RegisterPage", () => {
     jest.useRealTimers();
   });
 
-  test("shows register errors", async () => {
-    authApi.registerUser.mockRejectedValue(new Error("Ya existe un usuario"));
-
+  test("shows register validation errors", async () => {
     renderRegister();
     fireEvent.click(screen.getByRole("button", { name: /registrarse/i }));
 
