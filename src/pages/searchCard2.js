@@ -14,6 +14,9 @@ import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
 import { getEvents } from "../api/eventsApi";
 
+const DEFAULT_PAGE = 1;
+const EVENTS_PAGE_SIZE = 10;
+
 const cities = [
   "Madrid",
   "Barcelona",
@@ -40,6 +43,14 @@ const sports = [
   "Padel",
 ];
 
+function getEventsFromResponse(response) {
+  return Array.isArray(response) ? response : response?.events || [];
+}
+
+function getPaginationFromResponse(response) {
+  return Array.isArray(response) ? null : response?.pagination || null;
+}
+
 function renderEventsContent({
   isLoading,
   loadError,
@@ -47,7 +58,7 @@ function renderEventsContent({
   onEventChanged,
   onEventRemoved,
 }) {
-  if (isLoading) {
+  if (isLoading && events.length === 0) {
     return <Alert severity="info">Cargando eventos...</Alert>;
   }
 
@@ -77,6 +88,8 @@ export function SearchCard2() {
     date: "",
   });
   const [events, setEvents] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(DEFAULT_PAGE);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -84,18 +97,33 @@ export function SearchCard2() {
     setIsLoading(true);
     setLoadError("");
     try {
-      const data = await getEvents(searchCriteria);
-      setEvents(Array.isArray(data) ? data : []);
+      const data = await getEvents({
+        ...searchCriteria,
+        page,
+        limit: EVENTS_PAGE_SIZE,
+      });
+      const nextEvents = getEventsFromResponse(data);
+      setEvents((currentEvents) =>
+        page === DEFAULT_PAGE ? nextEvents : [...currentEvents, ...nextEvents]
+      );
+      setPagination(getPaginationFromResponse(data));
     } catch (error) {
       setLoadError(error.message || "No se pudieron cargar los eventos.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchCriteria]);
+  }, [page, searchCriteria]);
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  const updateSearchCriteria = (nextCriteria) => {
+    setEvents([]);
+    setPagination(null);
+    setPage(DEFAULT_PAGE);
+    setSearchCriteria(nextCriteria);
+  };
 
   const handleEventChanged = (updatedEvent) => {
     setEvents((currentEvents) =>
@@ -112,7 +140,11 @@ export function SearchCard2() {
   };
 
   const handleClear = () => {
-    setSearchCriteria({ city: "", sport: "", date: "" });
+    updateSearchCriteria({ city: "", sport: "", date: "" });
+  };
+
+  const handleLoadMore = () => {
+    setPage((currentPage) => currentPage + 1);
   };
 
   return (
@@ -143,7 +175,7 @@ export function SearchCard2() {
             select
             value={searchCriteria.city}
             onChange={(event) =>
-              setSearchCriteria({ ...searchCriteria, city: event.target.value })
+              updateSearchCriteria({ ...searchCriteria, city: event.target.value })
             }
           >
             {cities.map((city) => (
@@ -158,7 +190,7 @@ export function SearchCard2() {
             select
             value={searchCriteria.sport}
             onChange={(event) =>
-              setSearchCriteria({ ...searchCriteria, sport: event.target.value })
+              updateSearchCriteria({ ...searchCriteria, sport: event.target.value })
             }
           >
             {sports.map((sport) => (
@@ -174,7 +206,7 @@ export function SearchCard2() {
             value={searchCriteria.date}
             InputLabelProps={{ shrink: true }}
             onChange={(event) =>
-              setSearchCriteria({ ...searchCriteria, date: event.target.value })
+              updateSearchCriteria({ ...searchCriteria, date: event.target.value })
             }
           />
           <Button
@@ -196,6 +228,11 @@ export function SearchCard2() {
           onEventChanged: handleEventChanged,
           onEventRemoved: handleEventRemoved,
         })}
+        {pagination?.hasNextPage && (
+          <Button variant="outlined" onClick={handleLoadMore} disabled={isLoading}>
+            {isLoading ? "Cargando..." : "Cargar mas"}
+          </Button>
+        )}
       </Stack>
     </AppShell>
   );
