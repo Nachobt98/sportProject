@@ -1,7 +1,3 @@
-jest.mock("../models/User", () => ({
-  findOne: jest.fn(),
-}));
-
 jest.mock("../services/userService", () => ({
   getCurrentUser: jest.fn(),
   updateCurrentUser: jest.fn(),
@@ -13,9 +9,8 @@ jest.mock("../utils/logger", () => ({
   },
 }));
 
-const User = require("../models/User");
 const userService = require("../services/userService");
-const { getUser, getCurrentUser, updateCurrentUser } = require("./userController");
+const { getCurrentUser, updateCurrentUser } = require("./userController");
 
 function createResponse() {
   return {
@@ -24,43 +19,9 @@ function createResponse() {
   };
 }
 
-function queryResult(value) {
-  return { exec: jest.fn().mockResolvedValue(value) };
-}
-
 describe("userController", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  test("returns public user data", async () => {
-    const user = { toObject: () => ({ userName: "nacho", password: "hidden" }) };
-    User.findOne.mockReturnValue(queryResult(user));
-    const res = createResponse();
-
-    await getUser({ params: { userName: " nacho " } }, res);
-
-    expect(User.findOne).toHaveBeenCalledWith({ userName: "nacho" });
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({ userName: "nacho" });
-  });
-
-  test("returns 404 for missing users", async () => {
-    User.findOne.mockReturnValue(queryResult(null));
-    const res = createResponse();
-
-    await getUser({ params: { userName: "missing" } }, res);
-
-    expect(res.status).toHaveBeenCalledWith(404);
-  });
-
-  test("returns 500 when lookup fails", async () => {
-    User.findOne.mockReturnValue({ exec: jest.fn().mockRejectedValue(new Error("db")) });
-    const res = createResponse();
-
-    await getUser({ params: { userName: "nacho" } }, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
   });
 
   test("gets current authenticated user", async () => {
@@ -89,6 +50,15 @@ describe("userController", () => {
     const res = createResponse();
 
     await getCurrentUser({ auth: { userName: "nacho" } }, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
+  test("returns 500 when current user update fails", async () => {
+    userService.updateCurrentUser.mockRejectedValue(new Error("service error"));
+    const res = createResponse();
+
+    await updateCurrentUser({ auth: { userName: "nacho" }, body: {} }, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
   });
