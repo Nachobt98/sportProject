@@ -23,4 +23,9 @@ describe("API response helpers", () => {
     const response = { ok: false, json: jest.fn().mockResolvedValue({ message: "API error" }) };
     await expect(assertOkResponse(response, "fallback")).rejects.toThrow("API error");
   });
+
+  test("throws fallback message when API error has no message", async () => {
+    const response = { ok: false, json: jest.fn().mockResolvedValue({}) };
+    await expect(assertOkResponse(response, "fallback")).rejects.toThrow("fallback");
+  });
 });

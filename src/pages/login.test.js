@@ -36,7 +36,8 @@ describe("LoginPage", () => {
   test("renders login form", () => {
     renderLogin();
     expect(screen.getByRole("heading", { name: /inicia sesion/i })).toBeInTheDocument();
-    expect(screen.getByText(/usuario/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/contrasena/i)).toBeInTheDocument();
   });
 
   test("submits login successfully", async () => {

@@ -64,6 +64,7 @@ export function LoginPage() {
                 <Field
                   name="userName"
                   as={TextField}
+                  label="Usuario"
                   fullWidth
                   autoComplete="username"
                   error={Boolean(formikProps.touched.userName && formikProps.errors.userName)}
@@ -75,6 +76,7 @@ export function LoginPage() {
                 <Field
                   name="password"
                   as={TextField}
+                  label="Contrasena"
                   type={showPassword ? "text" : "password"}
                   fullWidth
                   autoComplete="current-password"

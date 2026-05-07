@@ -99,6 +99,7 @@ export function CreateEvent() {
                     <Field
                       name="name"
                       as={TextField}
+                      label="Nombre del evento"
                       fullWidth
                       autoComplete="off"
                     />
@@ -109,6 +110,7 @@ export function CreateEvent() {
                     <Field
                       name="sport"
                       as={TextField}
+                      label="Deporte"
                       fullWidth
                       autoComplete="off"
                     />
@@ -121,6 +123,7 @@ export function CreateEvent() {
                   <Field
                     name="description"
                     as={TextField}
+                    label="Descripcion"
                     fullWidth
                     multiline
                     rows={4}
@@ -136,7 +139,7 @@ export function CreateEvent() {
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                   <Stack spacing={0.75} sx={{ flex: 1 }}>
                     <Typography variant="subtitle2">Ciudad</Typography>
-                    <Field name="city" as={TextField} fullWidth autoComplete="off" />
+                    <Field name="city" as={TextField} label="Ciudad" fullWidth autoComplete="off" />
                     <ErrorMessage name="city" component={Alert} severity="error" />
                   </Stack>
                   <Stack spacing={0.75} sx={{ flex: 1 }}>
@@ -144,6 +147,7 @@ export function CreateEvent() {
                     <Field
                       name="date"
                       as={TextField}
+                      label="Fecha"
                       type="date"
                       fullWidth
                       InputLabelProps={{ shrink: true }}
@@ -158,6 +162,7 @@ export function CreateEvent() {
                     <Field
                       name="location"
                       as={TextField}
+                      label="Ubicacion"
                       fullWidth
                       autoComplete="off"
                     />
@@ -172,6 +177,7 @@ export function CreateEvent() {
                     <Field
                       name="locationName"
                       as={TextField}
+                      label="Direccion"
                       fullWidth
                       autoComplete="off"
                     />
@@ -185,7 +191,7 @@ export function CreateEvent() {
 
                 <Stack spacing={0.75}>
                   <Typography variant="subtitle2">Numero de participantes</Typography>
-                  <Field name="participants" as={TextField} select fullWidth>
+                  <Field name="participants" as={TextField} label="Numero de participantes" select fullWidth>
                     {participantOptions.map((value) => (
                       <MenuItem key={value} value={value}>
                         {value}

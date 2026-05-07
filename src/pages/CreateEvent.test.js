@@ -29,6 +29,11 @@ function fillField(container, name, value) {
   });
 }
 
+function selectParticipants(value) {
+  fireEvent.mouseDown(screen.getByLabelText(/numero de participantes/i));
+  fireEvent.click(screen.getByRole("option", { name: String(value) }));
+}
+
 describe("CreateEvent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -54,7 +59,7 @@ describe("CreateEvent", () => {
     fillField(container, "date", "2026-01-01");
     fillField(container, "location", "Court 1");
     fillField(container, "locationName", "Club Valencia");
-    fillField(container, "participants", "4");
+    selectParticipants(4);
 
     fireEvent.click(screen.getByRole("button", { name: /crear evento/i }));
 

@@ -92,6 +92,35 @@ describe("eventService", () => {
       creator: "G",
       participants: 1,
     }).error).toBe("La fecha del evento no es valida");
+    expect(service.buildEventPayload({
+      name: "A",
+      description: "B",
+      sport: "C",
+      date: "2026-01-01",
+      locationName: "D",
+      location: "E",
+      city: "F",
+      creator: "G",
+      participants: 0,
+    }).error).toBe("El numero de participantes debe ser mayor que cero");
+  });
+
+  test("rejects event creation when payload or creator are invalid", async () => {
+    await expect(service.createEvent({}, "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 400 })
+    );
+
+    User.findOne.mockReturnValue(queryResult(null));
+    await expect(service.createEvent({
+      name: "Padel",
+      description: "Match",
+      sport: "Padel",
+      date: "2026-01-01",
+      locationName: "Court",
+      location: "Valencia",
+      city: "Valencia",
+      participants: 4,
+    }, "missing")).resolves.toEqual(expect.objectContaining({ status: 404 }));
   });
 
   test("creates events", async () => {
@@ -132,6 +161,14 @@ describe("eventService", () => {
     expect(result.body).toEqual([{ _id: "1" }]);
   });
 
+  test("returns 404 when listing joined events for a missing user", async () => {
+    User.findOne.mockReturnValue(queryResult(null));
+
+    const result = await service.listJoinedEvents("missing");
+
+    expect(result.status).toBe(404);
+  });
+
   test("joins users to events", async () => {
     const event = createEventDoc({ participantsList: [] });
     const user = createUserDoc();
@@ -154,6 +191,36 @@ describe("eventService", () => {
     expect(result.status).toBe(409);
   });
 
+  test("rejects joins for invalid users, missing events, creators and full events", async () => {
+    await expect(service.joinUserToEvent("event-id", "")).resolves.toEqual(
+      expect.objectContaining({ status: 400 })
+    );
+
+    Event.findById.mockReturnValue(queryResult(null));
+    User.findOne.mockReturnValue(queryResult(createUserDoc()));
+    await expect(service.joinUserToEvent("event-id", "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 404 })
+    );
+
+    Event.findById.mockReturnValue(queryResult(createEventDoc()));
+    User.findOne.mockReturnValue(queryResult(null));
+    await expect(service.joinUserToEvent("event-id", "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 404 })
+    );
+
+    Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: "nacho" })));
+    User.findOne.mockReturnValue(queryResult(createUserDoc()));
+    await expect(service.joinUserToEvent("event-id", "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 400 })
+    );
+
+    Event.findById.mockReturnValue(queryResult(createEventDoc({ participants: 1, participantsList: ["other"] })));
+    User.findOne.mockReturnValue(queryResult(createUserDoc()));
+    await expect(service.joinUserToEvent("event-id", "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 409 })
+    );
+  });
+
   test("cancels user participation", async () => {
     const event = createEventDoc({ participantsList: ["nacho", "other"] });
     const user = createUserDoc({ joinedEvents: [{ toString: () => "event-id" }, { toString: () => "other-id" }] });
@@ -167,6 +234,14 @@ describe("eventService", () => {
     expect(user.joinedEvents).toHaveLength(1);
   });
 
+  test("returns lookup errors when cancelling participation", async () => {
+    mongoose.Types.ObjectId.isValid.mockReturnValue(false);
+
+    await expect(service.cancelUserEvent("bad", "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 400 })
+    );
+  });
+
   test("deletes owned events", async () => {
     Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: "nacho" })));
     Event.findByIdAndDelete.mockReturnValue(queryResult({}));
@@ -176,6 +251,18 @@ describe("eventService", () => {
 
     expect(result.status).toBe(200);
     expect(Event.findByIdAndDelete).toHaveBeenCalledWith("event-id");
+  });
+
+  test("rejects deleting missing or foreign events", async () => {
+    Event.findById.mockReturnValue(queryResult(null));
+    await expect(service.deleteEvent("event-id", "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 404 })
+    );
+
+    Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: "other" })));
+    await expect(service.deleteEvent("event-id", "nacho")).resolves.toEqual(
+      expect.objectContaining({ status: 403 })
+    );
   });
 
   test("rejects invalid event identifiers", async () => {
