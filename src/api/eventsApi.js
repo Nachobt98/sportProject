@@ -47,6 +47,16 @@ export async function cancelEventJoin(eventId) {
   return assertOkResponse(response, "No se pudo cancelar la participacion");
 }
 
+export async function getCurrentUserCreatedEvents() {
+  const response = await apiFetch("/api/users/me/events");
+  return assertOkResponse(response, "No se pudieron cargar los eventos creados");
+}
+
+export async function getCurrentUserJoinedEvents() {
+  const response = await apiFetch("/api/users/me/joined-events");
+  return assertOkResponse(response, "No se pudieron cargar los eventos unidos");
+}
+
 export async function getUserCreatedEvents(userName) {
   const response = await apiFetch(`/api/user/${userName}/events`);
   return assertOkResponse(response, "No se pudieron cargar los eventos creados");
