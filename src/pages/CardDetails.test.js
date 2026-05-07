@@ -7,6 +7,10 @@ import * as eventsApi from "../api/eventsApi";
 jest.mock("../api/eventsApi");
 const mockNavigate = jest.fn();
 
+jest.mock("../context/userContext", () => ({
+  useUser: () => ({ users: { userName: "nacho" } }),
+}));
+
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
@@ -52,6 +56,24 @@ describe("CardDetails", () => {
     expect(eventsApi.getEventById).toHaveBeenCalledWith("event-id");
     expect(screen.getByText("Friendly match")).toBeInTheDocument();
     expect(screen.getByText("player1")).toBeInTheDocument();
+  });
+
+  test("shows creator edit action", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
+
+    renderDetails();
+
+    fireEvent.click(await screen.findByRole("button", { name: /editar/i }));
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id/edit");
+  });
+
+  test("hides edit action for non creator events", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, creator: "other-user" } });
+
+    renderDetails();
+
+    expect(await screen.findByRole("heading", { name: "Padel match" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
   });
 
   test("shows empty participant state", async () => {
