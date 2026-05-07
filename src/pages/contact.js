@@ -25,8 +25,7 @@ export function Contact() {
             <Formik
               initialValues={{ name: "", email: "", message: "" }}
               validationSchema={validationSchema}
-              onSubmit={(values, { resetForm, setStatus }) => {
-                console.log("Formulario de contacto enviado", values);
+              onSubmit={(_values, { resetForm, setStatus }) => {
                 setStatus("Mensaje preparado correctamente.");
                 resetForm();
               }}

@@ -1,6 +1,7 @@
 const eventService = require("../services/eventService");
 const User = require("../models/User");
 const { normalizeString } = require("../utils/strings");
+const { logger } = require("../utils/logger");
 
 function sendServiceResult(res, result) {
   return res.status(result.status).json(result.body);
@@ -20,7 +21,7 @@ function createServiceHandler(serviceCall, errorMessage) {
       const result = await serviceCall(req);
       return sendServiceResult(res, result);
     } catch (error) {
-      console.error(error);
+      logger.error(errorMessage, error);
       return res.status(500).json({ message: errorMessage });
     }
   };
@@ -31,7 +32,7 @@ async function createEvent(req, res) {
     const result = await eventService.createEvent(req.body, getAuthenticatedUserName(req));
     return sendServiceResult(res, result);
   } catch (error) {
-    console.error(error);
+    logger.error("Error al crear el evento", error);
     return res.status(500).json({ message: "Error al crear el evento" });
   }
 }
@@ -41,7 +42,7 @@ async function listEvents(req, res) {
     const events = await eventService.listEvents();
     return res.status(200).json(events);
   } catch (error) {
-    console.error(error);
+    logger.error("Error al obtener la lista de eventos", error);
     return res.status(500).json({ message: "Error al obtener la lista de eventos" });
   }
 }
@@ -57,7 +58,7 @@ async function listUserEvents(req, res) {
     const userEvents = await eventService.listCreatedEvents(userName);
     return res.status(200).json(userEvents);
   } catch (error) {
-    console.error(error);
+    logger.error("Error al obtener la lista de eventos del usuario", error);
     return res.status(500).json({ message: "Error al obtener la lista de eventos del usuario" });
   }
 }

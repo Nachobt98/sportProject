@@ -64,7 +64,6 @@ export function CardEvent({ event, onChanged, onRemoved }) {
       onRemoved?.(currentEvent._id);
       setFeedback({ severity: "success", message: "Evento eliminado" });
     } catch (error) {
-      console.error("Error al eliminar el evento:", error);
       setFeedback({ severity: "error", message: error.message || "No se pudo conectar con el servidor" });
     }
   };
@@ -76,7 +75,6 @@ export function CardEvent({ event, onChanged, onRemoved }) {
       setIsUserJoined(true);
       onChanged?.(data.event);
     } catch (error) {
-      console.error("Error al unirse al evento:", error);
       setFeedback({ severity: "error", message: error.message || "No se pudo conectar con el servidor" });
     }
   };
@@ -88,7 +86,6 @@ export function CardEvent({ event, onChanged, onRemoved }) {
       setIsUserJoined(false);
       onChanged?.(data.event);
     } catch (error) {
-      console.error("Error al cancelar la participacion:", error);
       setFeedback({ severity: "error", message: error.message || "No se pudo conectar con el servidor" });
     }
   };

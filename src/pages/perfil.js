@@ -114,7 +114,6 @@ export function Perfil() {
         setCreatedEvents(Array.isArray(created) ? created : []);
         setJoinedEvents(Array.isArray(joined) ? joined : []);
       } catch (error) {
-        console.error("Error fetching profile events:", error);
         setEventsError(error.message || "No se pudieron cargar los eventos del perfil.");
       }
     }

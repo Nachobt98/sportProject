@@ -2,6 +2,12 @@ jest.mock("../models/User", () => ({
   findOne: jest.fn(),
 }));
 
+jest.mock("../utils/logger", () => ({
+  logger: {
+    error: jest.fn(),
+  },
+}));
+
 const User = require("../models/User");
 const { getUser } = require("./userController");
 
@@ -43,13 +49,11 @@ describe("userController", () => {
   });
 
   test("returns 500 when lookup fails", async () => {
-    jest.spyOn(console, "error").mockImplementation(() => {});
     User.findOne.mockReturnValue({ exec: jest.fn().mockRejectedValue(new Error("db")) });
     const res = createResponse();
 
     await getUser({ params: { userName: "nacho" } }, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    console.error.mockRestore();
   });
 });

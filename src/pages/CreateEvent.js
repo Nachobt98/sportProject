@@ -82,7 +82,6 @@ export function CreateEvent() {
                 navigate("/searchCard2");
               }, 900);
             } catch (error) {
-              console.error(error);
               setSubmitError(error.message || "No se pudo crear el evento");
             } finally {
               setSubmitting(false);

@@ -54,7 +54,6 @@ export function RegisterPage() {
       setOpenSnackbar(true);
       setTimeout(() => navigate("/homepage"), 1200);
     } catch (error) {
-      console.error("Error al enviar el formulario de registro:", error);
       setSubmitError(error.message || "No se pudo conectar con el servidor.");
     } finally {
       setSubmitting(false);

@@ -2,6 +2,7 @@ const User = require("../models/User");
 const { createSessionToken, hashPassword, verifyPassword } = require("../services/authService");
 const { normalizeString, validateRequiredFields } = require("../utils/strings");
 const { toPublicUser } = require("../utils/users");
+const { logger } = require("../utils/logger");
 
 async function register(req, res) {
   try {
@@ -45,7 +46,7 @@ async function register(req, res) {
       token: createSessionToken(newUser),
     });
   } catch (error) {
-    console.error(error);
+    logger.error("Error al registrar el usuario", error);
     return res.status(500).json({ message: "Error al registrar el usuario" });
   }
 }
@@ -81,7 +82,7 @@ async function login(req, res) {
       token: createSessionToken(user),
     });
   } catch (error) {
-    console.error(error);
+    logger.error("Error al iniciar sesion", error);
     return res.status(500).json({ message: "Error al iniciar sesion" });
   }
 }
@@ -95,7 +96,7 @@ async function getSession(req, res) {
 
     return res.status(200).json({ user: toPublicUser(user) });
   } catch (error) {
-    console.error(error);
+    logger.error("Error al validar la sesion", error);
     return res.status(500).json({ message: "Error al validar la sesion" });
   }
 }

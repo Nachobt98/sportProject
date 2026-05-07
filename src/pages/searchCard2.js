@@ -57,7 +57,6 @@ export function SearchCard2() {
       const data = await getEvents();
       setEvents(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching events:", error);
       setLoadError(error.message || "No se pudieron cargar los eventos.");
     } finally {
       setIsLoading(false);

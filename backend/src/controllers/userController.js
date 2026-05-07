@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const { normalizeString } = require("../utils/strings");
 const { toPublicUser } = require("../utils/users");
+const { logger } = require("../utils/logger");
 
 async function getUser(req, res) {
   const userName = normalizeString(req.params.userName);
@@ -12,7 +13,7 @@ async function getUser(req, res) {
 
     return res.status(200).json(toPublicUser(user));
   } catch (error) {
-    console.error(error);
+    logger.error("Error al buscar el usuario", error);
     return res.status(500).json({ message: "Error al buscar el usuario" });
   }
 }

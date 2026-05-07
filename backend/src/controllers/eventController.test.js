@@ -12,6 +12,12 @@ jest.mock("../models/User", () => ({
   findOne: jest.fn(),
 }));
 
+jest.mock("../utils/logger", () => ({
+  logger: {
+    error: jest.fn(),
+  },
+}));
+
 const eventService = require("../services/eventService");
 const User = require("../models/User");
 const controller = require("./eventController");

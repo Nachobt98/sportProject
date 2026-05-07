@@ -10,6 +10,12 @@ jest.mock("../utils/users", () => ({
   toPublicUser: jest.fn((user) => ({ userName: user.userName })),
 }));
 
+jest.mock("../utils/logger", () => ({
+  logger: {
+    error: jest.fn(),
+  },
+}));
+
 const User = require("../models/User");
 const authService = require("../services/authService");
 const controller = require("./authController");
@@ -119,6 +125,19 @@ describe("authController", () => {
 
     expect(authService.hashPassword).toHaveBeenCalledWith("Input123");
     expect(user.save).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test("keeps already hashed passwords on login", async () => {
+    const user = { userName: "nacho", password: "$2b$hashed-value", save: jest.fn() };
+    User.findOne = jest.fn().mockReturnValue(queryResult(user));
+    authService.verifyPassword.mockResolvedValue(true);
+    const res = createResponse();
+
+    await controller.login({ body: { userName: "nacho", password: "Input123" } }, res);
+
+    expect(authService.hashPassword).not.toHaveBeenCalled();
+    expect(user.save).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
   });
 

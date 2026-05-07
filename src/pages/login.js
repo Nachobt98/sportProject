@@ -38,7 +38,6 @@ export function LoginPage() {
       addUser(data.user);
       navigate("/homepage");
     } catch (error) {
-      console.error("Error al iniciar sesion:", error);
       setLoginError(error.message || "No se pudo conectar con el servidor.");
     } finally {
       setSubmitting(false);
