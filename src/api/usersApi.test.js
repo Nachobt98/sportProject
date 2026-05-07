@@ -1,21 +1,11 @@
 import * as client from "./client";
-import { getCurrentUser, getUser, updateCurrentUser } from "./usersApi";
+import { getCurrentUser, updateCurrentUser } from "./usersApi";
 
 jest.mock("./client");
 
 describe("usersApi", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  test("gets a user by username", async () => {
-    client.apiFetch.mockResolvedValue({
-      ok: true,
-      json: jest.fn().mockResolvedValue({ userName: "nacho" }),
-    });
-
-    await expect(getUser("nacho")).resolves.toEqual({ userName: "nacho" });
-    expect(client.apiFetch).toHaveBeenCalledWith("/api/user/nacho");
   });
 
   test("gets current user profile", async () => {
@@ -51,6 +41,6 @@ describe("usersApi", () => {
       json: jest.fn().mockResolvedValue({ message: "User not found" }),
     });
 
-    await expect(getUser("missing")).rejects.toThrow("User not found");
+    await expect(getCurrentUser()).rejects.toThrow("User not found");
   });
 });
