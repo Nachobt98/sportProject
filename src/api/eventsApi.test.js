@@ -22,19 +22,21 @@ describe("eventsApi", () => {
   }
 
   test("gets events", async () => {
-    mockJsonResponse([{ _id: "1" }]);
-    await expect(getEvents()).resolves.toEqual([{ _id: "1" }]);
+    const payload = { events: [{ _id: "1" }], pagination: { page: 1 } };
+    mockJsonResponse(payload);
+    await expect(getEvents()).resolves.toEqual(payload);
     expect(client.apiFetch).toHaveBeenCalledWith("/api/events");
   });
 
-  test("gets filtered events", async () => {
-    mockJsonResponse([{ _id: "1" }]);
-    await expect(getEvents({ city: "Valencia", sport: "Padel", date: "2026-01-01" })).resolves.toEqual([{ _id: "1" }]);
-    expect(client.apiFetch).toHaveBeenCalledWith("/api/events?city=Valencia&sport=Padel&date=2026-01-01");
+  test("gets filtered and paginated events", async () => {
+    const payload = { events: [{ _id: "1" }], pagination: { page: 2, limit: 10 } };
+    mockJsonResponse(payload);
+    await expect(getEvents({ city: "Valencia", sport: "Padel", date: "2026-01-01", page: 2, limit: 10 })).resolves.toEqual(payload);
+    expect(client.apiFetch).toHaveBeenCalledWith("/api/events?city=Valencia&sport=Padel&date=2026-01-01&page=2&limit=10");
   });
 
   test("ignores empty event filters", async () => {
-    mockJsonResponse([]);
+    mockJsonResponse({ events: [], pagination: { page: 1 } });
     await getEvents({ city: "", sport: "Padel", date: "" });
     expect(client.apiFetch).toHaveBeenCalledWith("/api/events?sport=Padel");
   });

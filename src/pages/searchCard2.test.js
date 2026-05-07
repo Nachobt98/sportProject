@@ -40,6 +40,21 @@ const events = [
   },
 ];
 
+function paginatedResponse(items = events, overrides = {}) {
+  return {
+    events: items,
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: items.length,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      ...overrides,
+    },
+  };
+}
+
 function renderSearch() {
   return render(
     <MemoryRouter>
@@ -58,14 +73,14 @@ describe("SearchCard2", () => {
   });
 
   test("loads and renders events", async () => {
-    eventsApi.getEvents.mockResolvedValue(events);
+    eventsApi.getEvents.mockResolvedValue(paginatedResponse(events));
 
     renderSearch();
 
     expect(screen.getByText(/cargando eventos/i)).toBeInTheDocument();
     expect(await screen.findByText("Padel Valencia")).toBeInTheDocument();
     expect(screen.getByText("Futbol Madrid")).toBeInTheDocument();
-    expect(eventsApi.getEvents).toHaveBeenCalledWith({ city: "", sport: "", date: "" });
+    expect(eventsApi.getEvents).toHaveBeenCalledWith({ city: "", sport: "", date: "", page: 1, limit: 10 });
   });
 
   test("shows loading errors", async () => {
@@ -77,7 +92,7 @@ describe("SearchCard2", () => {
   });
 
   test("shows an empty state when there are no events", async () => {
-    eventsApi.getEvents.mockResolvedValue([]);
+    eventsApi.getEvents.mockResolvedValue(paginatedResponse([]));
 
     renderSearch();
 
@@ -85,7 +100,7 @@ describe("SearchCard2", () => {
   });
 
   test("navigates to create event", async () => {
-    eventsApi.getEvents.mockResolvedValue([]);
+    eventsApi.getEvents.mockResolvedValue(paginatedResponse([]));
 
     renderSearch();
     await screen.findByText(/no se encontraron eventos/i);
@@ -95,7 +110,7 @@ describe("SearchCard2", () => {
   });
 
   test("clears filters and fetches the unfiltered event list", async () => {
-    eventsApi.getEvents.mockResolvedValue(events);
+    eventsApi.getEvents.mockResolvedValue(paginatedResponse(events));
 
     renderSearch();
     await waitForInitialSearchLoad();
@@ -103,17 +118,17 @@ describe("SearchCard2", () => {
     fireEvent.mouseDown(screen.getByLabelText(/ciudad/i));
     fireEvent.click(screen.getByRole("option", { name: "Valencia" }));
     await waitFor(() =>
-      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "Valencia", sport: "", date: "" })
+      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "Valencia", sport: "", date: "", page: 1, limit: 10 })
     );
 
     fireEvent.click(screen.getByRole("button", { name: /limpiar/i }));
     await waitFor(() =>
-      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "", sport: "", date: "" })
+      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "", sport: "", date: "", page: 1, limit: 10 })
     );
   });
 
   test("fetches filtered events from the backend", async () => {
-    eventsApi.getEvents.mockResolvedValue(events);
+    eventsApi.getEvents.mockResolvedValue(paginatedResponse(events));
 
     renderSearch();
     await waitFor(() => expect(screen.getByText("Padel Valencia")).toBeInTheDocument());
@@ -122,12 +137,28 @@ describe("SearchCard2", () => {
     fireEvent.click(screen.getByRole("option", { name: "Valencia" }));
 
     await waitFor(() =>
-      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "Valencia", sport: "", date: "" })
+      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "Valencia", sport: "", date: "", page: 1, limit: 10 })
     );
   });
 
+  test("loads the next event page", async () => {
+    eventsApi.getEvents
+      .mockResolvedValueOnce(paginatedResponse([events[0]], { total: 2, totalPages: 2, hasNextPage: true }))
+      .mockResolvedValueOnce(paginatedResponse([events[1]], { page: 2, total: 2, totalPages: 2, hasNextPage: false, hasPreviousPage: true }));
+
+    renderSearch();
+    expect(await screen.findByText("Padel Valencia")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /cargar mas/i }));
+
+    await waitFor(() =>
+      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "", sport: "", date: "", page: 2, limit: 10 })
+    );
+    expect(await screen.findByText("Futbol Madrid")).toBeInTheDocument();
+  });
+
   test("updates and removes events from the current list", async () => {
-    eventsApi.getEvents.mockResolvedValue(events);
+    eventsApi.getEvents.mockResolvedValue(paginatedResponse(events));
 
     renderSearch();
     await waitFor(() => expect(screen.getByText("Padel Valencia")).toBeInTheDocument());

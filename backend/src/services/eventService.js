@@ -3,12 +3,46 @@ const Event = require("../models/Event");
 const User = require("../models/User");
 const { normalizeString, validateRequiredFields } = require("../utils/strings");
 
+const DEFAULT_EVENT_PAGE = 1;
+const DEFAULT_EVENT_LIMIT = 10;
+const MAX_EVENT_LIMIT = 50;
+
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
 function serviceResponse(status, message, extraBody = {}) {
   return { status, body: { message, ...extraBody } };
+}
+
+function parsePositiveInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function buildEventPagination(filters = {}) {
+  const page = parsePositiveInteger(filters.page, DEFAULT_EVENT_PAGE);
+  const requestedLimit = parsePositiveInteger(filters.limit, DEFAULT_EVENT_LIMIT);
+  const limit = Math.min(requestedLimit, MAX_EVENT_LIMIT);
+
+  return {
+    page,
+    limit,
+    skip: (page - 1) * limit,
+  };
+}
+
+function buildPaginationMeta({ page, limit, total }) {
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    page,
+    limit,
+    total,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
+  };
 }
 
 function buildEventFilters(filters = {}) {
@@ -36,7 +70,25 @@ function buildEventFilters(filters = {}) {
   return query;
 }
 
-function buildEventPayload(payload) {
+function toPublicEvent(event) {
+  if (!event) {
+    return null;
+  }
+
+  const eventObject = event.toObject ? event.toObject() : event;
+  const creator = eventObject.creator;
+  const participantsList = eventObject.participantsList || [];
+
+  return {
+    ...eventObject,
+    creator: creator?.userName || creator?.toString?.() || creator,
+    participantsList: participantsList.map((participant) =>
+      participant?.userName || participant?.toString?.() || participant
+    ),
+  };
+}
+
+function buildEventPayload(payload, creatorId) {
   const missingFields = validateRequiredFields(payload, [
     "name",
     "description",
@@ -45,7 +97,6 @@ function buildEventPayload(payload) {
     "locationName",
     "location",
     "city",
-    "creator",
   ]);
 
   if (missingFields.length > 0) {
@@ -72,7 +123,7 @@ function buildEventPayload(payload) {
       location: normalizeString(payload.location),
       city: normalizeString(payload.city),
       participants,
-      creator: normalizeString(payload.creator),
+      creator: creatorId,
       participantsList: [],
     },
   };
@@ -83,18 +134,20 @@ async function findEventById(eventId) {
     return serviceResponse(400, "El identificador del evento no es valido");
   }
 
-  const event = await Event.findById(eventId).exec();
+  const event = await Event.findById(eventId)
+    .populate("creator", "userName profileImage")
+    .populate("participantsList", "userName profileImage")
+    .exec();
   if (!event) {
     return serviceResponse(404, "Evento no encontrado");
   }
 
-  return { status: 200, body: { event } };
+  return { status: 200, body: { event: toPublicEvent(event) } };
 }
 
 async function findEventAndUser(eventId, userName) {
-  const eventResult = await findEventById(eventId);
-  if (eventResult.status !== 200) {
-    return eventResult;
+  if (!isValidObjectId(eventId)) {
+    return serviceResponse(400, "El identificador del evento no es valido");
   }
 
   const normalizedUserName = normalizeString(userName);
@@ -102,40 +155,76 @@ async function findEventAndUser(eventId, userName) {
     return serviceResponse(400, "El nombre de usuario es requerido");
   }
 
-  const user = await User.findOne({ userName: normalizedUserName }).exec();
+  const [event, user] = await Promise.all([
+    Event.findById(eventId).exec(),
+    User.findOne({ userName: normalizedUserName }).exec(),
+  ]);
+
+  if (!event) {
+    return serviceResponse(404, "Evento no encontrado");
+  }
+
   if (!user) {
     return serviceResponse(404, "Usuario no encontrado");
   }
 
-  return { event: eventResult.body.event, user, userName: normalizedUserName };
+  return { event, user };
 }
 
 async function createEvent(payload, creatorUserName) {
-  const { value, error } = buildEventPayload({
-    ...payload,
-    creator: creatorUserName,
-  });
+  const creator = await User.findOne({ userName: normalizeString(creatorUserName) }).exec();
+  if (!creator) {
+    return serviceResponse(404, "Usuario creador no encontrado");
+  }
+
+  const { value, error } = buildEventPayload(payload, creator._id);
 
   if (error) {
     return serviceResponse(400, error);
   }
 
-  const creator = await User.findOne({ userName: value.creator }).exec();
-  if (!creator) {
-    return serviceResponse(404, "Usuario creador no encontrado");
-  }
-
   const newEvent = new Event(value);
   await newEvent.save();
-  return serviceResponse(201, "Evento creado exitosamente", { event: newEvent });
+  return serviceResponse(201, "Evento creado exitosamente", { event: toPublicEvent(newEvent) });
 }
 
 async function listEvents(filters = {}) {
-  return Event.find(buildEventFilters(filters)).sort({ date: 1, _id: 1 }).exec();
+  const query = buildEventFilters(filters);
+  const { page, limit, skip } = buildEventPagination(filters);
+
+  const [events, total] = await Promise.all([
+    Event.find(query)
+      .sort({ date: 1, _id: 1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("creator", "userName profileImage")
+      .populate("participantsList", "userName profileImage")
+      .exec(),
+    Event.countDocuments(query).exec(),
+  ]);
+
+  return {
+    status: 200,
+    body: {
+      events: events.map(toPublicEvent),
+      pagination: buildPaginationMeta({ page, limit, total }),
+    },
+  };
 }
 
 async function listCreatedEvents(userName) {
-  return Event.find({ creator: userName }).sort({ date: 1, _id: 1 }).exec();
+  const user = await User.findOne({ userName }).exec();
+  if (!user) {
+    return [];
+  }
+
+  const events = await Event.find({ creator: user._id })
+    .sort({ date: 1, _id: 1 })
+    .populate("creator", "userName profileImage")
+    .populate("participantsList", "userName profileImage")
+    .exec();
+
+  return events.map(toPublicEvent);
 }
 
 async function listJoinedEvents(userName) {
@@ -146,9 +235,11 @@ async function listJoinedEvents(userName) {
 
   const joinedEvents = await Event.find({ _id: { $in: user.joinedEvents } })
     .sort({ date: 1, _id: 1 })
+    .populate("creator", "userName profileImage")
+    .populate("participantsList", "userName profileImage")
     .exec();
 
-  return { status: 200, body: joinedEvents };
+  return { status: 200, body: joinedEvents.map(toPublicEvent) };
 }
 
 async function joinUserToEvent(eventId, userName) {
@@ -160,23 +251,28 @@ async function joinUserToEvent(eventId, userName) {
     return lookup;
   }
 
-  const { event, user, userName: normalizedUserName } = lookup;
+  const { event, user } = lookup;
+  const userId = user._id.toString();
 
-  if (event.creator === normalizedUserName) {
+  if (event.creator.toString() === userId) {
     return serviceResponse(400, "El creador no puede unirse a su propio evento");
   }
-  if (event.participantsList.includes(normalizedUserName)) {
+  if (event.participantsList.some((participantId) => participantId.toString() === userId)) {
     return serviceResponse(409, "El usuario ya participa en este evento");
   }
   if (event.participantsList.length >= event.participants) {
     return serviceResponse(409, "El evento ya no tiene plazas disponibles");
   }
 
-  event.participantsList.push(normalizedUserName);
+  event.participantsList.push(user._id);
   user.joinedEvents.addToSet(event._id);
 
   await Promise.all([event.save(), user.save()]);
-  return serviceResponse(200, "Usuario unido al evento exitosamente", { event });
+  const updatedEvent = await Event.findById(event._id)
+    .populate("creator", "userName profileImage")
+    .populate("participantsList", "userName profileImage")
+    .exec();
+  return serviceResponse(200, "Usuario unido al evento exitosamente", { event: toPublicEvent(updatedEvent) });
 }
 
 async function cancelUserEvent(eventId, userName) {
@@ -185,27 +281,32 @@ async function cancelUserEvent(eventId, userName) {
     return lookup;
   }
 
-  const { event, user, userName: normalizedUserName } = lookup;
+  const { event, user } = lookup;
+  const userId = user._id.toString();
 
   event.participantsList = event.participantsList.filter(
-    (participant) => participant !== normalizedUserName
+    (participantId) => participantId.toString() !== userId
   );
   user.joinedEvents = user.joinedEvents.filter(
     (joinedEventId) => joinedEventId.toString() !== eventId
   );
 
   await Promise.all([event.save(), user.save()]);
-  return serviceResponse(200, "Usuario eliminado del evento exitosamente", { event });
+  const updatedEvent = await Event.findById(event._id)
+    .populate("creator", "userName profileImage")
+    .populate("participantsList", "userName profileImage")
+    .exec();
+  return serviceResponse(200, "Usuario eliminado del evento exitosamente", { event: toPublicEvent(updatedEvent) });
 }
 
 async function deleteEvent(eventId, authUserName) {
-  const eventResult = await findEventById(eventId);
-  if (eventResult.status !== 200) {
-    return eventResult;
+  const lookup = await findEventAndUser(eventId, authUserName);
+  if (lookup.status) {
+    return lookup;
   }
 
-  const event = eventResult.body.event;
-  if (event.creator !== authUserName) {
+  const { event, user } = lookup;
+  if (event.creator.toString() !== user._id.toString()) {
     return serviceResponse(403, "Solo el creador puede eliminar este evento");
   }
 
@@ -220,7 +321,9 @@ async function deleteEvent(eventId, authUserName) {
 
 module.exports = {
   buildEventFilters,
+  buildEventPagination,
   buildEventPayload,
+  toPublicEvent,
   findEventById,
   createEvent,
   listEvents,

@@ -51,14 +51,17 @@ describe("eventController", () => {
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
-  test("lists events", async () => {
+  test("lists paginated events", async () => {
+    const req = { query: { city: "Valencia", page: "2" } };
     const res = createResponse();
-    eventService.listEvents.mockResolvedValue([{ _id: "1" }]);
+    const body = { events: [{ _id: "1" }], pagination: { page: 2 } };
+    eventService.listEvents.mockResolvedValue({ status: 200, body });
 
-    await controller.listEvents({}, res);
+    await controller.listEvents(req, res);
 
+    expect(eventService.listEvents).toHaveBeenCalledWith(req.query);
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith([{ _id: "1" }]);
+    expect(res.json).toHaveBeenCalledWith(body);
   });
 
   test("gets event details by id", async () => {
@@ -76,7 +79,7 @@ describe("eventController", () => {
     const res = createResponse();
     eventService.listEvents.mockRejectedValue(new Error("boom"));
 
-    await controller.listEvents({}, res);
+    await controller.listEvents({ query: {} }, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
   });
