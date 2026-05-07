@@ -13,7 +13,7 @@ jest.mock("./dropDownMenu", () => ({
   DropdownMenu: ({ navItems }) => <div data-testid="avatar-menu">{navItems.length}</div>,
 }));
 
-function renderHeader(path = "/homepage") {
+function renderHeader(path = "/home") {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Header />
@@ -26,18 +26,18 @@ describe("Header", () => {
     mockIsAuthenticated = true;
   });
 
-  test("does not render on public auth pages", () => {
-    const { container } = renderHeader("/");
+  test("does not render on login page", () => {
+    const { container } = renderHeader("/login");
     expect(container).toBeEmptyDOMElement();
   });
 
   test("does not render on registration page", () => {
-    const { container } = renderHeader("/registerpage");
+    const { container } = renderHeader("/register");
     expect(container).toBeEmptyDOMElement();
   });
 
   test("renders navigation and avatar menu for authenticated users", () => {
-    renderHeader("/homepage");
+    renderHeader("/home");
 
     expect(screen.getByText("SportLife")).toBeInTheDocument();
     expect(screen.getByText("Calendario")).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("Header", () => {
   test("renders login actions for anonymous users", () => {
     mockIsAuthenticated = false;
 
-    renderHeader("/homepage");
+    renderHeader("/home");
 
     expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Registro" })).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe("Header", () => {
   });
 
   test("marks the active navigation item", () => {
-    renderHeader("/searchCard2");
+    renderHeader("/events");
 
     expect(screen.getByRole("link", { name: /eventos/i })).toBeInTheDocument();
   });

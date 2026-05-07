@@ -77,13 +77,13 @@ export function DropdownMenu({ navItems = [] }) {
         {navItems.length > 0 && (
           <Divider sx={{ display: { xs: "block", md: "none" } }} />
         )}
-        <MenuItem onClick={handleMenuClose} component={Link} to="/Perfil">
+        <MenuItem onClick={handleMenuClose} component={Link} to="/profile">
           <ListItemIcon>
             <AccountCircleOutlinedIcon fontSize="small" />
           </ListItemIcon>
           Mi perfil
         </MenuItem>
-        <MenuItem onClick={handleMenuClose} component={Link} to="/faqPage">
+        <MenuItem onClick={handleMenuClose} component={Link} to="/faq">
           <ListItemIcon>
             <HelpOutlineOutlinedIcon fontSize="small" />
           </ListItemIcon>

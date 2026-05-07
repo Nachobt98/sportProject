@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CardDetails from "./CardDetails";
 import * as eventsApi from "../api/eventsApi";
@@ -31,7 +31,7 @@ function renderDetails(path = "/events/event-id") {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/events/:eventId" element={<CardDetails />} />
-        <Route path="/searchCard2" element={<div>Events page</div>} />
+        <Route path="/events" element={<div>Events page</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -116,6 +116,6 @@ describe("CardDetails", () => {
 
     expect(await screen.findByText("Evento no encontrado")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /volver/i }));
-    expect(mockNavigate).toHaveBeenCalledWith("/searchCard2");
+    expect(mockNavigate).toHaveBeenCalledWith("/events");
   });
 });

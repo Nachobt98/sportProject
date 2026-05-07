@@ -133,7 +133,7 @@ export function SearchCard2() {
         <Button
           variant="contained"
           startIcon={<AddCircleOutlineIcon />}
-          onClick={() => navigate("/createEvent")}
+          onClick={() => navigate("/events/new")}
         >
           Crear evento
         </Button>

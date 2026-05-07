@@ -28,7 +28,7 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-test("renders the login screen", () => {
+test("redirects the root route to login", () => {
   render(
     <MemoryRouter>
       <App />
@@ -40,7 +40,7 @@ test("renders the login screen", () => {
 
 test("redirects anonymous users away from protected routes", () => {
   render(
-    <MemoryRouter initialEntries={["/homepage"]}>
+    <MemoryRouter initialEntries={["/home"]}>
       <App />
     </MemoryRouter>
   );
@@ -61,6 +61,21 @@ test("renders protected routes for authenticated users", async () => {
   );
 
   expect(await screen.findByText("Article page")).toBeInTheDocument();
+});
+
+test("redirects legacy routes to normalized routes", async () => {
+  localStorage.setItem(
+    "auth",
+    JSON.stringify({ isAuthenticated: true, username: "nacho", token: "token" })
+  );
+
+  render(
+    <MemoryRouter initialEntries={["/homepage"]}>
+      <App />
+    </MemoryRouter>
+  );
+
+  expect(await screen.findByText("Home page")).toBeInTheDocument();
 });
 
 test("redirects unknown routes to login", () => {

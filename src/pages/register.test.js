@@ -68,7 +68,7 @@ describe("RegisterPage", () => {
     expect(mockLogin).toHaveBeenCalledWith("nacho", "token");
 
     jest.runOnlyPendingTimers();
-    expect(mockNavigate).toHaveBeenCalledWith("/homepage");
+    expect(mockNavigate).toHaveBeenCalledWith("/home");
     jest.useRealTimers();
   });
 

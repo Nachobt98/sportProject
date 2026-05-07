@@ -54,10 +54,10 @@ describe("Perfil", () => {
     jest.clearAllMocks();
     mockUser = { ...defaultMockUser };
     global.FileReader = MockFileReader;
-    eventsApi.getUserCreatedEvents.mockResolvedValue([
+    eventsApi.getCurrentUserCreatedEvents.mockResolvedValue([
       { _id: "created-id", name: "Created event", participantsList: [], creator: "nacho" },
     ]);
-    eventsApi.getUserJoinedEvents.mockResolvedValue([
+    eventsApi.getCurrentUserJoinedEvents.mockResolvedValue([
       { _id: "joined-id", name: "Joined event", participantsList: ["nacho"], creator: "other" },
     ]);
     usersApi.updateCurrentUser.mockResolvedValue({ user: { ...mockUser, city: "Madrid" } });
@@ -80,12 +80,12 @@ describe("Perfil", () => {
     expect(screen.getAllByText("Usuario").length).toBeGreaterThan(0);
     expect(screen.getByText("Email sin completar")).toBeInTheDocument();
     expect(screen.getAllByText("Sin completar").length).toBeGreaterThan(0);
-    expect(eventsApi.getUserCreatedEvents).not.toHaveBeenCalled();
-    expect(eventsApi.getUserJoinedEvents).not.toHaveBeenCalled();
+    expect(eventsApi.getCurrentUserCreatedEvents).not.toHaveBeenCalled();
+    expect(eventsApi.getCurrentUserJoinedEvents).not.toHaveBeenCalled();
   });
 
   test("shows event loading errors", async () => {
-    eventsApi.getUserCreatedEvents.mockRejectedValue(new Error("No se pudieron cargar los eventos"));
+    eventsApi.getCurrentUserCreatedEvents.mockRejectedValue(new Error("No se pudieron cargar los eventos"));
 
     renderProfile();
 

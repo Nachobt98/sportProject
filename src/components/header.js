@@ -18,8 +18,8 @@ import { DropdownMenu } from "./dropDownMenu";
 
 const navItems = [
   { label: "Calendario", path: "/calendar", icon: <CalendarMonthOutlinedIcon /> },
-  { label: "Eventos", path: "/searchCard2", icon: <SearchOutlinedIcon /> },
-  { label: "Crear", path: "/createEvent", icon: <AddCircleOutlineIcon /> },
+  { label: "Eventos", path: "/events", icon: <SearchOutlinedIcon /> },
+  { label: "Crear", path: "/events/new", icon: <AddCircleOutlineIcon /> },
   { label: "Contacto", path: "/contact", icon: <ContactSupportOutlinedIcon /> },
 ];
 
@@ -27,7 +27,7 @@ export function Header() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
-  if (location.pathname === "/" || location.pathname === "/registerpage") {
+  if (location.pathname === "/login" || location.pathname === "/register") {
     return null;
   }
 
@@ -47,7 +47,7 @@ export function Header() {
         <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 }, gap: 2 }}>
           <Button
             component={Link}
-            to="/homepage"
+            to="/home"
             color="inherit"
             sx={{
               px: 0,
@@ -99,10 +99,10 @@ export function Header() {
 
           {!isAuthenticated ? (
             <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
-              <Button component={Link} to="/" variant="outlined">
+              <Button component={Link} to="/login" variant="outlined">
                 Login
               </Button>
-              <Button component={Link} to="/registerpage" variant="contained">
+              <Button component={Link} to="/register" variant="contained">
                 Registro
               </Button>
             </Stack>

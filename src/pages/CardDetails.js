@@ -99,7 +99,7 @@ function CardDetails() {
         <Alert
           severity="error"
           action={
-            <Button color="inherit" size="small" onClick={() => navigate("/searchCard2")}>
+            <Button color="inherit" size="small" onClick={() => navigate("/events")}>
               Volver
             </Button>
           }

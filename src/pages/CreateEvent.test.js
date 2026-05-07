@@ -69,7 +69,7 @@ describe("CreateEvent", () => {
       creator: "nacho",
     })));
     jest.runOnlyPendingTimers();
-    expect(mockNavigate).toHaveBeenCalledWith("/searchCard2");
+    expect(mockNavigate).toHaveBeenCalledWith("/events");
     jest.useRealTimers();
   });
 
