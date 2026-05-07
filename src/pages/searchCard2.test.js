@@ -61,6 +61,7 @@ describe("SearchCard2", () => {
     expect(screen.getByText(/cargando eventos/i)).toBeInTheDocument();
     expect(await screen.findByText("Padel Valencia")).toBeInTheDocument();
     expect(screen.getByText("Futbol Madrid")).toBeInTheDocument();
+    expect(eventsApi.getEvents).toHaveBeenCalledWith({ city: "", sport: "", date: "" });
   });
 
   test("shows loading errors", async () => {
@@ -88,17 +89,25 @@ describe("SearchCard2", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/events/new");
   });
 
-  test("clears filters", async () => {
+  test("clears filters and fetches the unfiltered event list", async () => {
     eventsApi.getEvents.mockResolvedValue(events);
 
     renderSearch();
-    await waitFor(() => expect(screen.getByText("Padel Valencia")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: /limpiar/i }));
+    await waitFor(() => expect(eventsApi.getEvents).toHaveBeenCalledTimes(1));
 
-    expect(screen.getByText("Padel Valencia")).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByLabelText(/ciudad/i));
+    fireEvent.click(screen.getByRole("option", { name: "Valencia" }));
+    await waitFor(() =>
+      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "Valencia", sport: "", date: "" })
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /limpiar/i }));
+    await waitFor(() =>
+      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "", sport: "", date: "" })
+    );
   });
 
-  test("filters, updates and removes events", async () => {
+  test("fetches filtered events from the backend", async () => {
     eventsApi.getEvents.mockResolvedValue(events);
 
     renderSearch();
@@ -106,7 +115,17 @@ describe("SearchCard2", () => {
 
     fireEvent.mouseDown(screen.getByLabelText(/ciudad/i));
     fireEvent.click(screen.getByRole("option", { name: "Valencia" }));
-    expect(screen.queryByText("Futbol Madrid")).not.toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(eventsApi.getEvents).toHaveBeenLastCalledWith({ city: "Valencia", sport: "", date: "" })
+    );
+  });
+
+  test("updates and removes events from the current list", async () => {
+    eventsApi.getEvents.mockResolvedValue(events);
+
+    renderSearch();
+    await waitFor(() => expect(screen.getByText("Padel Valencia")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("change 1"));
     expect(screen.getByText("Padel Valencia updated")).toBeInTheDocument();
