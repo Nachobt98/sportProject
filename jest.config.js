@@ -13,6 +13,7 @@ module.exports = {
     "\\.(jpg|jpeg|png|gif|webp|svg)$": "<rootDir>/src/__mocks__/fileMock.js",
   },
   collectCoverageFrom: [
+    "backend/src/controllers/**/*.js",
     "backend/src/services/**/*.js",
     "backend/src/middlewares/**/*.js",
     "backend/src/utils/**/*.js",
