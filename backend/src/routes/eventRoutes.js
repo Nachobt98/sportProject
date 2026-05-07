@@ -8,6 +8,7 @@ const sameUser = [authenticateRequest, requireSameUser];
 
 router.get("/events", ...authenticated, eventController.listEvents);
 router.post("/events", ...authenticated, eventController.createEvent);
+router.get("/events/:eventId", ...authenticated, eventController.getEventById);
 router.delete("/events/:eventId", ...authenticated, eventController.deleteEvent);
 
 router.post("/events/:eventId/join", ...authenticated, eventController.joinEvent);
