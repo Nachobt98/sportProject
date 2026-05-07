@@ -52,7 +52,7 @@ export function RegisterPage() {
       addUser(data.user);
       login(data.user.userName, data.token);
       setOpenSnackbar(true);
-      setTimeout(() => navigate("/homepage"), 1200);
+      setTimeout(() => navigate("/home"), 1200);
     } catch (error) {
       setSubmitError(error.message || "No se pudo conectar con el servidor.");
     } finally {
@@ -126,7 +126,7 @@ export function RegisterPage() {
               </Button>
               <Typography variant="body2" color="text.secondary">
                 Ya tienes una cuenta?{" "}
-                <MuiLink component={RouterLink} to="/">
+                <MuiLink component={RouterLink} to="/login">
                   Inicia sesion
                 </MuiLink>
               </Typography>
