@@ -18,7 +18,10 @@ module.exports = {
     "backend/src/middlewares/**/*.js",
     "backend/src/utils/**/*.js",
     "src/api/**/*.js",
+    "src/components/dropDownMenu.js",
+    "src/components/header.js",
     "src/context/**/*.js",
+    "src/pages/perfil.js",
   ],
   coverageReporters: ["text", "lcov"],
 };

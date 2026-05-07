@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   city: String,
   email: { type: String, required: true, unique: true, trim: true },
   birthdate: Date,
+  profileImage: String,
   password: { type: String, required: true },
   joinedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
 });

@@ -24,7 +24,7 @@ const navItems = [
 ];
 
 export function Header() {
-  const { isAuthenticated, username } = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   if (location.pathname === "/" || location.pathname === "/registerpage") {
@@ -43,7 +43,7 @@ export function Header() {
         backdropFilter: "blur(12px)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth={false}>
         <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 }, gap: 2 }}>
           <Button
             component={Link}
@@ -98,7 +98,7 @@ export function Header() {
           <Box sx={{ flex: { xs: 1, md: 0 } }} />
 
           {!isAuthenticated ? (
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
               <Button component={Link} to="/" variant="outlined">
                 Login
               </Button>
@@ -107,16 +107,9 @@ export function Header() {
               </Button>
             </Stack>
           ) : (
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ display: { xs: "none", sm: "block" } }}
-              >
-                {username}
-              </Typography>
+            <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
               <DropdownMenu navItems={navItems} />
-            </Stack>
+            </Box>
           )}
         </Toolbar>
       </Container>

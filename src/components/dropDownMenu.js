@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Avatar,
   Divider,
   IconButton,
   ListItemIcon,
@@ -10,14 +11,17 @@ import {
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-import MenuIcon from "@mui/icons-material/Menu";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { useUser } from "../context/userContext";
 
+function getInitials(userName = "") {
+  return userName.slice(0, 2).toUpperCase();
+}
+
 export function DropdownMenu({ navItems = [] }) {
   const { logout } = useAuth();
-  const { deleteUser } = useUser();
+  const { users, deleteUser } = useUser();
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleMenuOpen = (event) => {
@@ -30,16 +34,25 @@ export function DropdownMenu({ navItems = [] }) {
 
   return (
     <>
-      <Tooltip title="Menu">
+      <Tooltip title="Abrir menu de usuario">
         <IconButton
+          aria-label="Abrir menu de usuario"
           onClick={handleMenuOpen}
           sx={{
+            p: 0.4,
             border: "1px solid",
             borderColor: "divider",
-            color: "text.secondary",
+            bgcolor: "background.paper",
+            "&:hover": { bgcolor: "background.paper", borderColor: "primary.light" },
           }}
         >
-          <MenuIcon />
+          <Avatar
+            src={users.profileImage || ""}
+            alt={users.userName || "Usuario"}
+            sx={{ width: 40, height: 40, fontSize: 14, fontWeight: 700 }}
+          >
+            {getInitials(users.userName)}
+          </Avatar>
         </IconButton>
       </Tooltip>
       <Menu

@@ -86,6 +86,24 @@ describe("authController", () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+  test("rejects invalid profile images during registration", async () => {
+    const res = createResponse();
+
+    await controller.register({
+      body: {
+        firstName: "Nacho",
+        lastName: "Bru",
+        userName: "nacho",
+        email: "nacho@example.com",
+        password: "Input123",
+        profileImage: "invalid-image",
+      },
+    }, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(User.findOne).not.toHaveBeenCalled();
+  });
+
   test("rejects duplicated users", async () => {
     User.findOne = jest.fn().mockReturnValue(queryResult({ userName: "nacho" }));
     const res = createResponse();
