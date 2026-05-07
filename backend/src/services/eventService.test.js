@@ -102,6 +102,17 @@ describe("eventService", () => {
     expect(service.buildEventPagination({ page: "bad", limit: "1000" })).toEqual({ page: 1, limit: 50, skip: 0 });
   });
 
+  test("builds editable event payloads", () => {
+    const result = service.buildEditableEventPayload(validPayload);
+
+    expect(result.value).toEqual(expect.objectContaining({
+      name: "Padel",
+      description: "Match",
+      participants: 4,
+      date: expect.any(Date),
+    }));
+  });
+
   test("builds valid event payloads with creator ObjectId", () => {
     const creatorId = objectId("creator-id");
     const result = service.buildEventPayload(validPayload, creatorId);
@@ -244,6 +255,34 @@ describe("eventService", () => {
     expect(user.joinedEvents).toHaveLength(1);
   });
 
+  test("updates owned events", async () => {
+    const event = createEventDoc({ creator: objectId("user-id"), participantsList: [objectId("player-id")] });
+    const user = createUserDoc();
+    Event.findById
+      .mockReturnValueOnce(queryResult(event))
+      .mockReturnValueOnce(populatedQuery({ ...event, ...validPayload, creator: { userName: "nacho" }, participantsList: [{ userName: "player" }] }));
+    User.findOne.mockReturnValue(queryResult(user));
+
+    const result = await service.updateEvent("event-id", { ...validPayload, name: "Updated match", participants: 2 }, "nacho");
+
+    expect(result.status).toBe(200);
+    expect(event.name).toBe("Updated match");
+    expect(event.save).toHaveBeenCalled();
+    expect(result.body.event).toEqual(expect.objectContaining({ creator: "nacho", participantsList: ["player"] }));
+  });
+
+  test("rejects invalid event updates", async () => {
+    const user = createUserDoc();
+    Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: objectId("other-id") })));
+    User.findOne.mockReturnValue(queryResult(user));
+    await expect(service.updateEvent("event-id", validPayload, "nacho")).resolves.toEqual(expect.objectContaining({ status: 403 }));
+
+    Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: user._id, participantsList: [objectId("one"), objectId("two")] })));
+    await expect(service.updateEvent("event-id", { ...validPayload, participants: 1 }, "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+
+    await expect(service.updateEvent("event-id", { ...validPayload, date: "bad-date" }, "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+  });
+
   test("deletes owned events and rejects foreign deletes", async () => {
     const user = createUserDoc();
     Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: user._id })));
@@ -262,6 +301,7 @@ describe("eventService", () => {
 
     await expect(service.joinUserToEvent("bad", "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
     await expect(service.cancelUserEvent("bad", "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    await expect(service.updateEvent("bad", validPayload, "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
     await expect(service.deleteEvent("bad", "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
   });
 });
