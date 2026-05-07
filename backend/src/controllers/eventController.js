@@ -2,10 +2,34 @@ const eventService = require("../services/eventService");
 const User = require("../models/User");
 const { normalizeString } = require("../utils/strings");
 
+function sendServiceResult(res, result) {
+  return res.status(result.status).json(result.body);
+}
+
+function getAuthenticatedUserName(req) {
+  return req.auth.userName;
+}
+
+function getParamUserName(req) {
+  return req.params.userName;
+}
+
+function createServiceHandler(serviceCall, errorMessage) {
+  return async function handleServiceRequest(req, res) {
+    try {
+      const result = await serviceCall(req);
+      return sendServiceResult(res, result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: errorMessage });
+    }
+  };
+}
+
 async function createEvent(req, res) {
   try {
-    const result = await eventService.createEvent(req.body, req.auth.userName);
-    return res.status(result.status).json(result.body);
+    const result = await eventService.createEvent(req.body, getAuthenticatedUserName(req));
+    return sendServiceResult(res, result);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Error al crear el evento" });
@@ -38,65 +62,35 @@ async function listUserEvents(req, res) {
   }
 }
 
-async function joinEvent(req, res) {
-  try {
-    const result = await eventService.joinUserToEvent(req.params.eventId, req.auth.userName);
-    return res.status(result.status).json(result.body);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al unir al usuario al evento" });
-  }
-}
+const joinEvent = createServiceHandler(
+  (req) => eventService.joinUserToEvent(req.params.eventId, getAuthenticatedUserName(req)),
+  "Error al unir al usuario al evento"
+);
 
-async function joinEventForUser(req, res) {
-  try {
-    const result = await eventService.joinUserToEvent(req.params.eventId, req.params.userName);
-    return res.status(result.status).json(result.body);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al agregar usuario al evento" });
-  }
-}
+const joinEventForUser = createServiceHandler(
+  (req) => eventService.joinUserToEvent(req.params.eventId, getParamUserName(req)),
+  "Error al agregar usuario al evento"
+);
 
-async function cancelEventJoin(req, res) {
-  try {
-    const result = await eventService.cancelUserEvent(req.params.eventId, req.auth.userName);
-    return res.status(result.status).json(result.body);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al cancelar la participacion" });
-  }
-}
+const cancelEventJoin = createServiceHandler(
+  (req) => eventService.cancelUserEvent(req.params.eventId, getAuthenticatedUserName(req)),
+  "Error al cancelar la participacion"
+);
 
-async function cancelEventJoinForUser(req, res) {
-  try {
-    const result = await eventService.cancelUserEvent(req.params.eventId, req.params.userName);
-    return res.status(result.status).json(result.body);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al cancelar la participacion" });
-  }
-}
+const cancelEventJoinForUser = createServiceHandler(
+  (req) => eventService.cancelUserEvent(req.params.eventId, getParamUserName(req)),
+  "Error al cancelar la participacion"
+);
 
-async function listJoinedEvents(req, res) {
-  try {
-    const result = await eventService.listJoinedEvents(req.params.userName);
-    return res.status(result.status).json(result.body);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al obtener los eventos unidos del usuario" });
-  }
-}
+const listJoinedEvents = createServiceHandler(
+  (req) => eventService.listJoinedEvents(req.params.userName),
+  "Error al obtener los eventos unidos del usuario"
+);
 
-async function deleteEvent(req, res) {
-  try {
-    const result = await eventService.deleteEvent(req.params.eventId, req.auth.userName);
-    return res.status(result.status).json(result.body);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al eliminar el evento" });
-  }
-}
+const deleteEvent = createServiceHandler(
+  (req) => eventService.deleteEvent(req.params.eventId, getAuthenticatedUserName(req)),
+  "Error al eliminar el evento"
+);
 
 module.exports = {
   createEvent,
