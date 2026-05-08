@@ -1,8 +1,33 @@
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
+const MAX_EMAIL_LENGTH = 254;
+
+function hasWhitespace(value) {
+  return value.split("").some((character) => character.trim() === "");
+}
 
 function isValidEmail(email) {
-  return typeof email === "string" && EMAIL_PATTERN.test(email.trim());
+  if (typeof email !== "string") {
+    return false;
+  }
+
+  const normalizedEmail = email.trim();
+  if (!normalizedEmail || normalizedEmail.length > MAX_EMAIL_LENGTH || hasWhitespace(normalizedEmail)) {
+    return false;
+  }
+
+  const atIndex = normalizedEmail.indexOf("@");
+  if (atIndex <= 0 || atIndex !== normalizedEmail.lastIndexOf("@")) {
+    return false;
+  }
+
+  const localPart = normalizedEmail.slice(0, atIndex);
+  const domain = normalizedEmail.slice(atIndex + 1);
+  if (!localPart || !domain || domain.startsWith(".") || domain.endsWith(".")) {
+    return false;
+  }
+
+  const domainParts = domain.split(".");
+  return domainParts.length >= 2 && domainParts.every(Boolean);
 }
 
 function isValidPassword(password) {
@@ -24,6 +49,7 @@ function parseOptionalDate(value) {
 
 module.exports = {
   MIN_PASSWORD_LENGTH,
+  MAX_EMAIL_LENGTH,
   isValidEmail,
   isValidPassword,
   parseOptionalDate,
