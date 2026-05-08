@@ -147,6 +147,18 @@ All backend routes are mounted under `/api`.
 
 Public API responses are serialized through backend DTOs under `backend/src/dtos`. User and event responses expose only the fields consumed by the current API contract, keep `id`/`_id` compatibility, serialize internal ObjectId references to strings or public user names, and avoid leaking sensitive or Mongoose-internal fields such as `password` and `__v`.
 
+Event-domain and current-user service errors now include a stable `error.code` while preserving the existing top-level `message` field for frontend compatibility. Example:
+
+```json
+{
+  "message": "El evento ya no tiene plazas disponibles",
+  "error": {
+    "code": "EVENT_FULL",
+    "message": "El evento ya no tiene plazas disponibles"
+  }
+}
+```
+
 ## Environment variables
 
 | Variable | Default | Description |
@@ -222,6 +234,7 @@ The project is in a transitional but increasingly clean state:
 - Current-user and event participation flows are token-based instead of username-in-URL based.
 - Event user relationships are stored as `ObjectId` references while API responses expose user names for the current UI.
 - User and event responses now pass through explicit DTOs before leaving the backend.
+- Event-domain and current-user service errors expose stable machine-readable codes while keeping legacy message compatibility.
 - Event search is backend-filtered and paginated.
 - Profile data uses `/api/users/me`.
 - Backend code is separated into routes, controllers, DTOs, services, models and utilities.
@@ -230,18 +243,20 @@ The project is in a transitional but increasingly clean state:
 Known cleanup areas:
 
 - Some production-hardening work is still pending around validation, rate limiting and payload limits.
+- Auth controller error normalization is still pending and should follow the event/user service error pattern.
 - Event editing currently updates the core event fields; richer flows such as cancellation/status changes are still pending.
 - Jest remains as the test runner for compatibility with the current test suite. A future Vitest migration can be done as a separate focused PR.
 
 ## Suggested next priorities
 
-1. Harden auth and security: rate limiting, better validation and production secrets.
-2. Add payload limits for base64 profile images.
-3. Improve frontend state/data fetching with clearer hooks or React Query.
-4. Improve UX with skeletons, confirmation dialogs and consistent empty states.
-5. Add event lifecycle states such as open, full, cancelled and past.
-6. Add deployment documentation.
-7. Consider migrating Jest to Vitest once the Vite build migration is stable.
+1. Normalize auth controller errors and validation.
+2. Harden auth and security: rate limiting, better validation and production secrets.
+3. Add payload limits for base64 profile images.
+4. Improve frontend state/data fetching with clearer hooks or React Query.
+5. Improve UX with skeletons, confirmation dialogs and consistent empty states.
+6. Add event lifecycle states such as open, full, cancelled and past.
+7. Add deployment documentation.
+8. Consider migrating Jest to Vitest once the Vite build migration is stable.
 
 ## PR discipline
 

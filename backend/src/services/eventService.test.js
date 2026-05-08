@@ -15,6 +15,7 @@ jest.mock("../models/User", () => ({
 const mongoose = require("mongoose");
 const Event = require("../models/Event");
 const User = require("../models/User");
+const { ERROR_CODES } = require("../utils/apiResponses");
 const service = require("./eventService");
 
 function queryResult(value) {
@@ -128,7 +129,9 @@ describe("eventService", () => {
   });
 
   test("rejects invalid event payloads", () => {
-    expect(service.buildEventPayload({}, objectId("creator-id")).error).toMatch("Faltan campos obligatorios");
+    const missingFields = service.buildEventPayload({}, objectId("creator-id"));
+    expect(missingFields.error).toMatch("Faltan campos obligatorios");
+    expect(missingFields.code).toBe(ERROR_CODES.VALIDATION_ERROR);
     expect(service.buildEventPayload({ ...validPayload, date: "bad-date" }, objectId("creator-id")).error).toBe("La fecha del evento no es valida");
     expect(service.buildEventPayload({ ...validPayload, participants: 0 }, objectId("creator-id")).error).toBe("El numero de participantes debe ser mayor que cero");
   });
@@ -147,11 +150,15 @@ describe("eventService", () => {
 
   test("rejects invalid or missing event detail lookups", async () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(false);
-    await expect(service.findEventById("bad-id")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    const invalidResult = await service.findEventById("bad-id");
+    expect(invalidResult.status).toBe(400);
+    expect(invalidResult.body.error.code).toBe(ERROR_CODES.INVALID_EVENT_ID);
 
     mongoose.Types.ObjectId.isValid.mockReturnValue(true);
     Event.findById.mockReturnValue(populatedQuery(null));
-    await expect(service.findEventById("event-id")).resolves.toEqual(expect.objectContaining({ status: 404 }));
+    const missingResult = await service.findEventById("event-id");
+    expect(missingResult.status).toBe(404);
+    expect(missingResult.body.error.code).toBe(ERROR_CODES.EVENT_NOT_FOUND);
   });
 
   test("creates events with creator ObjectId", async () => {
@@ -167,7 +174,9 @@ describe("eventService", () => {
   test("rejects event creation when creator is missing", async () => {
     User.findOne.mockReturnValue(queryResult(null));
 
-    await expect(service.createEvent(validPayload, "missing")).resolves.toEqual(expect.objectContaining({ status: 404 }));
+    const result = await service.createEvent(validPayload, "missing");
+    expect(result.status).toBe(404);
+    expect(result.body.error.code).toBe(ERROR_CODES.USER_NOT_FOUND);
   });
 
   test("lists filtered events with pagination metadata", async () => {
@@ -199,7 +208,9 @@ describe("eventService", () => {
     User.findOne.mockReturnValue(queryResult(null));
 
     await expect(service.listCreatedEvents("missing")).resolves.toEqual([]);
-    await expect(service.listJoinedEvents("missing")).resolves.toEqual(expect.objectContaining({ status: 404 }));
+    const joinedResult = await service.listJoinedEvents("missing");
+    expect(joinedResult.status).toBe(404);
+    expect(joinedResult.body.error.code).toBe(ERROR_CODES.USER_NOT_FOUND);
   });
 
   test("joins users to events", async () => {
@@ -218,14 +229,30 @@ describe("eventService", () => {
   });
 
   test("rejects invalid joins", async () => {
-    await expect(service.joinUserToEvent("event-id", "")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    const missingParams = await service.joinUserToEvent("event-id", "");
+    expect(missingParams.status).toBe(400);
+    expect(missingParams.body.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
 
     Event.findById.mockReturnValue(queryResult(createEventDoc({ participantsList: [objectId("user-id")] })));
     User.findOne.mockReturnValue(queryResult(createUserDoc()));
-    await expect(service.joinUserToEvent("event-id", "nacho")).resolves.toEqual(expect.objectContaining({ status: 409 }));
+    const duplicateResult = await service.joinUserToEvent("event-id", "nacho");
+    expect(duplicateResult.status).toBe(409);
+    expect(duplicateResult.body.error.code).toBe(ERROR_CODES.EVENT_ALREADY_JOINED);
 
     Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: objectId("user-id") })));
-    await expect(service.joinUserToEvent("event-id", "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    const creatorResult = await service.joinUserToEvent("event-id", "nacho");
+    expect(creatorResult.status).toBe(400);
+    expect(creatorResult.body.error.code).toBe(ERROR_CODES.EVENT_CREATOR_CANNOT_JOIN);
+  });
+
+  test("rejects joins when event is full", async () => {
+    Event.findById.mockReturnValue(queryResult(createEventDoc({ participants: 1, participantsList: [objectId("other-id")] })));
+    User.findOne.mockReturnValue(queryResult(createUserDoc()));
+
+    const result = await service.joinUserToEvent("event-id", "nacho");
+
+    expect(result.status).toBe(409);
+    expect(result.body.error.code).toBe(ERROR_CODES.EVENT_FULL);
   });
 
   test("cancels user participation", async () => {
@@ -263,12 +290,18 @@ describe("eventService", () => {
     const user = createUserDoc();
     Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: objectId("other-id") })));
     User.findOne.mockReturnValue(queryResult(user));
-    await expect(service.updateEvent("event-id", validPayload, "nacho")).resolves.toEqual(expect.objectContaining({ status: 403 }));
+    const forbiddenResult = await service.updateEvent("event-id", validPayload, "nacho");
+    expect(forbiddenResult.status).toBe(403);
+    expect(forbiddenResult.body.error.code).toBe(ERROR_CODES.EVENT_FORBIDDEN);
 
     Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: user._id, participantsList: [objectId("one"), objectId("two")] })));
-    await expect(service.updateEvent("event-id", { ...validPayload, participants: 1 }, "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    const capacityResult = await service.updateEvent("event-id", { ...validPayload, participants: 1 }, "nacho");
+    expect(capacityResult.status).toBe(400);
+    expect(capacityResult.body.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
 
-    await expect(service.updateEvent("event-id", { ...validPayload, date: "bad-date" }, "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    const invalidDateResult = await service.updateEvent("event-id", { ...validPayload, date: "bad-date" }, "nacho");
+    expect(invalidDateResult.status).toBe(400);
+    expect(invalidDateResult.body.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
   });
 
   test("deletes owned events and rejects foreign deletes", async () => {
@@ -281,15 +314,28 @@ describe("eventService", () => {
     await expect(service.deleteEvent("event-id", "nacho")).resolves.toEqual(expect.objectContaining({ status: 200 }));
 
     Event.findById.mockReturnValue(queryResult(createEventDoc({ creator: objectId("other-id") })));
-    await expect(service.deleteEvent("event-id", "nacho")).resolves.toEqual(expect.objectContaining({ status: 403 }));
+    const forbiddenResult = await service.deleteEvent("event-id", "nacho");
+    expect(forbiddenResult.status).toBe(403);
+    expect(forbiddenResult.body.error.code).toBe(ERROR_CODES.EVENT_FORBIDDEN);
   });
 
   test("rejects invalid event identifiers", async () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
-    await expect(service.joinUserToEvent("bad", "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
-    await expect(service.cancelUserEvent("bad", "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
-    await expect(service.updateEvent("bad", validPayload, "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
-    await expect(service.deleteEvent("bad", "nacho")).resolves.toEqual(expect.objectContaining({ status: 400 }));
+    const joinResult = await service.joinUserToEvent("bad", "nacho");
+    expect(joinResult.status).toBe(400);
+    expect(joinResult.body.error.code).toBe(ERROR_CODES.INVALID_EVENT_ID);
+
+    const cancelResult = await service.cancelUserEvent("bad", "nacho");
+    expect(cancelResult.status).toBe(400);
+    expect(cancelResult.body.error.code).toBe(ERROR_CODES.INVALID_EVENT_ID);
+
+    const updateResult = await service.updateEvent("bad", validPayload, "nacho");
+    expect(updateResult.status).toBe(400);
+    expect(updateResult.body.error.code).toBe(ERROR_CODES.INVALID_EVENT_ID);
+
+    const deleteResult = await service.deleteEvent("bad", "nacho");
+    expect(deleteResult.status).toBe(400);
+    expect(deleteResult.body.error.code).toBe(ERROR_CODES.INVALID_EVENT_ID);
   });
 });
