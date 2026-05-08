@@ -57,11 +57,11 @@ function persistUser(user) {
 }
 
 export const UserProvider = ({ children }) => {
-  const [users, setUsersState] = useState(getStoredUser);
+  const [users, updateUsers] = useState(getStoredUser);
 
   const setUsers = useCallback((user) => {
     const sanitizedUser = persistUser(user);
-    setUsersState(sanitizedUser);
+    updateUsers(sanitizedUser);
   }, []);
 
   const addUser = useCallback((user) => {
@@ -69,7 +69,7 @@ export const UserProvider = ({ children }) => {
   }, [setUsers]);
 
   const deleteUser = useCallback(() => {
-    setUsersState({});
+    updateUsers({});
     localStorage.removeItem(USER_STORAGE_KEY);
   }, []);
 
@@ -78,7 +78,7 @@ export const UserProvider = ({ children }) => {
   }, [users]);
 
   const updateUserData = useCallback((newData) => {
-    setUsersState((prevUserData) => {
+    updateUsers((prevUserData) => {
       const updatedUser = newData.userName !== undefined
         ? { ...prevUserData, userName: newData.userName }
         : { ...prevUserData, ...newData };

@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentSession } from "../api/authApi";
 import { useUser } from "./userContext";
@@ -44,7 +44,7 @@ function getAnonymousAuth() {
   };
 }
 
-function getStoredAuth() {
+function parseStoredAuth() {
   try {
     return sanitizeAuth(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "{}"));
   } catch {
@@ -60,7 +60,7 @@ function persistAuth(auth) {
 }
 
 export const AuthProvider = ({ children }) => {
-  const storedAuth = getStoredAuth();
+  const storedAuth = parseStoredAuth();
   const initialAuth = storedAuth.isAuthenticated && storedAuth.token
     ? storedAuth
     : getAnonymousAuth();
@@ -113,14 +113,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const handleUnauthorized = () => logout();
 
-    window.addEventListener("sportlife:unauthorized", handleUnauthorized);
+    globalThis.addEventListener("sportlife:unauthorized", handleUnauthorized);
     return () => {
-      window.removeEventListener("sportlife:unauthorized", handleUnauthorized);
+      globalThis.removeEventListener("sportlife:unauthorized", handleUnauthorized);
     };
   }, [logout]);
 
+  const contextValue = useMemo(
+    () => ({ ...auth, login, logout }),
+    [auth, logout]
+  );
+
   return (
-    <AuthContext.Provider value={{ ...auth, login, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

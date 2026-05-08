@@ -141,7 +141,7 @@ export function RegisterPage() {
               <Stack spacing={0.75}>
                 <Typography variant="subtitle2">Foto de perfil</Typography>
                 <Button variant="outlined" component="label">
-                  Seleccionar imagen
+                  <span>Seleccionar imagen</span>
                   <input
                     hidden
                     type="file"
