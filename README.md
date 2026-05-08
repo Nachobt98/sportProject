@@ -36,6 +36,7 @@ sportProject/
 │  ├─ server.js
 │  ├─ config/
 │  ├─ controllers/
+│  ├─ dtos/
 │  ├─ middlewares/
 │  ├─ models/
 │  ├─ routes/
@@ -144,6 +145,8 @@ All backend routes are mounted under `/api`.
 }
 ```
 
+Public API responses are serialized through backend DTOs under `backend/src/dtos`. User and event responses expose only the fields consumed by the current API contract, keep `id`/`_id` compatibility, serialize internal ObjectId references to strings or public user names, and avoid leaking sensitive or Mongoose-internal fields such as `password` and `__v`.
+
 ## Environment variables
 
 | Variable | Default | Description |
@@ -218,9 +221,10 @@ The project is in a transitional but increasingly clean state:
 - Event edition prevents reducing available places below the number of already joined users.
 - Current-user and event participation flows are token-based instead of username-in-URL based.
 - Event user relationships are stored as `ObjectId` references while API responses expose user names for the current UI.
+- User and event responses now pass through explicit DTOs before leaving the backend.
 - Event search is backend-filtered and paginated.
 - Profile data uses `/api/users/me`.
-- Backend code is separated into routes, controllers, services, models and utilities.
+- Backend code is separated into routes, controllers, DTOs, services, models and utilities.
 - Tests and SonarCloud act as a quality gate for future PRs.
 
 Known cleanup areas:
