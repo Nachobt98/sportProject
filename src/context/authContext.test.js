@@ -22,8 +22,9 @@ function Consumer() {
   return (
     <div>
       <span>{isAuthenticated ? "authenticated" : "anonymous"}</span>
-      <span>{username}</span>
+      <span data-testid="username">{username}</span>
       <button onClick={() => login("nacho", "token")}>login</button>
+      <button onClick={() => login("<admin>", "tok<>en!!")}>unsafe login</button>
       <button onClick={() => logout()}>logout</button>
       <button onClick={() => logout(false)}>logout silent</button>
     </div>
@@ -57,6 +58,18 @@ describe("AuthProvider", () => {
 
     expect(screen.getByText("authenticated")).toBeInTheDocument();
     expect(localStorage.getItem("auth")).toContain("token");
+  });
+
+  test("sanitizes auth data before storing it", () => {
+    renderAuth();
+    fireEvent.click(screen.getByText("unsafe login"));
+
+    expect(screen.getByTestId("username")).toHaveTextContent("admin");
+    expect(JSON.parse(localStorage.getItem("auth"))).toEqual({
+      isAuthenticated: true,
+      username: "admin",
+      token: "token",
+    });
   });
 
   test("logs out and redirects", () => {
