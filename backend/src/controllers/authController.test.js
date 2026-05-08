@@ -18,6 +18,7 @@ jest.mock("../utils/logger", () => ({
 
 const User = require("../models/User");
 const authService = require("../services/authService");
+const { ERROR_CODES } = require("../utils/apiResponses");
 const controller = require("./authController");
 
 function createResponse() {
@@ -29,6 +30,23 @@ function createResponse() {
 
 function queryResult(value) {
   return { exec: jest.fn().mockResolvedValue(value) };
+}
+
+function validRegisterBody(overrides = {}) {
+  return {
+    firstName: "Nacho",
+    lastName: "Bru",
+    userName: "nacho",
+    email: "nacho@example.com",
+    password: "Input123",
+    ...overrides,
+  };
+}
+
+function expectErrorCode(res, code) {
+  expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+    error: expect.objectContaining({ code }),
+  }));
 }
 
 describe("authController", () => {
@@ -44,16 +62,9 @@ describe("authController", () => {
     User.mockImplementation(() => savedUser);
     const res = createResponse();
 
-    await controller.register({
-      body: {
-        firstName: "Nacho",
-        lastName: "Bru",
-        userName: "nacho",
-        email: "nacho@example.com",
-        password: "Input123",
-      },
-    }, res);
+    await controller.register({ body: validRegisterBody({ email: "NACHO@example.com" }) }, res);
 
+    expect(User).toHaveBeenCalledWith(expect.objectContaining({ email: "nacho@example.com" }));
     expect(savedUser.save).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ token: "session-token" }));
@@ -65,17 +76,10 @@ describe("authController", () => {
     });
     const res = createResponse();
 
-    await controller.register({
-      body: {
-        firstName: "Nacho",
-        lastName: "Bru",
-        userName: "nacho",
-        email: "nacho@example.com",
-        password: "Input123",
-      },
-    }, res);
+    await controller.register({ body: validRegisterBody() }, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
+    expectErrorCode(res, ERROR_CODES.INTERNAL_ERROR);
   });
 
   test("rejects incomplete registration data", async () => {
@@ -84,23 +88,46 @@ describe("authController", () => {
     await controller.register({ body: { userName: "nacho" } }, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+    expectErrorCode(res, ERROR_CODES.VALIDATION_ERROR);
+  });
+
+  test("rejects invalid registration email", async () => {
+    const res = createResponse();
+
+    await controller.register({ body: validRegisterBody({ email: "bad-email" }) }, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expectErrorCode(res, ERROR_CODES.VALIDATION_ERROR);
+    expect(User.findOne).not.toHaveBeenCalled();
+  });
+
+  test("rejects short registration passwords", async () => {
+    const res = createResponse();
+
+    await controller.register({ body: validRegisterBody({ password: "short" }) }, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expectErrorCode(res, ERROR_CODES.VALIDATION_ERROR);
+    expect(User.findOne).not.toHaveBeenCalled();
+  });
+
+  test("rejects invalid registration birthdates", async () => {
+    const res = createResponse();
+
+    await controller.register({ body: validRegisterBody({ birthdate: "bad-date" }) }, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expectErrorCode(res, ERROR_CODES.VALIDATION_ERROR);
+    expect(User.findOne).not.toHaveBeenCalled();
   });
 
   test("rejects invalid profile images during registration", async () => {
     const res = createResponse();
 
-    await controller.register({
-      body: {
-        firstName: "Nacho",
-        lastName: "Bru",
-        userName: "nacho",
-        email: "nacho@example.com",
-        password: "Input123",
-        profileImage: "invalid-image",
-      },
-    }, res);
+    await controller.register({ body: validRegisterBody({ profileImage: "invalid-image" }) }, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+    expectErrorCode(res, ERROR_CODES.VALIDATION_ERROR);
     expect(User.findOne).not.toHaveBeenCalled();
   });
 
@@ -108,17 +135,10 @@ describe("authController", () => {
     User.findOne = jest.fn().mockReturnValue(queryResult({ userName: "nacho" }));
     const res = createResponse();
 
-    await controller.register({
-      body: {
-        firstName: "Nacho",
-        lastName: "Bru",
-        userName: "nacho",
-        email: "nacho@example.com",
-        password: "Input123",
-      },
-    }, res);
+    await controller.register({ body: validRegisterBody() }, res);
 
     expect(res.status).toHaveBeenCalledWith(409);
+    expectErrorCode(res, ERROR_CODES.DUPLICATE_USER);
   });
 
   test("logs in valid users", async () => {
@@ -165,12 +185,14 @@ describe("authController", () => {
 
     await controller.login({ body: { userName: "nacho", password: "Input123" } }, res);
     expect(res.status).toHaveBeenCalledWith(401);
+    expectErrorCode(res, ERROR_CODES.AUTH_INVALID_CREDENTIALS);
 
     User.findOne = jest.fn().mockReturnValue(queryResult({ userName: "nacho", password: "hash" }));
     authService.verifyPassword.mockResolvedValue(false);
 
     await controller.login({ body: { userName: "nacho", password: "Input123" } }, res);
     expect(res.status).toHaveBeenCalledWith(401);
+    expectErrorCode(res, ERROR_CODES.AUTH_INVALID_CREDENTIALS);
   });
 
   test("handles login errors", async () => {
@@ -182,6 +204,7 @@ describe("authController", () => {
     await controller.login({ body: { userName: "nacho", password: "Input123" } }, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
+    expectErrorCode(res, ERROR_CODES.INTERNAL_ERROR);
   });
 
   test("rejects invalid login data", async () => {
@@ -190,6 +213,7 @@ describe("authController", () => {
     await controller.login({ body: { userName: "" } }, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+    expectErrorCode(res, ERROR_CODES.AUTH_MISSING_CREDENTIALS);
   });
 
   test("gets current session", async () => {
@@ -208,6 +232,7 @@ describe("authController", () => {
 
     await controller.getSession({ auth: { userName: "missing" } }, res);
     expect(res.status).toHaveBeenCalledWith(404);
+    expectErrorCode(res, ERROR_CODES.USER_NOT_FOUND);
 
     User.findOne = jest.fn().mockReturnValue({
       exec: jest.fn().mockRejectedValue(new Error("boom")),
@@ -215,5 +240,6 @@ describe("authController", () => {
 
     await controller.getSession({ auth: { userName: "nacho" } }, res);
     expect(res.status).toHaveBeenCalledWith(500);
+    expectErrorCode(res, ERROR_CODES.INTERNAL_ERROR);
   });
 });
