@@ -9,6 +9,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { useNavigate, useParams } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -128,6 +129,7 @@ export function CreateEvent() {
     ? "Actualiza la actividad, plazas disponibles y punto de encuentro del evento."
     : "Define la actividad, plazas disponibles y punto de encuentro para que otras personas puedan unirse.";
   const successMessage = isEditMode ? "Evento actualizado correctamente" : "Evento creado correctamente";
+  const detailPath = `/events/${eventId}`;
 
   if (isLoading) {
     return (
@@ -159,6 +161,17 @@ export function CreateEvent() {
       title={pageTitle}
       subtitle={pageSubtitle}
       maxWidth="md"
+      actions={
+        isEditMode ? (
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackOutlinedIcon />}
+            onClick={() => navigate(detailPath)}
+          >
+            Volver
+          </Button>
+        ) : undefined
+      }
     >
       <Paper
         sx={{
@@ -188,7 +201,7 @@ export function CreateEvent() {
 
               setOpenSnackbar(true);
               setTimeout(() => {
-                navigate(isEditMode ? `/events/${eventId}` : "/events");
+                navigate(isEditMode ? detailPath : "/events", { replace: isEditMode });
               }, 900);
             } catch (error) {
               setSubmitError(error.message || (isEditMode ? "No se pudo editar el evento" : "No se pudo crear el evento"));
@@ -313,7 +326,17 @@ export function CreateEvent() {
                   />
                 </Stack>
 
-                <Stack direction="row" justifyContent="flex-end">
+                <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                  {isEditMode && (
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      startIcon={<ArrowBackOutlinedIcon />}
+                      onClick={() => navigate(detailPath)}
+                    >
+                      Volver
+                    </Button>
+                  )}
                   <Button
                     type="submit"
                     variant="contained"
