@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   MenuItem,
   Paper,
@@ -12,6 +11,7 @@ import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
+import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
 import { getEvents } from "../api/eventsApi";
 
 const DEFAULT_PAGE = 1;
@@ -51,42 +51,27 @@ function getPaginationFromResponse(response) {
   return Array.isArray(response) ? null : response?.pagination || null;
 }
 
-function renderEventsContent({
-  isLoading,
-  loadError,
-  events,
-  onEventChanged,
-  onEventRemoved,
-}) {
+function renderEventsContent({ isLoading, loadError, events, onEventChanged, onEventRemoved }) {
   if (isLoading && events.length === 0) {
-    return <Alert severity="info">Cargando eventos...</Alert>;
+    return <LoadingState title="Cargando eventos" description="Buscando actividades disponibles con los filtros actuales." />;
   }
 
   if (loadError) {
-    return <Alert severity="error">{loadError}</Alert>;
+    return <ErrorState title="No se pudieron cargar los eventos" message={loadError} />;
   }
 
   if (events.length === 0) {
-    return <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>;
+    return <EmptyState title="No hay eventos disponibles" description="Prueba a limpiar filtros o buscar otra ciudad, deporte o fecha." />;
   }
 
   return events.map((event) => (
-    <CardEvent
-      key={event._id}
-      event={event}
-      onChanged={onEventChanged}
-      onRemoved={onEventRemoved}
-    />
+    <CardEvent key={event._id} event={event} onChanged={onEventChanged} onRemoved={onEventRemoved} />
   ));
 }
 
 export function SearchCard2() {
   const navigate = useNavigate();
-  const [searchCriteria, setSearchCriteria] = useState({
-    city: "",
-    sport: "",
-    date: "",
-  });
+  const [searchCriteria, setSearchCriteria] = useState({ city: "", sport: "", date: "" });
   const [events, setEvents] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(DEFAULT_PAGE);
@@ -97,15 +82,9 @@ export function SearchCard2() {
     setIsLoading(true);
     setLoadError("");
     try {
-      const data = await getEvents({
-        ...searchCriteria,
-        page,
-        limit: EVENTS_PAGE_SIZE,
-      });
+      const data = await getEvents({ ...searchCriteria, page, limit: EVENTS_PAGE_SIZE });
       const nextEvents = getEventsFromResponse(data);
-      setEvents((currentEvents) =>
-        page === DEFAULT_PAGE ? nextEvents : [...currentEvents, ...nextEvents]
-      );
+      setEvents((currentEvents) => (page === DEFAULT_PAGE ? nextEvents : [...currentEvents, ...nextEvents]));
       setPagination(getPaginationFromResponse(data));
     } catch (error) {
       setLoadError(error.message || "No se pudieron cargar los eventos.");
@@ -126,17 +105,11 @@ export function SearchCard2() {
   };
 
   const handleEventChanged = (updatedEvent) => {
-    setEvents((currentEvents) =>
-      currentEvents.map((event) =>
-        event._id === updatedEvent._id ? updatedEvent : event
-      )
-    );
+    setEvents((currentEvents) => currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event)));
   };
 
   const handleEventRemoved = (eventId) => {
-    setEvents((currentEvents) =>
-      currentEvents.filter((event) => event._id !== eventId)
-    );
+    setEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
   };
 
   const handleClear = () => {
@@ -152,82 +125,28 @@ export function SearchCard2() {
       title="Eventos"
       subtitle="Busca actividades deportivas por ciudad, deporte o fecha y gestiona tu participacion desde una lista mas clara."
       actions={
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutlineIcon />}
-          onClick={() => navigate("/events/new")}
-        >
+        <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate("/events/new")}>
           Crear evento
         </Button>
       }
     >
-      <Paper
-        sx={{
-          p: { xs: 2, md: 2.5 },
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
+      <Paper sx={{ p: { xs: 2, md: 2.5 }, border: "1px solid", borderColor: "divider" }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <TextField
-            fullWidth
-            label="Ciudad"
-            select
-            value={searchCriteria.city}
-            onChange={(event) =>
-              updateSearchCriteria({ ...searchCriteria, city: event.target.value })
-            }
-          >
-            {cities.map((city) => (
-              <MenuItem key={city} value={city}>
-                {city}
-              </MenuItem>
-            ))}
+          <TextField fullWidth label="Ciudad" select value={searchCriteria.city} onChange={(event) => updateSearchCriteria({ ...searchCriteria, city: event.target.value })}>
+            {cities.map((city) => <MenuItem key={city} value={city}>{city}</MenuItem>)}
           </TextField>
-          <TextField
-            fullWidth
-            label="Deporte"
-            select
-            value={searchCriteria.sport}
-            onChange={(event) =>
-              updateSearchCriteria({ ...searchCriteria, sport: event.target.value })
-            }
-          >
-            {sports.map((sport) => (
-              <MenuItem key={sport} value={sport}>
-                {sport}
-              </MenuItem>
-            ))}
+          <TextField fullWidth label="Deporte" select value={searchCriteria.sport} onChange={(event) => updateSearchCriteria({ ...searchCriteria, sport: event.target.value })}>
+            {sports.map((sport) => <MenuItem key={sport} value={sport}>{sport}</MenuItem>)}
           </TextField>
-          <TextField
-            fullWidth
-            label="Fecha"
-            type="date"
-            value={searchCriteria.date}
-            InputLabelProps={{ shrink: true }}
-            onChange={(event) =>
-              updateSearchCriteria({ ...searchCriteria, date: event.target.value })
-            }
-          />
-          <Button
-            variant="outlined"
-            startIcon={<RestartAltOutlinedIcon />}
-            onClick={handleClear}
-            sx={{ minWidth: { md: 150 } }}
-          >
+          <TextField fullWidth label="Fecha" type="date" value={searchCriteria.date} InputLabelProps={{ shrink: true }} onChange={(event) => updateSearchCriteria({ ...searchCriteria, date: event.target.value })} />
+          <Button variant="outlined" startIcon={<RestartAltOutlinedIcon />} onClick={handleClear} sx={{ minWidth: { md: 150 } }}>
             Limpiar
           </Button>
         </Stack>
       </Paper>
 
       <Stack spacing={2}>
-        {renderEventsContent({
-          isLoading,
-          loadError,
-          events,
-          onEventChanged: handleEventChanged,
-          onEventRemoved: handleEventRemoved,
-        })}
+        {renderEventsContent({ isLoading, loadError, events, onEventChanged: handleEventChanged, onEventRemoved: handleEventRemoved })}
         {pagination?.hasNextPage && (
           <Button variant="outlined" onClick={handleLoadMore} disabled={isLoading}>
             {isLoading ? "Cargando..." : "Cargar mas"}
