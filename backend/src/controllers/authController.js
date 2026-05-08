@@ -3,6 +3,7 @@ const { createSessionToken, hashPassword, verifyPassword } = require("../service
 const { isValidProfileImage } = require("../services/userService");
 const { buildErrorBody, ERROR_CODES } = require("../utils/apiResponses");
 const { normalizeString, validateRequiredFields } = require("../utils/strings");
+const { isValidEmail, isValidPassword, parseOptionalDate } = require("../utils/validators");
 const { toPublicUser } = require("../utils/users");
 const { logger } = require("../utils/logger");
 
@@ -24,6 +25,31 @@ async function register(req, res) {
       ));
     }
 
+    if (!isValidEmail(req.body.email)) {
+      return res.status(400).json(buildErrorBody(
+        "El email no tiene un formato valido",
+        ERROR_CODES.VALIDATION_ERROR,
+        { field: "email" }
+      ));
+    }
+
+    if (!isValidPassword(req.body.password)) {
+      return res.status(400).json(buildErrorBody(
+        "El password debe tener al menos 8 caracteres",
+        ERROR_CODES.VALIDATION_ERROR,
+        { field: "password" }
+      ));
+    }
+
+    const birthdateResult = parseOptionalDate(req.body.birthdate);
+    if (birthdateResult.error) {
+      return res.status(400).json(buildErrorBody(
+        "La fecha de nacimiento no es valida",
+        ERROR_CODES.VALIDATION_ERROR,
+        { field: "birthdate" }
+      ));
+    }
+
     if (!isValidProfileImage(req.body.profileImage)) {
       return res.status(400).json(buildErrorBody(
         "La imagen de perfil no es valida o es demasiado grande",
@@ -33,7 +59,7 @@ async function register(req, res) {
     }
 
     const userName = normalizeString(req.body.userName);
-    const email = normalizeString(req.body.email);
+    const email = normalizeString(req.body.email).toLowerCase();
     const existingUser = await User.findOne({ $or: [{ userName }, { email }] }).exec();
 
     if (existingUser) {
@@ -49,7 +75,7 @@ async function register(req, res) {
       userName,
       city: normalizeString(req.body.city),
       email,
-      birthdate: req.body.birthdate || undefined,
+      birthdate: birthdateResult.value,
       profileImage: req.body.profileImage || "",
       password: await hashPassword(req.body.password),
       joinedEvents: [],
