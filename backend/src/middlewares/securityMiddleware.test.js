@@ -1,4 +1,4 @@
-jest.mock("helmet", () => jest.fn(() => "helmet-middleware"));
+jest.mock("helmet", () => jest.fn(() => "helmet-middleware"), { virtual: true });
 jest.mock("express", () => ({
   json: jest.fn((options) => ({ type: "json", options })),
 }));
