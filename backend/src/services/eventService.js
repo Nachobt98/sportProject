@@ -86,12 +86,23 @@ function buildEventFilters(filters = {}) {
   return query;
 }
 
+function buildFutureDateQuery(dateQuery, now = new Date()) {
+  if (!dateQuery) {
+    return { $gte: now };
+  }
+
+  return {
+    ...dateQuery,
+    $gte: dateQuery.$gte && dateQuery.$gte > now ? dateQuery.$gte : now,
+  };
+}
+
 function buildPublicEventQuery(filters = {}, user) {
   const query = buildEventFilters(filters);
   return {
     ...query,
     status: EVENT_STATUS.OPEN,
-    date: query.date || { $gte: new Date() },
+    date: buildFutureDateQuery(query.date),
     ...(user?._id ? { dismissedBy: { $ne: user._id } } : {}),
   };
 }
@@ -442,6 +453,7 @@ async function deleteEvent(eventId, authUserName) {
 module.exports = {
   EVENT_STATUS,
   buildEventFilters,
+  buildFutureDateQuery,
   buildPublicEventQuery,
   buildEventPagination,
   buildEditableEventPayload,
