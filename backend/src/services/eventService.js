@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Event = require("../models/Event");
 const User = require("../models/User");
+const { toEventDto } = require("../dtos/eventDto");
 const { normalizeString, validateRequiredFields } = require("../utils/strings");
 
 const DEFAULT_EVENT_PAGE = 1;
@@ -80,24 +81,6 @@ function buildEventFilters(filters = {}) {
   return query;
 }
 
-function toPublicEvent(event) {
-  if (!event) {
-    return null;
-  }
-
-  const eventObject = event.toObject ? event.toObject() : event;
-  const creator = eventObject.creator;
-  const participantsList = eventObject.participantsList || [];
-
-  return {
-    ...eventObject,
-    creator: creator?.userName || creator?.toString?.() || creator,
-    participantsList: participantsList.map((participant) =>
-      participant?.userName || participant?.toString?.() || participant
-    ),
-  };
-}
-
 function buildEditableEventPayload(payload) {
   const missingFields = validateRequiredFields(payload, EVENT_REQUIRED_FIELDS);
 
@@ -158,7 +141,7 @@ async function findEventById(eventId) {
     return serviceResponse(404, "Evento no encontrado");
   }
 
-  return { status: 200, body: { event: toPublicEvent(event) } };
+  return { status: 200, body: { event: toEventDto(event) } };
 }
 
 async function findEventAndUser(eventId, userName) {
@@ -201,7 +184,7 @@ async function createEvent(payload, creatorUserName) {
 
   const newEvent = new Event(value);
   await newEvent.save();
-  return serviceResponse(201, "Evento creado exitosamente", { event: toPublicEvent(newEvent) });
+  return serviceResponse(201, "Evento creado exitosamente", { event: toEventDto(newEvent) });
 }
 
 async function listEvents(filters = {}) {
@@ -222,7 +205,7 @@ async function listEvents(filters = {}) {
   return {
     status: 200,
     body: {
-      events: events.map(toPublicEvent),
+      events: events.map(toEventDto),
       pagination: buildPaginationMeta({ page, limit, total }),
     },
   };
@@ -240,7 +223,7 @@ async function listCreatedEvents(userName) {
     .populate("participantsList", "userName profileImage")
     .exec();
 
-  return events.map(toPublicEvent);
+  return events.map(toEventDto);
 }
 
 async function listJoinedEvents(userName) {
@@ -255,7 +238,7 @@ async function listJoinedEvents(userName) {
     .populate("participantsList", "userName profileImage")
     .exec();
 
-  return { status: 200, body: joinedEvents.map(toPublicEvent) };
+  return { status: 200, body: joinedEvents.map(toEventDto) };
 }
 
 async function joinUserToEvent(eventId, userName) {
@@ -288,7 +271,7 @@ async function joinUserToEvent(eventId, userName) {
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
     .exec();
-  return serviceResponse(200, "Usuario unido al evento exitosamente", { event: toPublicEvent(updatedEvent) });
+  return serviceResponse(200, "Usuario unido al evento exitosamente", { event: toEventDto(updatedEvent) });
 }
 
 async function cancelUserEvent(eventId, userName) {
@@ -312,7 +295,7 @@ async function cancelUserEvent(eventId, userName) {
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
     .exec();
-  return serviceResponse(200, "Usuario eliminado del evento exitosamente", { event: toPublicEvent(updatedEvent) });
+  return serviceResponse(200, "Usuario eliminado del evento exitosamente", { event: toEventDto(updatedEvent) });
 }
 
 async function updateEvent(eventId, payload, authUserName) {
@@ -346,7 +329,7 @@ async function updateEvent(eventId, payload, authUserName) {
     .populate("participantsList", "userName profileImage")
     .exec();
 
-  return serviceResponse(200, "Evento actualizado correctamente", { event: toPublicEvent(updatedEvent) });
+  return serviceResponse(200, "Evento actualizado correctamente", { event: toEventDto(updatedEvent) });
 }
 
 async function deleteEvent(eventId, authUserName) {
@@ -374,7 +357,6 @@ module.exports = {
   buildEventPagination,
   buildEditableEventPayload,
   buildEventPayload,
-  toPublicEvent,
   findEventById,
   createEvent,
   listEvents,
