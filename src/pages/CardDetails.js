@@ -136,7 +136,7 @@ function CardDetails() {
           <Button
             variant="outlined"
             startIcon={<ArrowBackOutlinedIcon />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/events")}
           >
             Volver
           </Button>
