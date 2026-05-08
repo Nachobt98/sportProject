@@ -1,11 +1,7 @@
-function toPublicUser(user) {
-  if (!user) {
-    return null;
-  }
+const { toUserDto } = require("../dtos/userDto");
 
-  const userObject = user.toObject ? user.toObject() : user;
-  const { password, ...publicUser } = userObject;
-  return publicUser;
+function toPublicUser(user) {
+  return toUserDto(user);
 }
 
 module.exports = { toPublicUser };
