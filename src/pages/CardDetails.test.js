@@ -142,6 +142,16 @@ describe("CardDetails", () => {
     expect(await screen.findByText("No se pudo cancelar")).toBeInTheDocument();
   });
 
+  test("shows default cancel event error when the thrown error has no message", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
+    eventsApi.cancelEvent.mockRejectedValue({});
+
+    renderDetails();
+
+    fireEvent.click(await screen.findByRole("button", { name: /cancelar evento/i }));
+    expect(await screen.findByText("No se pudo cancelar el evento.")).toBeInTheDocument();
+  });
+
   test("dismisses cancelled and past events from profile", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "past" } });
     eventsApi.dismissEvent.mockResolvedValue({ eventId: "event-id" });
