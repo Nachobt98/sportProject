@@ -21,6 +21,8 @@ import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
 import { useUser } from "../context/userContext";
 import { cancelEvent, deleteEvent, dismissEvent, getEventById } from "../api/eventsApi";
 import {
@@ -29,6 +31,33 @@ import {
   getEventStatusColor,
   getEventStatusLabel,
 } from "../utils/eventStatus";
+
+const DETAIL_CONFIRM_ACTIONS = {
+  CANCEL_EVENT: "cancel-event",
+  DISMISS_EVENT: "dismiss-event",
+  DELETE_EVENT: "delete-event",
+};
+
+const confirmDialogConfig = {
+  [DETAIL_CONFIRM_ACTIONS.CANCEL_EVENT]: {
+    title: "Cancelar evento",
+    description: "El evento dejara de aparecer en la busqueda publica y quedara bloqueado para sus participantes.",
+    confirmLabel: "Cancelar evento",
+    severity: "warning",
+  },
+  [DETAIL_CONFIRM_ACTIONS.DISMISS_EVENT]: {
+    title: "Borrar de mi perfil",
+    description: "El evento desaparecera de tu perfil, pero seguira disponible para otros usuarios vinculados.",
+    confirmLabel: "Borrar de mi perfil",
+    severity: "info",
+  },
+  [DETAIL_CONFIRM_ACTIONS.DELETE_EVENT]: {
+    title: "Eliminar evento globalmente",
+    description: "Esta accion eliminara el evento para todos los usuarios. No se podra deshacer.",
+    confirmLabel: "Eliminar globalmente",
+    severity: "error",
+  },
+};
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("es-ES", {
@@ -48,9 +77,7 @@ function safeLocationHref(location) {
     return location;
   }
 
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    location
-  )}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
 }
 
 function getStatusMessage(status) {
@@ -74,6 +101,8 @@ function CardDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -111,57 +140,63 @@ function CardDetails() {
     };
   }, [eventId]);
 
-  const handleCancelEvent = async () => {
+  const runConfirmedAction = async () => {
     setActionError("");
-    try {
-      const data = await cancelEvent(eventId);
-      setEventData(data.event);
-    } catch (error) {
-      setActionError(error.message || "No se pudo cancelar el evento.");
-    }
-  };
+    setIsConfirming(true);
 
-  const handleDismissEvent = async () => {
-    setActionError("");
     try {
-      await dismissEvent(eventId);
-      navigate("/profile", { replace: true });
-    } catch (error) {
-      setActionError(error.message || "No se pudo borrar el evento de tu perfil.");
-    }
-  };
+      if (confirmAction === DETAIL_CONFIRM_ACTIONS.CANCEL_EVENT) {
+        const data = await cancelEvent(eventId);
+        setEventData(data.event);
+      }
 
-  const handleDeleteEvent = async () => {
-    setActionError("");
-    try {
-      await deleteEvent(eventId);
-      navigate("/profile", { replace: true });
+      if (confirmAction === DETAIL_CONFIRM_ACTIONS.DISMISS_EVENT) {
+        await dismissEvent(eventId);
+        navigate("/profile", { replace: true });
+      }
+
+      if (confirmAction === DETAIL_CONFIRM_ACTIONS.DELETE_EVENT) {
+        await deleteEvent(eventId);
+        navigate("/profile", { replace: true });
+      }
+
+      setConfirmAction(null);
     } catch (error) {
-      setActionError(error.message || "No se pudo eliminar el evento.");
+      const fallbackMessage = {
+        [DETAIL_CONFIRM_ACTIONS.CANCEL_EVENT]: "No se pudo cancelar el evento.",
+        [DETAIL_CONFIRM_ACTIONS.DISMISS_EVENT]: "No se pudo borrar el evento de tu perfil.",
+        [DETAIL_CONFIRM_ACTIONS.DELETE_EVENT]: "No se pudo eliminar el evento.",
+      }[confirmAction];
+      setActionError(error.message || fallbackMessage);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
   if (isLoading) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
-        <Alert severity="info">Cargando evento...</Alert>
+        <LoadingState title="Cargando evento" description="Estamos recuperando los datos actualizados del evento." />
       </AppShell>
     );
   }
 
-  if (loadError || !eventData) {
+  if (loadError) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
-        <Alert
-          severity="error"
-          action={
-            <Button color="inherit" size="small" onClick={() => navigate("/events")}>
-              Volver
-            </Button>
-          }
-        >
-          {loadError || "Evento no encontrado."}
-        </Alert>
+        <ErrorState title="No se pudo cargar el evento" message={loadError} actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
+      </AppShell>
+    );
+  }
+
+  if (!eventData) {
+    return (
+      <AppShell title="Detalle de evento" maxWidth="md">
+        <EmptyState
+          title="Evento no encontrado"
+          description="El evento no existe, fue eliminado o ya no esta disponible para tu usuario."
+          action={<Button variant="outlined" onClick={() => navigate("/events")}>Volver a eventos</Button>}
+        />
       </AppShell>
     );
   }
@@ -174,157 +209,107 @@ function CardDetails() {
   const canManageActiveEvent = isCreator && isActiveLifecycle;
   const canEdit = isCreator && status !== EVENT_STATUS.CANCELLED;
   const canEditDate = canEditEventDate(eventData, isCreator);
+  const activeConfirmConfig = confirmAction ? confirmDialogConfig[confirmAction] : null;
 
   return (
-    <AppShell
-      title={eventData.name}
-      subtitle={eventData.description}
-      maxWidth="md"
-      actions={
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
-          {canEdit && (
-            <Button
-              variant="contained"
-              startIcon={<EditOutlinedIcon />}
-              onClick={() => navigate(`/events/${eventId}/edit`)}
-            >
-              {canEditDate ? "Cambiar fecha" : "Editar"}
+    <>
+      <AppShell
+        title={eventData.name}
+        subtitle={eventData.description}
+        maxWidth="md"
+        actions={
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+            {canEdit && (
+              <Button variant="contained" startIcon={<EditOutlinedIcon />} onClick={() => navigate(`/events/${eventId}/edit`)}>
+                {canEditDate ? "Cambiar fecha" : "Editar"}
+              </Button>
+            )}
+            {canManageActiveEvent && (
+              <Button variant="outlined" color="warning" startIcon={<CancelOutlinedIcon />} onClick={() => setConfirmAction(DETAIL_CONFIRM_ACTIONS.CANCEL_EVENT)}>
+                Cancelar evento
+              </Button>
+            )}
+            {(status === EVENT_STATUS.CANCELLED || status === EVENT_STATUS.PAST) && (
+              <Button variant="outlined" startIcon={<VisibilityOffOutlinedIcon />} onClick={() => setConfirmAction(DETAIL_CONFIRM_ACTIONS.DISMISS_EVENT)}>
+                Borrar de mi perfil
+              </Button>
+            )}
+            {canManageActiveEvent && (
+              <Button variant="outlined" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setConfirmAction(DETAIL_CONFIRM_ACTIONS.DELETE_EVENT)}>
+                Eliminar globalmente
+              </Button>
+            )}
+            <Button variant="outlined" startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate("/events")}>
+              Volver
             </Button>
-          )}
-          {canManageActiveEvent && (
-            <Button
-              variant="outlined"
-              color="warning"
-              startIcon={<CancelOutlinedIcon />}
-              onClick={handleCancelEvent}
-            >
-              Cancelar evento
-            </Button>
-          )}
-          {(status === EVENT_STATUS.CANCELLED || status === EVENT_STATUS.PAST) && (
-            <Button
-              variant="outlined"
-              startIcon={<VisibilityOffOutlinedIcon />}
-              onClick={handleDismissEvent}
-            >
-              Borrar de mi perfil
-            </Button>
-          )}
-          {canManageActiveEvent && (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteOutlineOutlinedIcon />}
-              onClick={handleDeleteEvent}
-            >
-              Eliminar globalmente
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackOutlinedIcon />}
-            onClick={() => navigate("/events")}
-          >
-            Volver
-          </Button>
-        </Stack>
-      }
-    >
-      {actionError && <Alert severity="error">{actionError}</Alert>}
-      <Paper
-        sx={{
-          p: { xs: 2, md: 3 },
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Stack spacing={3}>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-            <Chip label={eventData.sport} color="primary" />
-            <Chip
-              label={getEventStatusLabel(status)}
-              color={getEventStatusColor(status)}
-              variant={status === EVENT_STATUS.OPEN ? "filled" : "outlined"}
-            />
-            <Chip label={eventData.city} variant="outlined" />
-            <Chip
-              icon={<PeopleAltOutlinedIcon />}
-              label={`${participants.length}/${eventData.participants} plazas`}
-              color={status === EVENT_STATUS.OPEN ? "secondary" : "default"}
-              variant="outlined"
-            />
           </Stack>
+        }
+      >
+        {actionError && <Alert severity="error">{actionError}</Alert>}
+        <Paper sx={{ p: { xs: 2, md: 3 }, border: "1px solid", borderColor: "divider" }}>
+          <Stack spacing={3}>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+              <Chip label={eventData.sport} color="primary" />
+              <Chip label={getEventStatusLabel(status)} color={getEventStatusColor(status)} variant={status === EVENT_STATUS.OPEN ? "filled" : "outlined"} />
+              <Chip label={eventData.city} variant="outlined" />
+              <Chip icon={<PeopleAltOutlinedIcon />} label={`${participants.length}/${eventData.participants} plazas`} color={status === EVENT_STATUS.OPEN ? "secondary" : "default"} variant="outlined" />
+            </Stack>
 
-          <Alert severity={status === EVENT_STATUS.OPEN ? "success" : "info"}>{getStatusMessage(status)}</Alert>
+            <Alert severity={status === EVENT_STATUS.OPEN ? "success" : "info"}>{getStatusMessage(status)}</Alert>
 
-          <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-            <Stack spacing={2} sx={{ flex: 1 }}>
-              <Box>
-                <Typography variant="overline" color="text.secondary">
-                  Creador
-                </Typography>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1 }}>
-                  <Avatar src={perfil} />
-                  <Typography variant="h6">
-                    {eventData.creator || "Usuario desconocido"}
-                  </Typography>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+              <Stack spacing={2} sx={{ flex: 1 }}>
+                <Box>
+                  <Typography variant="overline" color="text.secondary">Creador</Typography>
+                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1 }}>
+                    <Avatar src={perfil} />
+                    <Typography variant="h6">{eventData.creator || "Usuario desconocido"}</Typography>
+                  </Stack>
+                </Box>
+
+                <Box>
+                  <Typography variant="overline" color="text.secondary">Participantes</Typography>
+                  <Stack direction="row" spacing={1.5} sx={{ mt: 1, flexWrap: "wrap" }}>
+                    {participants.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">Todavia no hay participantes.</Typography>
+                    ) : (
+                      participants.map((participant) => <Chip key={participant} avatar={<Avatar src={perfil} />} label={participant} variant="outlined" />)
+                    )}
+                  </Stack>
+                </Box>
+              </Stack>
+
+              <Stack spacing={2} sx={{ minWidth: { md: 260 }, p: 2, border: "1px solid", borderColor: "divider", bgcolor: "background.default" }}>
+                <Stack direction="row" spacing={1.25} alignItems="center">
+                  <AccessTimeOutlinedIcon color="primary" />
+                  <Typography variant="body2">{formatDate(eventData.date)}</Typography>
                 </Stack>
-              </Box>
-
-              <Box>
-                <Typography variant="overline" color="text.secondary">
-                  Participantes
-                </Typography>
-                <Stack direction="row" spacing={1.5} sx={{ mt: 1, flexWrap: "wrap" }}>
-                  {participants.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      Todavia no hay participantes.
-                    </Typography>
+                <Stack direction="row" spacing={1.25} alignItems="center">
+                  <LocationOnOutlinedIcon color="primary" />
+                  {locationHref ? (
+                    <MuiLink href={locationHref} target="_blank" rel="noopener">{eventData.locationName || eventData.location}</MuiLink>
                   ) : (
-                    participants.map((participant) => (
-                      <Chip
-                        key={participant}
-                        avatar={<Avatar src={perfil} />}
-                        label={participant}
-                        variant="outlined"
-                      />
-                    ))
+                    <Typography variant="body2">{eventData.locationName || "Ubicacion no indicada"}</Typography>
                   )}
                 </Stack>
-              </Box>
-            </Stack>
-
-            <Stack
-              spacing={2}
-              sx={{
-                minWidth: { md: 260 },
-                p: 2,
-                border: "1px solid",
-                borderColor: "divider",
-                bgcolor: "background.default",
-              }}
-            >
-              <Stack direction="row" spacing={1.25} alignItems="center">
-                <AccessTimeOutlinedIcon color="primary" />
-                <Typography variant="body2">{formatDate(eventData.date)}</Typography>
-              </Stack>
-              <Stack direction="row" spacing={1.25} alignItems="center">
-                <LocationOnOutlinedIcon color="primary" />
-                {locationHref ? (
-                  <MuiLink href={locationHref} target="_blank" rel="noopener">
-                    {eventData.locationName || eventData.location}
-                  </MuiLink>
-                ) : (
-                  <Typography variant="body2">
-                    {eventData.locationName || "Ubicacion no indicada"}
-                  </Typography>
-                )}
               </Stack>
             </Stack>
           </Stack>
-        </Stack>
-      </Paper>
-    </AppShell>
+        </Paper>
+      </AppShell>
+      {activeConfirmConfig && (
+        <ConfirmDialog
+          open={Boolean(activeConfirmConfig)}
+          title={activeConfirmConfig.title}
+          description={activeConfirmConfig.description}
+          confirmLabel={activeConfirmConfig.confirmLabel}
+          severity={activeConfirmConfig.severity}
+          isConfirming={isConfirming}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={runConfirmedAction}
+        />
+      )}
+    </>
   );
 }
 
