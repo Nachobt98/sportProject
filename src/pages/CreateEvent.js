@@ -327,16 +327,6 @@ export function CreateEvent() {
                 </Stack>
 
                 <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                  {isEditMode && (
-                    <Button
-                      type="button"
-                      variant="outlined"
-                      startIcon={<ArrowBackOutlinedIcon />}
-                      onClick={() => navigate(detailPath)}
-                    >
-                      Volver
-                    </Button>
-                  )}
                   <Button
                     type="submit"
                     variant="contained"
