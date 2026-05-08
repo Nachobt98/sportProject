@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CardDetails from "./CardDetails";
 import * as eventsApi from "../api/eventsApi";
@@ -44,7 +44,8 @@ function renderDetails(path = "/events/event-id") {
 }
 
 async function confirmAction(nameMatcher) {
-  fireEvent.click(await screen.findByRole("button", { name: nameMatcher }));
+  const dialog = await screen.findByRole("dialog");
+  fireEvent.click(within(dialog).getByRole("button", { name: nameMatcher }));
 }
 
 describe("CardDetails", () => {
