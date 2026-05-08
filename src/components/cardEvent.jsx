@@ -65,7 +65,7 @@ function getLockedMessage(status) {
     return "Evento cancelado. Las acciones de participacion estan bloqueadas.";
   }
   if (status === EVENT_STATUS.PAST) {
-    return "Evento pasado. No acepta nuevas acciones de participacion.";
+    return "Evento pasado. No acepta nuevas inscripciones.";
   }
   return "";
 }
@@ -90,6 +90,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
   const status = currentEvent.status || EVENT_STATUS.OPEN;
   const locked = isLockedEvent(currentEvent);
   const canJoin = canJoinEvent(currentEvent) && availableSlots > 0;
+  const canCancelParticipation = status !== EVENT_STATUS.CANCELLED;
   const canEditDate = canEditEventDate(currentEvent, isCreator);
   const isActiveLifecycle = status === EVENT_STATUS.OPEN || status === EVENT_STATUS.FULL;
   const canManageActiveEvent = isCreator && isActiveLifecycle;
@@ -256,7 +257,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
               color="secondary"
               startIcon={<LogoutOutlinedIcon />}
               onClick={handleCancelClick}
-              disabled={locked}
+              disabled={!canCancelParticipation}
             >
               Cancelar participacion
             </Button>
