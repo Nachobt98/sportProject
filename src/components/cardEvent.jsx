@@ -91,6 +91,8 @@ export function CardEvent({ event, onChanged, onRemoved }) {
   const locked = isLockedEvent(currentEvent);
   const canJoin = canJoinEvent(currentEvent) && availableSlots > 0;
   const canEditDate = canEditEventDate(currentEvent, isCreator);
+  const isActiveLifecycle = status === EVENT_STATUS.OPEN || status === EVENT_STATUS.FULL;
+  const canManageActiveEvent = isCreator && isActiveLifecycle;
   const lockedMessage = getLockedMessage(status);
 
   useEffect(() => {
@@ -130,9 +132,9 @@ export function CardEvent({ event, onChanged, onRemoved }) {
     try {
       await dismissEvent(currentEvent._id);
       onRemoved?.(currentEvent._id);
-      setFeedback({ severity: "success", message: "Evento ocultado" });
+      setFeedback({ severity: "success", message: "Evento borrado de tu perfil" });
     } catch (error) {
-      setFeedback({ severity: "error", message: error.message || "No se pudo ocultar el evento" });
+      setFeedback({ severity: "error", message: error.message || "No se pudo borrar el evento de tu perfil" });
     }
   };
 
@@ -260,7 +262,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
             </Button>
           )}
 
-          {isCreator && status === EVENT_STATUS.OPEN && (
+          {canManageActiveEvent && (
             <Button
               variant="outlined"
               color="warning"
@@ -288,11 +290,11 @@ export function CardEvent({ event, onChanged, onRemoved }) {
               startIcon={<VisibilityOffOutlinedIcon />}
               onClick={handleDismissClick}
             >
-              Quitar de mi perfil
+              Borrar de mi perfil
             </Button>
           )}
 
-          {isCreator && status !== EVENT_STATUS.PAST && (
+          {canManageActiveEvent && (
             <Button
               variant="outlined"
               color="error"
