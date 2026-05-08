@@ -15,6 +15,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { AppShell } from "../components/AppShell";
+import { ErrorState, LoadingState } from "../components/FeedbackState";
 import { useUser } from "../context/userContext";
 import { createEvent, getEventById, updateEvent } from "../api/eventsApi";
 
@@ -134,7 +135,7 @@ export function CreateEvent() {
   if (isLoading) {
     return (
       <AppShell title={pageTitle} maxWidth="md">
-        <Alert severity="info">Cargando evento...</Alert>
+        <LoadingState title="Cargando evento" description="Preparando el formulario con los datos actuales." />
       </AppShell>
     );
   }
@@ -142,16 +143,12 @@ export function CreateEvent() {
   if (loadError) {
     return (
       <AppShell title={pageTitle} maxWidth="md">
-        <Alert
-          severity="error"
-          action={
-            <Button color="inherit" size="small" onClick={() => navigate("/events")}>
-              Volver
-            </Button>
-          }
-        >
-          {loadError}
-        </Alert>
+        <ErrorState
+          title="No se puede editar el evento"
+          message={loadError}
+          actionLabel="Volver a eventos"
+          onAction={() => navigate("/events")}
+        />
       </AppShell>
     );
   }
