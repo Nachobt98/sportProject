@@ -7,6 +7,7 @@ SportLife is a full-stack JavaScript application for creating, discovering and j
 - Frontend: React 18, Vite, React Router 6, Material UI, Formik and Yup.
 - Backend: Node.js, Express, MongoDB and Mongoose.
 - Authentication: JWT sessions with bcrypt password hashing.
+- Security: Helmet security headers, JSON payload limits, API rate limiting and production environment validation.
 - Quality: Jest tests, explicit frontend/backend test environments, coverage reporting and SonarCloud analysis through GitHub Actions.
 
 ## Current features
@@ -104,8 +105,8 @@ All backend routes are mounted under `/api`.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---:|---|
-| `POST` | `/api/register` | No | Creates a user and returns a session token. |
-| `POST` | `/api/login` | No | Authenticates a user and returns a session token. |
+| `POST` | `/api/register` | No | Creates a user and returns a session token. Rate limited. |
+| `POST` | `/api/login` | No | Authenticates a user and returns a session token. Rate limited. |
 | `GET` | `/api/session` | Yes | Validates the current JWT and returns the current user. |
 
 ### Users
@@ -147,7 +148,7 @@ All backend routes are mounted under `/api`.
 
 Public API responses are serialized through backend DTOs under `backend/src/dtos`. User and event responses expose only the fields consumed by the current API contract, keep `id`/`_id` compatibility, serialize internal ObjectId references to strings or public user names, and avoid leaking sensitive or Mongoose-internal fields such as `password` and `__v`.
 
-Auth, event-domain and current-user service errors include a stable `error.code` while preserving the existing top-level `message` field for frontend compatibility. Example:
+Auth, event-domain and current-user service errors include a stable `error.code` while preserving the existing top-level `message` field for frontend compatibility. Rate limit responses use `RATE_LIMITED`. Example:
 
 ```json
 {
@@ -159,15 +160,25 @@ Auth, event-domain and current-user service errors include a stable `error.code`
 }
 ```
 
+## Backend security
+
+- Helmet is applied globally for standard HTTP security headers.
+- JSON request bodies are limited to `1mb`.
+- All `/api` routes have a general rate limit of 300 requests per 15 minutes per client.
+- `/api/register` and `/api/login` have a stricter rate limit of 10 requests per 15 minutes per client.
+- `JWT_SECRET` must be set to a non-default value when `NODE_ENV=production`.
+- `PASSWORD_HASH_ROUNDS` must be an integer greater than or equal to 4.
+
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
+| `NODE_ENV` | `development` | Runtime environment. Production enables stricter config validation. |
 | `PORT` | `5000` | Backend port. |
 | `MONGO_URI` | `mongodb://localhost:27017/sportlife` | MongoDB connection string. |
 | `CLIENT_ORIGIN` | `http://localhost:3000` | Allowed CORS origin. |
-| `JWT_SECRET` | `local-dev-secret-change-me` | JWT signing secret. Change outside local development. |
-| `PASSWORD_HASH_ROUNDS` | `10` | bcrypt hash cost. |
+| `JWT_SECRET` | `local-dev-secret-change-me` | JWT signing secret. Must be changed in production. |
+| `PASSWORD_HASH_ROUNDS` | `10` | bcrypt hash cost. Must be an integer greater than or equal to 4. |
 | `VITE_API_URL` | `http://localhost:5000` | Frontend API base URL used by Vite. |
 | `REACT_APP_API_URL` | `http://localhost:5000` | Backward-compatible fallback for older local env files. Prefer `VITE_API_URL`. |
 
@@ -235,26 +246,25 @@ The project is in a transitional but increasingly clean state:
 - Event user relationships are stored as `ObjectId` references while API responses expose user names for the current UI.
 - User and event responses now pass through explicit DTOs before leaving the backend.
 - Auth, event-domain and current-user service errors expose stable machine-readable codes while keeping legacy message compatibility.
+- Backend applies security headers, request-size limits, rate limiting and production environment checks.
 - Event search is backend-filtered and paginated.
 - Profile data uses `/api/users/me`.
-- Backend code is separated into routes, controllers, DTOs, services, models and utilities.
+- Backend code is separated into routes, controllers, DTOs, services, models, middlewares and utilities.
 - Tests and SonarCloud act as a quality gate for future PRs.
 
 Known cleanup areas:
 
-- Some production-hardening work is still pending around validation, rate limiting and payload limits.
 - Event editing currently updates the core event fields; richer flows such as cancellation/status changes are still pending.
+- Base64 profile image storage is still transitional; external object storage or a stricter upload strategy should be considered before production use.
 - Jest remains as the test runner for compatibility with the current test suite. A future Vitest migration can be done as a separate focused PR.
 
 ## Suggested next priorities
 
-1. Harden auth and security: rate limiting, better validation and production secrets.
-2. Add payload limits for base64 profile images.
-3. Improve frontend state/data fetching with clearer hooks or React Query.
-4. Improve UX with skeletons, confirmation dialogs and consistent empty states.
-5. Add event lifecycle states such as open, full, cancelled and past.
-6. Add deployment documentation.
-7. Consider migrating Jest to Vitest once the Vite build migration is stable.
+1. Improve frontend state/data fetching with clearer hooks or React Query.
+2. Improve UX with skeletons, confirmation dialogs and consistent empty states.
+3. Add event lifecycle states such as open, full, cancelled and past.
+4. Add deployment documentation.
+5. Consider migrating Jest to Vitest once the Vite build migration is stable.
 
 ## PR discipline
 
