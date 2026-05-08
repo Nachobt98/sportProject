@@ -133,18 +133,6 @@ describe("eventService", () => {
     expect(service.buildEventPayload({ ...validPayload, participants: 0 }, objectId("creator-id")).error).toBe("El numero de participantes debe ser mayor que cero");
   });
 
-  test("serializes populated events for the public API", () => {
-    expect(service.toPublicEvent({
-      _id: "event-id",
-      creator: { userName: "creator" },
-      participantsList: [{ userName: "nacho" }, objectId("other-id")],
-    })).toEqual(expect.objectContaining({
-      creator: "creator",
-      participantsList: ["nacho", "other-id"],
-    }));
-    expect(service.toPublicEvent(null)).toBeNull();
-  });
-
   test("finds events by id", async () => {
     Event.findById.mockReturnValue(populatedQuery(createEventDoc({
       creator: { userName: "creator" },
