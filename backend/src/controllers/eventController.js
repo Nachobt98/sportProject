@@ -33,7 +33,7 @@ async function createEvent(req, res) {
 
 async function listEvents(req, res) {
   try {
-    const result = await eventService.listEvents(req.query);
+    const result = await eventService.listEvents(req.query, getAuthenticatedUserName(req));
     return sendServiceResult(res, result);
   } catch (error) {
     logger.error("Error al obtener la lista de eventos", error);
@@ -76,6 +76,16 @@ const updateEvent = createServiceHandler(
   "Error al editar el evento"
 );
 
+const cancelEvent = createServiceHandler(
+  (req) => eventService.cancelEvent(req.params.eventId, getAuthenticatedUserName(req)),
+  "Error al cancelar el evento"
+);
+
+const dismissEvent = createServiceHandler(
+  (req) => eventService.dismissEventForUser(req.params.eventId, getAuthenticatedUserName(req)),
+  "Error al ocultar el evento"
+);
+
 const deleteEvent = createServiceHandler(
   (req) => eventService.deleteEvent(req.params.eventId, getAuthenticatedUserName(req)),
   "Error al eliminar el evento"
@@ -90,5 +100,7 @@ module.exports = {
   joinEvent,
   cancelEventJoin,
   updateEvent,
+  cancelEvent,
+  dismissEvent,
   deleteEvent,
 };
