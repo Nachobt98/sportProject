@@ -23,12 +23,32 @@ function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+function getReferenceId(reference) {
+  return reference?._id || reference;
+}
+
 function idsMatch(left, right) {
-  return left?.toString() === right?.toString();
+  const leftId = getReferenceId(left);
+  const rightId = getReferenceId(right);
+  return leftId?.toString() === rightId?.toString();
 }
 
 function includesId(values = [], expectedId) {
   return values.some((value) => idsMatch(value, expectedId));
+}
+
+function canViewEvent(event, user) {
+  const status = getEffectiveEventStatus(event);
+
+  if (status === EVENT_STATUS.OPEN || status === EVENT_STATUS.FULL) {
+    return true;
+  }
+
+  if (!user || includesId(event.dismissedBy, user._id)) {
+    return false;
+  }
+
+  return idsMatch(event.creator, user._id) || includesId(event.participantsList, user._id);
 }
 
 function parsePositiveInteger(value, fallback) {
@@ -165,17 +185,21 @@ async function getUserByName(userName) {
   return User.findOne({ userName: normalizedUserName }).exec();
 }
 
-async function findEventById(eventId) {
+async function findEventById(eventId, authUserName = "") {
   if (!isValidObjectId(eventId)) {
     return serviceResponse(400, "El identificador del evento no es valido", {}, ERROR_CODES.INVALID_EVENT_ID);
   }
 
-  const event = await Event.findById(eventId)
-    .populate("creator", "userName profileImage")
-    .populate("participantsList", "userName profileImage")
-    .populate("dismissedBy", "userName profileImage")
-    .exec();
-  if (!event) {
+  const [event, user] = await Promise.all([
+    Event.findById(eventId)
+      .populate("creator", "userName profileImage")
+      .populate("participantsList", "userName profileImage")
+      .populate("dismissedBy", "userName profileImage")
+      .exec(),
+    getUserByName(authUserName),
+  ]);
+
+  if (!event || !canViewEvent(event, user)) {
     return serviceResponse(404, "Evento no encontrado", {}, ERROR_CODES.EVENT_NOT_FOUND);
   }
 
@@ -458,6 +482,7 @@ module.exports = {
   buildEventPagination,
   buildEditableEventPayload,
   buildEventPayload,
+  canViewEvent,
   findEventById,
   createEvent,
   listEvents,
