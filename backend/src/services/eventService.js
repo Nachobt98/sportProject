@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Event = require("../models/Event");
 const User = require("../models/User");
-const { toEventDto } = require("../dtos/eventDto");
+const { EVENT_STATUS, getEffectiveEventStatus, toEventDto } = require("../dtos/eventDto");
 const { ERROR_CODES, serviceResponse } = require("../utils/apiResponses");
 const { normalizeString, validateRequiredFields } = require("../utils/strings");
 
@@ -21,6 +21,14 @@ const EVENT_REQUIRED_FIELDS = [
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
+}
+
+function idsMatch(left, right) {
+  return left?.toString() === right?.toString();
+}
+
+function includesId(values = [], expectedId) {
+  return values.some((value) => idsMatch(value, expectedId));
 }
 
 function parsePositiveInteger(value, fallback) {
@@ -78,6 +86,16 @@ function buildEventFilters(filters = {}) {
   return query;
 }
 
+function buildPublicEventQuery(filters = {}, user) {
+  const query = buildEventFilters(filters);
+  return {
+    ...query,
+    status: EVENT_STATUS.OPEN,
+    date: query.date || { $gte: new Date() },
+    ...(user?._id ? { dismissedBy: { $ne: user._id } } : {}),
+  };
+}
+
 function buildEditableEventPayload(payload) {
   const missingFields = validateRequiredFields(payload, EVENT_REQUIRED_FIELDS);
 
@@ -121,8 +139,19 @@ function buildEventPayload(payload, creatorId) {
       ...value,
       creator: creatorId,
       participantsList: [],
+      dismissedBy: [],
+      status: EVENT_STATUS.OPEN,
     },
   };
+}
+
+async function getUserByName(userName) {
+  const normalizedUserName = normalizeString(userName);
+  if (!normalizedUserName) {
+    return null;
+  }
+
+  return User.findOne({ userName: normalizedUserName }).exec();
 }
 
 async function findEventById(eventId) {
@@ -133,6 +162,7 @@ async function findEventById(eventId) {
   const event = await Event.findById(eventId)
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
+    .populate("dismissedBy", "userName profileImage")
     .exec();
   if (!event) {
     return serviceResponse(404, "Evento no encontrado", {}, ERROR_CODES.EVENT_NOT_FOUND);
@@ -168,7 +198,7 @@ async function findEventAndUser(eventId, userName) {
 }
 
 async function createEvent(payload, creatorUserName) {
-  const creator = await User.findOne({ userName: normalizeString(creatorUserName) }).exec();
+  const creator = await getUserByName(creatorUserName);
   if (!creator) {
     return serviceResponse(404, "Usuario creador no encontrado", {}, ERROR_CODES.USER_NOT_FOUND);
   }
@@ -184,8 +214,9 @@ async function createEvent(payload, creatorUserName) {
   return serviceResponse(201, "Evento creado exitosamente", { event: toEventDto(newEvent) });
 }
 
-async function listEvents(filters = {}) {
-  const query = buildEventFilters(filters);
+async function listEvents(filters = {}, authUserName = "") {
+  const user = await getUserByName(authUserName);
+  const query = buildPublicEventQuery(filters, user);
   const { page, limit, skip } = buildEventPagination(filters);
 
   const [events, total] = await Promise.all([
@@ -195,6 +226,7 @@ async function listEvents(filters = {}) {
       .limit(limit)
       .populate("creator", "userName profileImage")
       .populate("participantsList", "userName profileImage")
+      .populate("dismissedBy", "userName profileImage")
       .exec(),
     Event.countDocuments(query).exec(),
   ]);
@@ -209,30 +241,32 @@ async function listEvents(filters = {}) {
 }
 
 async function listCreatedEvents(userName) {
-  const user = await User.findOne({ userName }).exec();
+  const user = await getUserByName(userName);
   if (!user) {
     return [];
   }
 
-  const events = await Event.find({ creator: user._id })
+  const events = await Event.find({ creator: user._id, dismissedBy: { $ne: user._id } })
     .sort({ date: 1, _id: 1 })
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
+    .populate("dismissedBy", "userName profileImage")
     .exec();
 
   return events.map(toEventDto);
 }
 
 async function listJoinedEvents(userName) {
-  const user = await User.findOne({ userName }).exec();
+  const user = await getUserByName(userName);
   if (!user) {
     return serviceResponse(404, "Usuario no encontrado", {}, ERROR_CODES.USER_NOT_FOUND);
   }
 
-  const joinedEvents = await Event.find({ _id: { $in: user.joinedEvents } })
+  const joinedEvents = await Event.find({ _id: { $in: user.joinedEvents }, dismissedBy: { $ne: user._id } })
     .sort({ date: 1, _id: 1 })
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
+    .populate("dismissedBy", "userName profileImage")
     .exec();
 
   return { status: 200, body: joinedEvents.map(toEventDto) };
@@ -249,15 +283,19 @@ async function joinUserToEvent(eventId, userName) {
 
   const { event, user } = lookup;
   const userId = user._id.toString();
+  const status = getEffectiveEventStatus(event);
 
+  if (status !== EVENT_STATUS.OPEN) {
+    return serviceResponse(409, "El evento no acepta nuevas inscripciones", {}, ERROR_CODES.EVENT_FULL);
+  }
   if (event.creator.toString() === userId) {
     return serviceResponse(400, "El creador no puede unirse a su propio evento", {}, ERROR_CODES.EVENT_CREATOR_CANNOT_JOIN);
   }
-  if (event.participantsList.some((participantId) => participantId.toString() === userId)) {
+  if (includesId(event.participantsList, user._id)) {
     return serviceResponse(409, "El usuario ya participa en este evento", {}, ERROR_CODES.EVENT_ALREADY_JOINED);
   }
-  if (event.participantsList.length >= event.participants) {
-    return serviceResponse(409, "El evento ya no tiene plazas disponibles", {}, ERROR_CODES.EVENT_FULL);
+  if (includesId(event.dismissedBy, user._id)) {
+    event.dismissedBy = event.dismissedBy.filter((dismissedUserId) => !idsMatch(dismissedUserId, user._id));
   }
 
   event.participantsList.push(user._id);
@@ -267,6 +305,7 @@ async function joinUserToEvent(eventId, userName) {
   const updatedEvent = await Event.findById(event._id)
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
+    .populate("dismissedBy", "userName profileImage")
     .exec();
   return serviceResponse(200, "Usuario unido al evento exitosamente", { event: toEventDto(updatedEvent) });
 }
@@ -291,6 +330,7 @@ async function cancelUserEvent(eventId, userName) {
   const updatedEvent = await Event.findById(event._id)
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
+    .populate("dismissedBy", "userName profileImage")
     .exec();
   return serviceResponse(200, "Usuario eliminado del evento exitosamente", { event: toEventDto(updatedEvent) });
 }
@@ -304,6 +344,10 @@ async function updateEvent(eventId, payload, authUserName) {
   const { event, user } = lookup;
   if (event.creator.toString() !== user._id.toString()) {
     return serviceResponse(403, "Solo el creador puede editar este evento", {}, ERROR_CODES.EVENT_FORBIDDEN);
+  }
+
+  if (event.status === EVENT_STATUS.CANCELLED) {
+    return serviceResponse(409, "No se puede editar un evento cancelado", {}, ERROR_CODES.EVENT_FORBIDDEN);
   }
 
   const { value, error, code } = buildEditableEventPayload(payload);
@@ -320,15 +364,59 @@ async function updateEvent(eventId, payload, authUserName) {
     );
   }
 
-  Object.assign(event, value);
+  Object.assign(event, value, { status: EVENT_STATUS.OPEN });
   await event.save();
 
   const updatedEvent = await Event.findById(event._id)
     .populate("creator", "userName profileImage")
     .populate("participantsList", "userName profileImage")
+    .populate("dismissedBy", "userName profileImage")
     .exec();
 
   return serviceResponse(200, "Evento actualizado correctamente", { event: toEventDto(updatedEvent) });
+}
+
+async function cancelEvent(eventId, authUserName) {
+  const lookup = await findEventAndUser(eventId, authUserName);
+  if (lookup.status) {
+    return lookup;
+  }
+
+  const { event, user } = lookup;
+  if (event.creator.toString() !== user._id.toString()) {
+    return serviceResponse(403, "Solo el creador puede cancelar este evento", {}, ERROR_CODES.EVENT_FORBIDDEN);
+  }
+
+  event.status = EVENT_STATUS.CANCELLED;
+  await event.save();
+
+  const updatedEvent = await Event.findById(event._id)
+    .populate("creator", "userName profileImage")
+    .populate("participantsList", "userName profileImage")
+    .populate("dismissedBy", "userName profileImage")
+    .exec();
+
+  return serviceResponse(200, "Evento cancelado correctamente", { event: toEventDto(updatedEvent) });
+}
+
+async function dismissEventForUser(eventId, authUserName) {
+  const lookup = await findEventAndUser(eventId, authUserName);
+  if (lookup.status) {
+    return lookup;
+  }
+
+  const { event, user } = lookup;
+  const status = getEffectiveEventStatus(event);
+  const canDismiss = status === EVENT_STATUS.CANCELLED || status === EVENT_STATUS.PAST || event.creator.toString() === user._id.toString();
+
+  if (!canDismiss) {
+    return serviceResponse(409, "Solo se pueden ocultar eventos cancelados, pasados o propios", {}, ERROR_CODES.EVENT_FORBIDDEN);
+  }
+
+  event.dismissedBy.addToSet(user._id);
+  await event.save();
+
+  return serviceResponse(200, "Evento ocultado para el usuario correctamente", { eventId });
 }
 
 async function deleteEvent(eventId, authUserName) {
@@ -352,7 +440,9 @@ async function deleteEvent(eventId, authUserName) {
 }
 
 module.exports = {
+  EVENT_STATUS,
   buildEventFilters,
+  buildPublicEventQuery,
   buildEventPagination,
   buildEditableEventPayload,
   buildEventPayload,
@@ -364,5 +454,7 @@ module.exports = {
   joinUserToEvent,
   cancelUserEvent,
   updateEvent,
+  cancelEvent,
+  dismissEventForUser,
   deleteEvent,
 };
