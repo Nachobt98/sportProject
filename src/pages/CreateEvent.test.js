@@ -101,6 +101,7 @@ describe("CreateEvent", () => {
     const nameInput = await screen.findByDisplayValue("Padel match");
     expect(screen.getByRole("heading", { name: /editar evento/i })).toBeInTheDocument();
     expect(nameInput).toHaveAttribute("name", "name");
+    expect(screen.getAllByRole("button", { name: /volver/i })).toHaveLength(2);
 
     fillField(container, "name", "Updated match");
     fireEvent.click(screen.getByRole("button", { name: /guardar cambios/i }));
@@ -113,8 +114,19 @@ describe("CreateEvent", () => {
     act(() => {
       jest.runOnlyPendingTimers();
     });
-    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id");
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id", { replace: true });
     jest.useRealTimers();
+  });
+
+  test("navigates back to event detail from edit mode", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
+
+    renderCreateEvent("/events/event-id/edit");
+
+    await screen.findByDisplayValue("Padel match");
+    fireEvent.click(screen.getAllByRole("button", { name: /volver/i })[0]);
+
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id");
   });
 
   test("blocks editing when the current user is not the creator", async () => {
