@@ -61,6 +61,29 @@ describe("CardDetails", () => {
     expect(screen.getByText("Open")).toBeInTheDocument();
   });
 
+  test("renders full event details and keeps active creator actions", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "full", participants: 1 } });
+
+    renderDetails();
+
+    expect(await screen.findByText("Full")).toBeInTheDocument();
+    expect(screen.getByText(/este evento esta completo/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /cancelar evento/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /eliminar globalmente/i })).toBeInTheDocument();
+  });
+
+  test("renders cancelled event details without edit or global delete actions", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "cancelled" } });
+
+    renderDetails();
+
+    expect(await screen.findByText("Cancelled")).toBeInTheDocument();
+    expect(screen.getByText(/ha sido cancelado/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /borrar de mi perfil/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /eliminar globalmente/i })).not.toBeInTheDocument();
+  });
+
   test("shows creator edit action", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
 
@@ -163,7 +186,7 @@ describe("CardDetails", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/profile", { replace: true });
   });
 
-  test("shows dismiss errors", async () => {
+  test("shows dismiss errors and default dismiss fallback", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "cancelled" } });
     eventsApi.dismissEvent.mockRejectedValue(new Error("No se pudo borrar"));
 
@@ -171,6 +194,12 @@ describe("CardDetails", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /borrar de mi perfil/i }));
     expect(await screen.findByText("No se pudo borrar")).toBeInTheDocument();
+
+    eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "cancelled" } });
+    eventsApi.dismissEvent.mockRejectedValue({});
+    renderDetails();
+    fireEvent.click((await screen.findAllByRole("button", { name: /borrar de mi perfil/i }))[1]);
+    expect(await screen.findByText("No se pudo borrar el evento de tu perfil.")).toBeInTheDocument();
   });
 
   test("creator can delete active events", async () => {
@@ -184,7 +213,7 @@ describe("CardDetails", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/profile", { replace: true });
   });
 
-  test("shows delete errors", async () => {
+  test("shows delete errors and default delete fallback", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
     eventsApi.deleteEvent.mockRejectedValue(new Error("No se pudo eliminar"));
 
@@ -192,6 +221,12 @@ describe("CardDetails", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /eliminar globalmente/i }));
     expect(await screen.findByText("No se pudo eliminar")).toBeInTheDocument();
+
+    eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
+    eventsApi.deleteEvent.mockRejectedValue({});
+    renderDetails();
+    fireEvent.click((await screen.findAllByRole("button", { name: /eliminar globalmente/i }))[1]);
+    expect(await screen.findByText("No se pudo eliminar el evento.")).toBeInTheDocument();
   });
 
   test("past events show date edit action instead of global delete", async () => {
@@ -199,9 +234,23 @@ describe("CardDetails", () => {
 
     renderDetails();
 
-    fireEvent.click(await screen.findByRole("button", { name: /cambiar fecha/i }));
+    expect(await screen.findByText("Past")).toBeInTheDocument();
+    expect(screen.getByText(/ya ha pasado/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /cambiar fecha/i }));
     expect(mockNavigate).toHaveBeenCalledWith("/events/event-id/edit");
     expect(screen.queryByRole("button", { name: /eliminar globalmente/i })).not.toBeInTheDocument();
+  });
+
+  test("shows default loading error and missing event fallback", async () => {
+    eventsApi.getEventById.mockRejectedValue({});
+
+    renderDetails();
+
+    expect(await screen.findByText("No se pudo cargar el evento.")).toBeInTheDocument();
+
+    eventsApi.getEventById.mockResolvedValue({ event: null });
+    renderDetails();
+    expect(await screen.findByText("Evento no encontrado.")).toBeInTheDocument();
   });
 
   test("shows an error when route has no event id", async () => {
