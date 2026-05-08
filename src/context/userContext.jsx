@@ -2,14 +2,65 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 
 const UserContext = createContext();
 
+const USER_STORAGE_KEY = "user";
+const USER_TEXT_FIELDS = [
+  "_id",
+  "id",
+  "firstName",
+  "lastName",
+  "userName",
+  "city",
+  "email",
+  "birthdate",
+  "profileImage",
+];
+
+function sanitizeText(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.replace(/[<>]/g, "").trim();
+}
+
+function sanitizeUser(user) {
+  if (!user || typeof user !== "object") {
+    return {};
+  }
+
+  return USER_TEXT_FIELDS.reduce((sanitizedUser, field) => {
+    if (user[field] !== undefined && user[field] !== null) {
+      return {
+        ...sanitizedUser,
+        [field]: sanitizeText(user[field]),
+      };
+    }
+
+    return sanitizedUser;
+  }, {});
+}
+
+function getStoredUser() {
+  try {
+    return sanitizeUser(JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || "{}"));
+  } catch {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    return {};
+  }
+}
+
+function persistUser(user) {
+  const sanitizedUser = sanitizeUser(user);
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(sanitizedUser));
+  return sanitizedUser;
+}
+
 export const UserProvider = ({ children }) => {
-  const [users, setUsersState] = useState(
-    JSON.parse(localStorage.getItem("user")) || {}
-  );
+  const [users, setUsersState] = useState(getStoredUser);
 
   const setUsers = useCallback((user) => {
-    setUsersState(user);
-    localStorage.setItem("user", JSON.stringify(user));
+    const sanitizedUser = persistUser(user);
+    setUsersState(sanitizedUser);
   }, []);
 
   const addUser = useCallback((user) => {
@@ -18,7 +69,7 @@ export const UserProvider = ({ children }) => {
 
   const deleteUser = useCallback(() => {
     setUsersState({});
-    localStorage.removeItem("user");
+    localStorage.removeItem(USER_STORAGE_KEY);
   }, []);
 
   const getUserData = useCallback(() => {
@@ -31,8 +82,7 @@ export const UserProvider = ({ children }) => {
         ? { ...prevUserData, userName: newData.userName }
         : { ...prevUserData, ...newData };
 
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      return updatedUser;
+      return persistUser(updatedUser);
     });
   }, []);
 
