@@ -48,7 +48,7 @@ sportProject/
 │  ├─ context/
 │  ├─ pages/
 │  ├─ theme.js
-│  └─ index.js
+│  └─ index.jsx
 ├─ babel.config.js
 ├─ index.html
 ├─ jest.config.js
