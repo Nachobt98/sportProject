@@ -87,7 +87,7 @@ describe("CardEvent", () => {
     expect(await screen.findByText("No quedan plazas")).toBeInTheDocument();
   });
 
-  test("cancels event participation for joined full and past events", async () => {
+  test("cancels event participation for joined full events", async () => {
     const onChanged = jest.fn();
     eventsApi.cancelEventJoin.mockResolvedValue({ event: { ...baseEvent, participantsList: [] } });
 
@@ -96,10 +96,14 @@ describe("CardEvent", () => {
 
     await waitFor(() => expect(eventsApi.cancelEventJoin).toHaveBeenCalledWith("event-id"));
     expect(onChanged).toHaveBeenCalled();
+  });
 
-    eventsApi.cancelEventJoin.mockClear();
+  test("cancels event participation for joined past events", async () => {
+    eventsApi.cancelEventJoin.mockResolvedValue({ event: { ...baseEvent, status: "past", participantsList: [] } });
+
     renderCard({ ...baseEvent, status: "past", participantsList: ["nacho"] });
-    fireEvent.click(screen.getAllByRole("button", { name: /cancelar participacion/i })[1]);
+    fireEvent.click(screen.getByRole("button", { name: /cancelar participacion/i }));
+
     await waitFor(() => expect(eventsApi.cancelEventJoin).toHaveBeenCalledWith("event-id"));
   });
 
