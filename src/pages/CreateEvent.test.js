@@ -101,7 +101,7 @@ describe("CreateEvent", () => {
     const nameInput = await screen.findByDisplayValue("Padel match");
     expect(screen.getByRole("heading", { name: /editar evento/i })).toBeInTheDocument();
     expect(nameInput).toHaveAttribute("name", "name");
-    expect(screen.getAllByRole("button", { name: /volver/i })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: /volver/i })).toHaveLength(1);
 
     fillField(container, "name", "Updated match");
     fireEvent.click(screen.getByRole("button", { name: /guardar cambios/i }));
@@ -124,9 +124,9 @@ describe("CreateEvent", () => {
     renderCreateEvent("/events/event-id/edit");
 
     await screen.findByDisplayValue("Padel match");
-    fireEvent.click(screen.getAllByRole("button", { name: /volver/i })[0]);
+    fireEvent.click(screen.getByRole("button", { name: /volver/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id");
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id", { replace: true });
   });
 
   test("blocks editing when the current user is not the creator", async () => {
