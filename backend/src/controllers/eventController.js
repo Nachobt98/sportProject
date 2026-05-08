@@ -57,7 +57,7 @@ const listCurrentUserJoinedEvents = createServiceHandler(
 );
 
 const getEventById = createServiceHandler(
-  (req) => eventService.findEventById(req.params.eventId),
+  (req) => eventService.findEventById(req.params.eventId, getAuthenticatedUserName(req)),
   "Error al obtener el evento"
 );
 
