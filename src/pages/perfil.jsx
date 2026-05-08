@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Avatar,
@@ -20,7 +21,7 @@ import {
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { AppShell } from "../components/AppShell";
-import { CardEvent } from "../components/cardEvent";
+import { CardEvent, eventPropType } from "../components/cardEvent";
 import { useUser } from "../context/userContext";
 import { getCurrentUserCreatedEvents, getCurrentUserJoinedEvents } from "../api/eventsApi";
 import { updateCurrentUser } from "../api/usersApi";
@@ -98,6 +99,14 @@ function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
     </Paper>
   );
 }
+
+EventsPanel.propTypes = {
+  title: PropTypes.string.isRequired,
+  emptyText: PropTypes.string.isRequired,
+  events: PropTypes.arrayOf(eventPropType).isRequired,
+  onChanged: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func.isRequired,
+};
 
 export function Perfil() {
   const { users, setUsers } = useUser();

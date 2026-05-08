@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Grid, Paper, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -6,7 +7,7 @@ import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { apiFetch } from "../api/client";
-import { CardEvent } from "../components/cardEvent";
+import { CardEvent, eventPropType } from "../components/cardEvent";
 import { AppShell } from "../components/AppShell";
 import { useUser } from "../context/userContext";
 
@@ -56,6 +57,16 @@ function EventList({ events, selectedDate, emptyText, onChanged, onRemoved }) {
     </Stack>
   );
 }
+
+EventList.propTypes = {
+  events: PropTypes.arrayOf(eventPropType).isRequired,
+  selectedDate: PropTypes.shape({
+    format: PropTypes.func.isRequired,
+  }).isRequired,
+  emptyText: PropTypes.string.isRequired,
+  onChanged: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func.isRequired,
+};
 
 export function Calendar() {
   const { users } = useUser();

@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { Avatar, Grid, Stack, Typography } from "@mui/material";
 
 export function Testimonio({ foto, nombre, mensaje }) {
@@ -13,3 +14,9 @@ export function Testimonio({ foto, nombre, mensaje }) {
     </Grid>
   );
 }
+
+Testimonio.propTypes = {
+  foto: PropTypes.string,
+  nombre: PropTypes.string.isRequired,
+  mensaje: PropTypes.string.isRequired,
+};
