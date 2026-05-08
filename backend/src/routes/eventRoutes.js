@@ -11,6 +11,8 @@ router.get("/events/:eventId", ...authenticated, eventController.getEventById);
 router.patch("/events/:eventId", ...authenticated, eventController.updateEvent);
 router.delete("/events/:eventId", ...authenticated, eventController.deleteEvent);
 
+router.post("/events/:eventId/cancel", ...authenticated, eventController.cancelEvent);
+router.post("/events/:eventId/dismiss", ...authenticated, eventController.dismissEvent);
 router.post("/events/:eventId/join", ...authenticated, eventController.joinEvent);
 router.delete("/events/:eventId/join", ...authenticated, eventController.cancelEventJoin);
 
