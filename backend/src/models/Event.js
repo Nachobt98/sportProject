@@ -20,6 +20,7 @@ const eventSchema = new mongoose.Schema(
       default: "open",
       required: true,
     },
+    dismissedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
@@ -28,5 +29,6 @@ eventSchema.index({ status: 1, date: 1, _id: 1 });
 eventSchema.index({ date: 1, _id: 1 });
 eventSchema.index({ city: 1, sport: 1, status: 1, date: 1, _id: 1 });
 eventSchema.index({ creator: 1, date: 1, _id: 1 });
+eventSchema.index({ dismissedBy: 1, status: 1, date: 1 });
 
 module.exports = mongoose.model("Event", eventSchema);
