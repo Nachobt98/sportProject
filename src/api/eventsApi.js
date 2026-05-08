@@ -36,6 +36,18 @@ export async function createEvent(eventData) {
   return assertOkResponse(response, "No se pudo crear el evento");
 }
 
+export async function updateEvent(eventId, eventData) {
+  const response = await apiFetch(`/api/events/${eventId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(eventData),
+  });
+
+  return assertOkResponse(response, "No se pudo editar el evento");
+}
+
 export async function deleteEvent(eventId) {
   const response = await apiFetch(`/api/events/${eventId}`, {
     method: "DELETE",

@@ -6,6 +6,7 @@ jest.mock("../services/eventService", () => ({
   listJoinedEvents: jest.fn(),
   joinUserToEvent: jest.fn(),
   cancelUserEvent: jest.fn(),
+  updateEvent: jest.fn(),
   deleteEvent: jest.fn(),
 }));
 
@@ -128,6 +129,17 @@ describe("eventController", () => {
 
     await controller.cancelEventJoin(req, res);
     expect(eventService.cancelUserEvent).toHaveBeenCalledWith("event-id", "nacho");
+  });
+
+  test("updates events through the service", async () => {
+    const req = { body: { name: "Padel updated" }, params: { eventId: "event-id" }, auth: { userName: "nacho" } };
+    const res = createResponse();
+    eventService.updateEvent.mockResolvedValue({ status: 200, body: { event: req.body } });
+
+    await controller.updateEvent(req, res);
+
+    expect(eventService.updateEvent).toHaveBeenCalledWith("event-id", req.body, "nacho");
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   test("deletes events through the service", async () => {

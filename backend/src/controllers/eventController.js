@@ -71,6 +71,11 @@ const cancelEventJoin = createServiceHandler(
   "Error al cancelar la participacion"
 );
 
+const updateEvent = createServiceHandler(
+  (req) => eventService.updateEvent(req.params.eventId, req.body, getAuthenticatedUserName(req)),
+  "Error al editar el evento"
+);
+
 const deleteEvent = createServiceHandler(
   (req) => eventService.deleteEvent(req.params.eventId, getAuthenticatedUserName(req)),
   "Error al eliminar el evento"
@@ -84,5 +89,6 @@ module.exports = {
   getEventById,
   joinEvent,
   cancelEventJoin,
+  updateEvent,
   deleteEvent,
 };

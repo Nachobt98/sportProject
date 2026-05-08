@@ -7,6 +7,10 @@ import * as eventsApi from "../api/eventsApi";
 jest.mock("../api/eventsApi");
 const mockNavigate = jest.fn();
 
+jest.mock("../context/userContext", () => ({
+  useUser: () => ({ users: { userName: "nacho" } }),
+}));
+
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
@@ -54,6 +58,24 @@ describe("CardDetails", () => {
     expect(screen.getByText("player1")).toBeInTheDocument();
   });
 
+  test("shows creator edit action", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
+
+    renderDetails();
+
+    fireEvent.click(await screen.findByRole("button", { name: /editar/i }));
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id/edit");
+  });
+
+  test("hides edit action for non creator events", async () => {
+    eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, creator: "other-user" } });
+
+    renderDetails();
+
+    expect(await screen.findByRole("heading", { name: "Padel match" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /editar/i })).not.toBeInTheDocument();
+  });
+
   test("shows empty participant state", async () => {
     eventsApi.getEventById.mockResolvedValue({
       event: { ...baseEvent, participantsList: [] },
@@ -84,7 +106,7 @@ describe("CardDetails", () => {
     );
   });
 
-  test("renders missing location fallback and back navigation", async () => {
+  test("renders missing location fallback and deterministic back navigation", async () => {
     eventsApi.getEventById.mockResolvedValue({
       event: { ...baseEvent, location: "", locationName: "" },
     });
@@ -93,7 +115,7 @@ describe("CardDetails", () => {
 
     expect(await screen.findByText("Ubicacion no indicada")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /volver/i }));
-    expect(mockNavigate).toHaveBeenCalledWith(-1);
+    expect(mockNavigate).toHaveBeenCalledWith("/events");
   });
 
   test("shows an error when route has no event id", async () => {

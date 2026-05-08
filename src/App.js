@@ -45,6 +45,7 @@ function App() {
             <Route path="/profile" element={protectedElement(<Perfil />)} />
             <Route path="/events" element={protectedElement(<SearchCard2 />)} />
             <Route path="/events/new" element={protectedElement(<CreateEvent />)} />
+            <Route path="/events/:eventId/edit" element={protectedElement(<CreateEvent />)} />
             <Route path="/events/:eventId" element={protectedElement(<CardDetails />)} />
             <Route path="/faq" element={protectedElement(<FaqPage />)} />
             <Route path="/contact" element={protectedElement(<Contact />)} />

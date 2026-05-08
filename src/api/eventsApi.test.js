@@ -8,6 +8,7 @@ import {
   getEventById,
   getEvents,
   joinEvent,
+  updateEvent,
 } from "./eventsApi";
 
 jest.mock("./client");
@@ -52,6 +53,16 @@ describe("eventsApi", () => {
     mockJsonResponse({ event: eventData });
     await createEvent(eventData);
     expect(client.apiFetch).toHaveBeenCalledWith("/api/events", expect.objectContaining({ method: "POST" }));
+  });
+
+  test("updates events", async () => {
+    const eventData = { name: "Padel updated" };
+    mockJsonResponse({ event: eventData });
+    await updateEvent("123", eventData);
+    expect(client.apiFetch).toHaveBeenCalledWith("/api/events/123", expect.objectContaining({
+      method: "PATCH",
+      body: JSON.stringify(eventData),
+    }));
   });
 
   test("deletes events", async () => {

@@ -11,12 +11,14 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { useUser } from "../context/userContext";
 import { getEventById } from "../api/eventsApi";
 
 function formatDate(dateString) {
@@ -45,6 +47,7 @@ function safeLocationHref(location) {
 function CardDetails() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { users } = useUser();
   const [eventData, setEventData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -112,6 +115,7 @@ function CardDetails() {
 
   const participants = eventData.participantsList || [];
   const locationHref = safeLocationHref(eventData.location);
+  const isCreator = eventData.creator === users.userName;
 
   return (
     <AppShell
@@ -119,13 +123,24 @@ function CardDetails() {
       subtitle={eventData.description}
       maxWidth="md"
       actions={
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackOutlinedIcon />}
-          onClick={() => navigate(-1)}
-        >
-          Volver
-        </Button>
+        <Stack direction="row" spacing={1}>
+          {isCreator && (
+            <Button
+              variant="contained"
+              startIcon={<EditOutlinedIcon />}
+              onClick={() => navigate(`/events/${eventId}/edit`)}
+            >
+              Editar
+            </Button>
+          )}
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackOutlinedIcon />}
+            onClick={() => navigate("/events")}
+          >
+            Volver
+          </Button>
+        </Stack>
       }
     >
       <Paper

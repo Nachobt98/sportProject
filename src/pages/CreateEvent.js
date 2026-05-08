@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -9,13 +9,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { AppShell } from "../components/AppShell";
 import { useUser } from "../context/userContext";
-import { createEvent } from "../api/eventsApi";
+import { createEvent, getEventById, updateEvent } from "../api/eventsApi";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Nombre es requerido"),
@@ -29,12 +30,92 @@ const validationSchema = Yup.object().shape({
 });
 
 const participantOptions = Array.from({ length: 20 }, (_, index) => index + 1);
+const emptyEventValues = {
+  name: "",
+  description: "",
+  sport: "",
+  date: "",
+  location: "",
+  locationName: "",
+  city: "",
+  participants: "",
+};
+
+function toDateInputValue(date) {
+  if (!date) {
+    return "";
+  }
+
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+}
+
+function toEventFormValues(event) {
+  return {
+    name: event.name || "",
+    description: event.description || "",
+    sport: event.sport || "",
+    date: toDateInputValue(event.date),
+    location: event.location || "",
+    locationName: event.locationName || "",
+    city: event.city || "",
+    participants: event.participants ? String(event.participants) : "",
+  };
+}
 
 export function CreateEvent() {
+  const { eventId } = useParams();
+  const isEditMode = Boolean(eventId);
   const { users } = useUser();
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [isLoading, setIsLoading] = useState(isEditMode);
+  const [initialValues, setInitialValues] = useState(emptyEventValues);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchEditableEvent() {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const data = await getEventById(eventId);
+        if (!isMounted) {
+          return;
+        }
+
+        if (data.event?.creator !== users.userName) {
+          setLoadError("Solo el creador puede editar este evento.");
+          return;
+        }
+
+        setInitialValues(toEventFormValues(data.event));
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message || "No se pudo cargar el evento.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    if (isEditMode) {
+      fetchEditableEvent();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId, isEditMode, users.userName]);
 
   const handleSnackbarClose = (event, reason) => {
     if (reason === "clickaway") {
@@ -43,11 +124,54 @@ export function CreateEvent() {
     setOpenSnackbar(false);
   };
 
+  const pageTitle = isEditMode ? "Editar evento" : "Crear evento";
+  const pageSubtitle = isEditMode
+    ? "Actualiza la actividad, plazas disponibles y punto de encuentro del evento."
+    : "Define la actividad, plazas disponibles y punto de encuentro para que otras personas puedan unirse.";
+  const successMessage = isEditMode ? "Evento actualizado correctamente" : "Evento creado correctamente";
+  const detailPath = `/events/${eventId}`;
+
+  if (isLoading) {
+    return (
+      <AppShell title={pageTitle} maxWidth="md">
+        <Alert severity="info">Cargando evento...</Alert>
+      </AppShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppShell title={pageTitle} maxWidth="md">
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => navigate("/events")}>
+              Volver
+            </Button>
+          }
+        >
+          {loadError}
+        </Alert>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell
-      title="Crear evento"
-      subtitle="Define la actividad, plazas disponibles y punto de encuentro para que otras personas puedan unirse."
+      title={pageTitle}
+      subtitle={pageSubtitle}
       maxWidth="md"
+      actions={
+        isEditMode ? (
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackOutlinedIcon />}
+            onClick={() => navigate(detailPath, { replace: true })}
+          >
+            Volver
+          </Button>
+        ) : undefined
+      }
     >
       <Paper
         sx={{
@@ -57,16 +181,8 @@ export function CreateEvent() {
         }}
       >
         <Formik
-          initialValues={{
-            name: "",
-            description: "",
-            sport: "",
-            date: "",
-            location: "",
-            locationName: "",
-            city: "",
-            participants: "",
-          }}
+          initialValues={initialValues}
+          enableReinitialize
           validationSchema={validationSchema}
           onSubmit={async (values, { setSubmitting }) => {
             setSubmitError("");
@@ -76,13 +192,23 @@ export function CreateEvent() {
                 participants: Number(values.participants),
                 creator: users.userName,
               };
-              await createEvent(eventData);
+
+              if (isEditMode) {
+                await updateEvent(eventId, eventData);
+              } else {
+                await createEvent(eventData);
+              }
+
               setOpenSnackbar(true);
               setTimeout(() => {
-                navigate("/events");
+                if (isEditMode) {
+                  navigate(detailPath, { replace: true });
+                } else {
+                  navigate("/events");
+                }
               }, 900);
             } catch (error) {
-              setSubmitError(error.message || "No se pudo crear el evento");
+              setSubmitError(error.message || (isEditMode ? "No se pudo editar el evento" : "No se pudo crear el evento"));
             } finally {
               setSubmitting(false);
             }
@@ -204,14 +330,14 @@ export function CreateEvent() {
                   />
                 </Stack>
 
-                <Stack direction="row" justifyContent="flex-end">
+                <Stack direction="row" justifyContent="flex-end" spacing={1}>
                   <Button
                     type="submit"
                     variant="contained"
                     startIcon={<SaveOutlinedIcon />}
                     disabled={formikProps.isSubmitting}
                   >
-                    Crear evento
+                    {isEditMode ? "Guardar cambios" : "Crear evento"}
                   </Button>
                 </Stack>
               </Stack>
@@ -224,7 +350,7 @@ export function CreateEvent() {
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={handleSnackbarClose}
-        message="Evento creado correctamente"
+        message={successMessage}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
     </AppShell>

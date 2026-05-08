@@ -61,6 +61,21 @@ test("renders protected routes for authenticated users", async () => {
   expect(await screen.findByText("Search page")).toBeInTheDocument();
 });
 
+test("renders event edit route for authenticated users", async () => {
+  localStorage.setItem(
+    "auth",
+    JSON.stringify({ isAuthenticated: true, username: "nacho", token: "token" })
+  );
+
+  render(
+    <MemoryRouter initialEntries={["/events/event-id/edit"]}>
+      <App />
+    </MemoryRouter>
+  );
+
+  expect(await screen.findByText("Create event page")).toBeInTheDocument();
+});
+
 test("redirects unknown routes to login", () => {
   render(
     <MemoryRouter initialEntries={["/unknown"]}>
