@@ -106,7 +106,7 @@ describe("CardDetails", () => {
     );
   });
 
-  test("renders missing location fallback and back navigation", async () => {
+  test("renders missing location fallback and deterministic back navigation", async () => {
     eventsApi.getEventById.mockResolvedValue({
       event: { ...baseEvent, location: "", locationName: "" },
     });
@@ -115,7 +115,7 @@ describe("CardDetails", () => {
 
     expect(await screen.findByText("Ubicacion no indicada")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /volver/i }));
-    expect(mockNavigate).toHaveBeenCalledWith(-1);
+    expect(mockNavigate).toHaveBeenCalledWith("/events");
   });
 
   test("shows an error when route has no event id", async () => {
