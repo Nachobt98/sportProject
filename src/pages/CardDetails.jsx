@@ -58,7 +58,7 @@ function getStatusMessage(status) {
     return "Este evento esta completo. El detalle sigue disponible, pero no admite nuevas inscripciones.";
   }
   if (status === EVENT_STATUS.CANCELLED) {
-    return "Este evento ha sido cancelado. Solo permanece visible para el creador y usuarios vinculados que no lo hayan quitado de su perfil.";
+    return "Este evento ha sido cancelado. Solo permanece visible para el creador y usuarios vinculados que no lo hayan borrado de su perfil.";
   }
   if (status === EVENT_STATUS.PAST) {
     return "Este evento ya ha pasado. El creador puede cambiar la fecha para reactivarlo.";
@@ -127,7 +127,7 @@ function CardDetails() {
       await dismissEvent(eventId);
       navigate("/profile", { replace: true });
     } catch (error) {
-      setActionError(error.message || "No se pudo quitar el evento de tu perfil.");
+      setActionError(error.message || "No se pudo borrar el evento de tu perfil.");
     }
   };
 
@@ -170,6 +170,8 @@ function CardDetails() {
   const locationHref = safeLocationHref(eventData.location);
   const isCreator = eventData.creator === users.userName;
   const status = eventData.status || EVENT_STATUS.OPEN;
+  const isActiveLifecycle = status === EVENT_STATUS.OPEN || status === EVENT_STATUS.FULL;
+  const canManageActiveEvent = isCreator && isActiveLifecycle;
   const canEdit = isCreator && status !== EVENT_STATUS.CANCELLED;
   const canEditDate = canEditEventDate(eventData, isCreator);
 
@@ -189,7 +191,7 @@ function CardDetails() {
               {canEditDate ? "Cambiar fecha" : "Editar"}
             </Button>
           )}
-          {isCreator && status === EVENT_STATUS.OPEN && (
+          {canManageActiveEvent && (
             <Button
               variant="outlined"
               color="warning"
@@ -205,10 +207,10 @@ function CardDetails() {
               startIcon={<VisibilityOffOutlinedIcon />}
               onClick={handleDismissEvent}
             >
-              Quitar de mi perfil
+              Borrar de mi perfil
             </Button>
           )}
-          {isCreator && status !== EVENT_STATUS.PAST && (
+          {canManageActiveEvent && (
             <Button
               variant="outlined"
               color="error"
