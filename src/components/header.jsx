@@ -97,7 +97,11 @@ export function Header() {
 
           <Box sx={{ flex: { xs: 1, md: 0 } }} />
 
-          {!isAuthenticated ? (
+          {isAuthenticated ? (
+            <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
+              <DropdownMenu navItems={navItems} />
+            </Box>
+          ) : (
             <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
               <Button component={Link} to="/login" variant="outlined">
                 Login
@@ -106,10 +110,6 @@ export function Header() {
                 Registro
               </Button>
             </Stack>
-          ) : (
-            <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
-              <DropdownMenu navItems={navItems} />
-            </Box>
           )}
         </Toolbar>
       </Container>

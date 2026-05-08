@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -19,6 +20,18 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/userContext";
 import { cancelEventJoin, deleteEvent, joinEvent } from "../api/eventsApi";
+
+export const eventPropType = PropTypes.shape({
+  _id: PropTypes.string.isRequired,
+  name: PropTypes.string,
+  description: PropTypes.string,
+  sport: PropTypes.string,
+  date: PropTypes.string,
+  city: PropTypes.string,
+  creator: PropTypes.string,
+  participants: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  participantsList: PropTypes.arrayOf(PropTypes.string),
+});
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("es-ES", {
@@ -198,3 +211,9 @@ export function CardEvent({ event, onChanged, onRemoved }) {
     </Card>
   );
 }
+
+CardEvent.propTypes = {
+  event: eventPropType.isRequired,
+  onChanged: PropTypes.func,
+  onRemoved: PropTypes.func,
+};

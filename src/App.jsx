@@ -1,4 +1,4 @@
-import React from "react";
+import PropTypes from "prop-types";
 import "./App.css";
 import { ThemeProvider } from "@mui/material";
 import { Navigate, Route, Routes } from "react-router-dom";
@@ -26,6 +26,10 @@ function ProtectedRoute({ children }) {
 
   return children;
 }
+
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 function protectedElement(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>;

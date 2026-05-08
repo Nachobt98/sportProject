@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "./authContext";
 import * as authApi from "../api/authApi";
@@ -22,8 +22,9 @@ function Consumer() {
   return (
     <div>
       <span>{isAuthenticated ? "authenticated" : "anonymous"}</span>
-      <span>{username}</span>
+      <span data-testid="username">{username}</span>
       <button onClick={() => login("nacho", "token")}>login</button>
+      <button onClick={() => login("<admin>", "tok<>en!!")}>unsafe login</button>
       <button onClick={() => logout()}>logout</button>
       <button onClick={() => logout(false)}>logout silent</button>
     </div>
@@ -57,6 +58,18 @@ describe("AuthProvider", () => {
 
     expect(screen.getByText("authenticated")).toBeInTheDocument();
     expect(localStorage.getItem("auth")).toContain("token");
+  });
+
+  test("sanitizes auth data before storing it", () => {
+    renderAuth();
+    fireEvent.click(screen.getByText("unsafe login"));
+
+    expect(screen.getByTestId("username")).toHaveTextContent("admin");
+    expect(JSON.parse(localStorage.getItem("auth"))).toEqual({
+      isAuthenticated: true,
+      username: "admin",
+      token: "token",
+    });
   });
 
   test("logs out and redirects", () => {
@@ -96,13 +109,15 @@ describe("AuthProvider", () => {
     expect(localStorage.getItem("auth")).toBeNull();
   });
 
-  test("handles unauthorized events", () => {
+  test("handles unauthorized events", async () => {
     localStorage.setItem("auth", JSON.stringify({ isAuthenticated: true, username: "nacho", token: "token" }));
     authApi.getCurrentSession.mockResolvedValue({ user: { userName: "nacho" } });
 
     renderAuth();
-    window.dispatchEvent(new Event("sportlife:unauthorized"));
+    act(() => {
+      window.dispatchEvent(new Event("sportlife:unauthorized"));
+    });
 
-    expect(mockDeleteUser).toHaveBeenCalled();
+    await waitFor(() => expect(mockDeleteUser).toHaveBeenCalled());
   });
 });

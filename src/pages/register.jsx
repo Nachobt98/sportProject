@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import PropTypes from "prop-types";
+import { useState } from "react";
 import {
   Alert,
   Button,
@@ -140,7 +141,7 @@ export function RegisterPage() {
               <Stack spacing={0.75}>
                 <Typography variant="subtitle2">Foto de perfil</Typography>
                 <Button variant="outlined" component="label">
-                  Seleccionar imagen
+                  <span>Seleccionar imagen</span>
                   <input
                     hidden
                     type="file"
@@ -195,3 +196,16 @@ function FieldControl({ name, label, type = "text", formik, inputLabelProps }) {
     </Stack>
   );
 }
+
+FieldControl.propTypes = {
+  name: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  type: PropTypes.string,
+  formik: PropTypes.shape({
+    touched: PropTypes.objectOf(PropTypes.bool).isRequired,
+    errors: PropTypes.objectOf(PropTypes.string).isRequired,
+  }).isRequired,
+  inputLabelProps: PropTypes.shape({
+    shrink: PropTypes.bool,
+  }),
+};

@@ -1,4 +1,4 @@
-import React from "react";
+import PropTypes from "prop-types";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 
 export function AuthLayout({ title, subtitle, children }) {
@@ -41,3 +41,8 @@ export function AuthLayout({ title, subtitle, children }) {
   );
 }
 
+AuthLayout.propTypes = {
+  title: PropTypes.node.isRequired,
+  subtitle: PropTypes.node,
+  children: PropTypes.node.isRequired,
+};

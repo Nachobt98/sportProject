@@ -40,12 +40,10 @@ export function Carousel() {
   };
 
   useEffect(() => {
-    // Cambiar automáticamente de imagen cada 5 segundos (ajusta según tus necesidades)
     const interval = setInterval(() => {
       setCurrImg((prevImg) => (prevImg < images.length - 1 ? prevImg + 1 : 0));
     }, 5000);
 
-    // Limpieza del intervalo al desmontar el componente
     return () => clearInterval(interval);
   }, [images.length]);
 

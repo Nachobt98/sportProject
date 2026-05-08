@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import PropTypes from "prop-types";
+import { useState } from "react";
 import {
   Avatar,
   Divider,
@@ -106,3 +107,13 @@ export function DropdownMenu({ navItems = [] }) {
     </>
   );
 }
+
+DropdownMenu.propTypes = {
+  navItems: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      path: PropTypes.string.isRequired,
+      icon: PropTypes.node,
+    })
+  ),
+};
