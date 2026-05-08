@@ -48,6 +48,22 @@ export async function updateEvent(eventId, eventData) {
   return assertOkResponse(response, "No se pudo editar el evento");
 }
 
+export async function cancelEvent(eventId) {
+  const response = await apiFetch(`/api/events/${eventId}/cancel`, {
+    method: "POST",
+  });
+
+  return assertOkResponse(response, "No se pudo cancelar el evento");
+}
+
+export async function dismissEvent(eventId) {
+  const response = await apiFetch(`/api/events/${eventId}/dismiss`, {
+    method: "POST",
+  });
+
+  return assertOkResponse(response, "No se pudo ocultar el evento");
+}
+
 export async function deleteEvent(eventId) {
   const response = await apiFetch(`/api/events/${eventId}`, {
     method: "DELETE",
