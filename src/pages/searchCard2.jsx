@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   MenuItem,
   Paper,
@@ -12,6 +11,7 @@ import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
+import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
 import { getEvents } from "../api/eventsApi";
 
 const DEFAULT_PAGE = 1;
@@ -59,15 +59,20 @@ function renderEventsContent({
   onEventRemoved,
 }) {
   if (isLoading && events.length === 0) {
-    return <Alert severity="info">Cargando eventos...</Alert>;
+    return <LoadingState title="Cargando eventos" description="Buscando actividades disponibles con los filtros actuales." />;
   }
 
   if (loadError) {
-    return <Alert severity="error">{loadError}</Alert>;
+    return <ErrorState title="No se pudieron cargar los eventos" message={loadError} />;
   }
 
   if (events.length === 0) {
-    return <Alert severity="info">No se encontraron eventos con esos filtros.</Alert>;
+    return (
+      <EmptyState
+        title="No hay eventos disponibles"
+        description="Prueba a limpiar filtros o buscar otra ciudad, deporte o fecha."
+      />
+    );
   }
 
   return events.map((event) => (
