@@ -19,22 +19,26 @@ export const EVENT_STATUS_COLORS = {
   [EVENT_STATUS.PAST]: "default",
 };
 
+export function getEventStatus(status) {
+  return status || EVENT_STATUS.OPEN;
+}
+
 export function isLockedEvent(event) {
-  return event?.status && event.status !== EVENT_STATUS.OPEN;
+  return getEventStatus(event?.status) !== EVENT_STATUS.OPEN;
 }
 
 export function canJoinEvent(event) {
-  return event?.status === EVENT_STATUS.OPEN && event.canJoin !== false;
+  return getEventStatus(event?.status) === EVENT_STATUS.OPEN && event?.canJoin !== false;
 }
 
 export function canEditEventDate(event, isCreator) {
-  return Boolean(isCreator && event?.status === EVENT_STATUS.PAST);
+  return Boolean(isCreator && getEventStatus(event?.status) === EVENT_STATUS.PAST);
 }
 
 export function getEventStatusLabel(status) {
-  return EVENT_STATUS_LABELS[status] || EVENT_STATUS_LABELS[EVENT_STATUS.OPEN];
+  return EVENT_STATUS_LABELS[getEventStatus(status)] || EVENT_STATUS_LABELS[EVENT_STATUS.OPEN];
 }
 
 export function getEventStatusColor(status) {
-  return EVENT_STATUS_COLORS[status] || EVENT_STATUS_COLORS[EVENT_STATUS.OPEN];
+  return EVENT_STATUS_COLORS[getEventStatus(status)] || EVENT_STATUS_COLORS[EVENT_STATUS.OPEN];
 }
