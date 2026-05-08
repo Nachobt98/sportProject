@@ -67,14 +67,14 @@ describe("eventController", () => {
     expect(res.json).toHaveBeenCalledWith(body);
   });
 
-  test("gets event details by id", async () => {
-    const req = { params: { eventId: "event-id" } };
+  test("gets event details by id for the authenticated user", async () => {
+    const req = { params: { eventId: "event-id" }, auth: { userName: "nacho" } };
     const res = createResponse();
     eventService.findEventById.mockResolvedValue({ status: 200, body: { event: { _id: "event-id" } } });
 
     await controller.getEventById(req, res);
 
-    expect(eventService.findEventById).toHaveBeenCalledWith("event-id");
+    expect(eventService.findEventById).toHaveBeenCalledWith("event-id", "nacho");
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
