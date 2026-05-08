@@ -78,6 +78,7 @@ describe("Calendar", () => {
   });
 
   test("handles empty and failing event loads", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     apiFetch.mockReset();
     apiFetch
       .mockResolvedValueOnce(jsonResponse([]))
@@ -89,6 +90,11 @@ describe("Calendar", () => {
     expect(screen.getByText("No hay eventos proximos desde esta fecha.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: /mis eventos/i }));
     expect(screen.getByText("Todavia no te has unido a eventos proximos.")).toBeInTheDocument();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error al obtener los eventos unidos del usuario:",
+      expect.any(Error)
+    );
+    consoleErrorSpy.mockRestore();
   });
 
   test("uses an empty joined list when no user is loaded", async () => {
