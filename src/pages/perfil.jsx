@@ -22,6 +22,7 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { AppShell } from "../components/AppShell";
 import { CardEvent, eventPropType } from "../components/cardEvent";
+import { EmptyState, ErrorState } from "../components/FeedbackState";
 import { useUser } from "../context/userContext";
 import { getCurrentUserCreatedEvents, getCurrentUserJoinedEvents } from "../api/eventsApi";
 import { updateCurrentUser } from "../api/usersApi";
@@ -82,7 +83,7 @@ function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
       <Stack spacing={2}>
         <Typography variant="h5">{title}</Typography>
         {events.length === 0 ? (
-          <Typography color="text.secondary">{emptyText}</Typography>
+          <EmptyState title={emptyText} description="Cuando haya actividad, aparecera aqui con sus acciones disponibles." compact />
         ) : (
           <Stack spacing={1.5}>
             {events.map((event) => (
@@ -254,7 +255,7 @@ export function Perfil() {
         </Button>
       }
     >
-      {eventsError && <Alert severity="error">{eventsError}</Alert>}
+      {eventsError && <ErrorState title="No se pudieron cargar tus eventos" message={eventsError} compact />}
       {profileError && <Alert severity="error">{profileError}</Alert>}
       {profileSuccess && <Alert severity="success">{profileSuccess}</Alert>}
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
