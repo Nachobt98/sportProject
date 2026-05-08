@@ -26,6 +26,8 @@ const baseEvent = {
   creator: "other",
   participants: 4,
   participantsList: [],
+  status: "open",
+  canJoin: true,
 };
 
 function renderCard(event = baseEvent, props = {}) {
@@ -41,12 +43,13 @@ describe("CardEvent", () => {
     jest.clearAllMocks();
   });
 
-  test("renders event information", () => {
+  test("renders event information and status", () => {
     renderCard();
 
     expect(screen.getByText("Padel match")).toBeInTheDocument();
     expect(screen.getByText("Friendly match")).toBeInTheDocument();
     expect(screen.getByText("Padel")).toBeInTheDocument();
+    expect(screen.getByText("Open")).toBeInTheDocument();
   });
 
   test("navigates to event detail route", () => {
@@ -84,16 +87,31 @@ describe("CardEvent", () => {
     expect(await screen.findByText("No quedan plazas")).toBeInTheDocument();
   });
 
-  test("cancels event participation", async () => {
+  test("cancels event participation for joined full events", async () => {
     const onChanged = jest.fn();
-    const joinedEvent = { ...baseEvent, participantsList: ["nacho"] };
     eventsApi.cancelEventJoin.mockResolvedValue({ event: { ...baseEvent, participantsList: [] } });
 
-    renderCard(joinedEvent, { onChanged });
-    fireEvent.click(screen.getByRole("button", { name: /cancelar/i }));
+    renderCard({ ...baseEvent, status: "full", participants: 1, participantsList: ["nacho"] }, { onChanged });
+    fireEvent.click(screen.getByRole("button", { name: /cancelar participacion/i }));
 
     await waitFor(() => expect(eventsApi.cancelEventJoin).toHaveBeenCalledWith("event-id"));
     expect(onChanged).toHaveBeenCalled();
+  });
+
+  test("cancels event participation for joined past events", async () => {
+    eventsApi.cancelEventJoin.mockResolvedValue({ event: { ...baseEvent, status: "past", participantsList: [] } });
+
+    renderCard({ ...baseEvent, status: "past", participantsList: ["nacho"] });
+    fireEvent.click(screen.getByRole("button", { name: /cancelar participacion/i }));
+
+    await waitFor(() => expect(eventsApi.cancelEventJoin).toHaveBeenCalledWith("event-id"));
+  });
+
+  test("disables participation cancellation for cancelled events", () => {
+    renderCard({ ...baseEvent, status: "cancelled", participantsList: ["nacho"] });
+
+    expect(screen.getByRole("button", { name: /cancelar participacion/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /borrar de mi perfil/i })).toBeEnabled();
   });
 
   test("shows cancel errors", async () => {
@@ -106,7 +124,54 @@ describe("CardEvent", () => {
     expect(await screen.findByText("No se pudo cancelar")).toBeInTheDocument();
   });
 
-  test("deletes own events", async () => {
+  test("creator can cancel active events", async () => {
+    const onChanged = jest.fn();
+    eventsApi.cancelEvent.mockResolvedValue({ event: { ...baseEvent, creator: "nacho", status: "cancelled" } });
+
+    renderCard({ ...baseEvent, creator: "nacho" }, { onChanged });
+    fireEvent.click(screen.getByRole("button", { name: /cancelar evento/i }));
+
+    await waitFor(() => expect(eventsApi.cancelEvent).toHaveBeenCalledWith("event-id"));
+    expect(onChanged).toHaveBeenCalledWith(expect.objectContaining({ status: "cancelled" }));
+  });
+
+  test("shows creator cancel errors", async () => {
+    eventsApi.cancelEvent.mockRejectedValue(new Error("No se pudo cancelar el evento"));
+
+    renderCard({ ...baseEvent, creator: "nacho" });
+    fireEvent.click(screen.getByRole("button", { name: /cancelar evento/i }));
+
+    expect(await screen.findByText("No se pudo cancelar el evento")).toBeInTheDocument();
+  });
+
+  test("creator can edit past event date", () => {
+    renderCard({ ...baseEvent, creator: "nacho", status: "past" });
+
+    fireEvent.click(screen.getByRole("button", { name: /cambiar fecha/i }));
+    expect(mockNavigate).toHaveBeenCalledWith("/events/event-id/edit");
+  });
+
+  test("dismisses cancelled and past events from profile", async () => {
+    const onRemoved = jest.fn();
+    eventsApi.dismissEvent.mockResolvedValue({ eventId: "event-id" });
+
+    renderCard({ ...baseEvent, status: "past" }, { onRemoved });
+    fireEvent.click(screen.getByRole("button", { name: /borrar de mi perfil/i }));
+
+    await waitFor(() => expect(eventsApi.dismissEvent).toHaveBeenCalledWith("event-id"));
+    expect(onRemoved).toHaveBeenCalledWith("event-id");
+  });
+
+  test("shows dismiss errors", async () => {
+    eventsApi.dismissEvent.mockRejectedValue(new Error("No se pudo borrar"));
+
+    renderCard({ ...baseEvent, status: "cancelled" });
+    fireEvent.click(screen.getByRole("button", { name: /borrar de mi perfil/i }));
+
+    expect(await screen.findByText("No se pudo borrar")).toBeInTheDocument();
+  });
+
+  test("deletes own active events", async () => {
     const onRemoved = jest.fn();
     eventsApi.deleteEvent.mockResolvedValue({ eventId: "event-id" });
 

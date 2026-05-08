@@ -16,9 +16,13 @@ SportLife is a full-stack JavaScript application for creating, discovering and j
 - JWT-protected frontend routes.
 - Session validation with `/api/session`.
 - Event list with backend filters and pagination.
+- Public event search only shows open future events that the current user has not dismissed.
+- Event lifecycle states exposed in the UI: `open`, `full`, `cancelled` and `past`.
 - Event creation.
 - Event detail pages by URL: `/events/:eventId`.
 - Creator-only event editing through `/events/:eventId/edit` and `PATCH /api/events/:eventId`.
+- Creator-only event cancellation through `POST /api/events/:eventId/cancel`.
+- Per-user event dismissal through `POST /api/events/:eventId/dismiss` for cancelled, past or owned events.
 - Join and leave event flows.
 - Creator-only event deletion.
 - Editable profile page.
@@ -83,10 +87,10 @@ Tests live next to the implementation files using `*.test.js` naming.
 |---|---|
 | `/home` | Main landing page after authentication. |
 | `/profile` | Current user profile, profile image and user event panels. |
-| `/events` | Event search/list page. |
+| `/events` | Event search/list page. Shows only searchable open future events. |
 | `/events/new` | Event creation form. |
 | `/events/:eventId` | Event detail page loaded by event ID from the backend. |
-| `/events/:eventId/edit` | Creator-only event edit form. |
+| `/events/:eventId/edit` | Creator-only event edit form. Past events can be reactivated by changing their date. |
 | `/faq` | FAQ page. |
 | `/contact` | Contact page. |
 | `/calendar` | Calendar page. |
@@ -120,15 +124,17 @@ All backend routes are mounted under `/api`.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---:|---|
-| `GET` | `/api/events` | Yes | Lists events with optional `city`, `sport`, `date`, `page` and `limit` query parameters. |
+| `GET` | `/api/events` | Yes | Lists searchable events with optional `city`, `sport`, `date`, `page` and `limit` query parameters. Only open future events are returned. |
 | `POST` | `/api/events` | Yes | Creates a new event. Creator comes from the token. |
 | `GET` | `/api/events/:eventId` | Yes | Returns one event by ID. |
-| `PATCH` | `/api/events/:eventId` | Yes | Updates an event. Only the creator can edit it. |
-| `DELETE` | `/api/events/:eventId` | Yes | Deletes an event. Only the creator can delete it. |
-| `POST` | `/api/events/:eventId/join` | Yes | Joins the current user to an event. |
-| `DELETE` | `/api/events/:eventId/join` | Yes | Removes the current user from an event. |
-| `GET` | `/api/users/me/events` | Yes | Lists events created by the current user. |
-| `GET` | `/api/users/me/joined-events` | Yes | Lists events joined by the current user. |
+| `PATCH` | `/api/events/:eventId` | Yes | Updates an event. Only the creator can edit it. Cancelled events cannot be edited. |
+| `DELETE` | `/api/events/:eventId` | Yes | Deletes an event globally. Only the creator can delete it. |
+| `POST` | `/api/events/:eventId/cancel` | Yes | Cancels an event. Only the creator can cancel it. |
+| `POST` | `/api/events/:eventId/dismiss` | Yes | Hides a cancelled, past or owned event from the current user's profile/search results. Does not delete it globally. |
+| `POST` | `/api/events/:eventId/join` | Yes | Joins the current user to an open event. |
+| `DELETE` | `/api/events/:eventId/join` | Yes | Removes the current user from an open event. |
+| `GET` | `/api/users/me/events` | Yes | Lists events created by the current user, including cancelled or past events unless dismissed by that user. |
+| `GET` | `/api/users/me/joined-events` | Yes | Lists events joined by the current user, including cancelled or past events unless dismissed by that user. |
 
 `GET /api/events` returns a paginated response:
 
@@ -147,6 +153,24 @@ All backend routes are mounted under `/api`.
 ```
 
 Public API responses are serialized through backend DTOs under `backend/src/dtos`. User and event responses expose only the fields consumed by the current API contract, keep `id`/`_id` compatibility, serialize internal ObjectId references to strings or public user names, and avoid leaking sensitive or Mongoose-internal fields such as `password` and `__v`.
+
+Event responses include lifecycle metadata:
+
+```json
+{
+  "status": "open",
+  "baseStatus": "open",
+  "canJoin": true,
+  "isLocked": false
+}
+```
+
+Lifecycle rules:
+
+- `open`: persisted base status is open, date is future and there are available places. Users can join.
+- `full`: derived status when an open future event has no available places. The event is visible in search/detail, but join is disabled.
+- `cancelled`: persisted base status set by the creator. It is removed from public search but remains visible in created/joined profile panels until each linked user dismisses it.
+- `past`: derived status when an open event date is in the past. It is removed from public search but remains visible in created/joined profile panels until dismissed. The creator can edit the date to reactivate it.
 
 Auth, event-domain and current-user service errors include a stable `error.code` while preserving the existing top-level `message` field for frontend compatibility. Rate limit responses use `RATE_LIMITED`. Example:
 
@@ -210,6 +234,16 @@ npm run dev
 npm run seed:dev
 ```
 
+`seed:dev` creates or updates the local `dev` user.
+
+For a complete lifecycle demo, run:
+
+```bash
+npm run seed:events
+```
+
+`seed:events` creates or updates demo users `dev`, `alex` and `marta` with password `Dev123`, then creates sample `open`, `full`, `cancelled` and `past` events linked across those users.
+
 ### Preview production build locally
 
 ```bash
@@ -242,6 +276,7 @@ The project is in a transitional but increasingly clean state:
 - Event details are URL-driven and reload-safe.
 - Event creation and edition share the same Formik/Yup form, while the backend enforces creator-only updates.
 - Event edition prevents reducing available places below the number of already joined users.
+- Event lifecycle status is now explicit in the API and visible on event cards/detail pages.
 - Current-user and event participation flows are token-based instead of username-in-URL based.
 - Event user relationships are stored as `ObjectId` references while API responses expose user names for the current UI.
 - User and event responses now pass through explicit DTOs before leaving the backend.
@@ -254,7 +289,7 @@ The project is in a transitional but increasingly clean state:
 
 Known cleanup areas:
 
-- Event editing currently updates the core event fields; richer flows such as cancellation/status changes are still pending.
+- Event lifecycle dismissal is per event/user through `dismissedBy`; if the project later needs notification history or audit trails, this should become a separate model.
 - Base64 profile image storage is still transitional; external object storage or a stricter upload strategy should be considered before production use.
 - Jest remains as the test runner for compatibility with the current test suite. A future Vitest migration can be done as a separate focused PR.
 
@@ -262,9 +297,8 @@ Known cleanup areas:
 
 1. Improve frontend state/data fetching with clearer hooks or React Query.
 2. Improve UX with skeletons, confirmation dialogs and consistent empty states.
-3. Add event lifecycle states such as open, full, cancelled and past.
-4. Add deployment documentation.
-5. Consider migrating Jest to Vitest once the Vite build migration is stable.
+3. Add deployment documentation.
+4. Consider migrating Jest to Vitest once the Vite build migration is stable.
 
 ## PR discipline
 

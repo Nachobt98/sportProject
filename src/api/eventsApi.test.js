@@ -1,8 +1,10 @@
 import * as client from "./client";
 import {
+  cancelEvent,
   cancelEventJoin,
   createEvent,
   deleteEvent,
+  dismissEvent,
   getCurrentUserCreatedEvents,
   getCurrentUserJoinedEvents,
   getEventById,
@@ -63,6 +65,16 @@ describe("eventsApi", () => {
       method: "PATCH",
       body: JSON.stringify(eventData),
     }));
+  });
+
+  test("cancels and dismisses events", async () => {
+    mockJsonResponse({ event: { _id: "123", status: "cancelled" } });
+    await cancelEvent("123");
+    expect(client.apiFetch).toHaveBeenLastCalledWith("/api/events/123/cancel", { method: "POST" });
+
+    mockJsonResponse({ eventId: "123" });
+    await dismissEvent("123");
+    expect(client.apiFetch).toHaveBeenLastCalledWith("/api/events/123/dismiss", { method: "POST" });
   });
 
   test("deletes events", async () => {

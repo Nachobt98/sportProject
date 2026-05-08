@@ -31,6 +31,7 @@
     "dev": "vite --host 0.0.0.0",
     "server": "node backend/server.js",
     "seed:dev": "node backend/seedDevUser.js",
+    "seed:events": "node backend/seedDevEvents.js",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "jest --passWithNoTests",

@@ -11,7 +11,10 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
@@ -19,7 +22,13 @@ import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { useUser } from "../context/userContext";
-import { getEventById } from "../api/eventsApi";
+import { cancelEvent, deleteEvent, dismissEvent, getEventById } from "../api/eventsApi";
+import {
+  EVENT_STATUS,
+  canEditEventDate,
+  getEventStatusColor,
+  getEventStatusLabel,
+} from "../utils/eventStatus";
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("es-ES", {
@@ -44,6 +53,19 @@ function safeLocationHref(location) {
   )}`;
 }
 
+function getStatusMessage(status) {
+  if (status === EVENT_STATUS.FULL) {
+    return "Este evento esta completo. El detalle sigue disponible, pero no admite nuevas inscripciones.";
+  }
+  if (status === EVENT_STATUS.CANCELLED) {
+    return "Este evento ha sido cancelado. Solo permanece visible para el creador y usuarios vinculados que no lo hayan borrado de su perfil.";
+  }
+  if (status === EVENT_STATUS.PAST) {
+    return "Este evento ya ha pasado. El creador puede cambiar la fecha para reactivarlo.";
+  }
+  return "Evento abierto y disponible para inscripciones.";
+}
+
 function CardDetails() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -51,6 +73,7 @@ function CardDetails() {
   const [eventData, setEventData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -88,6 +111,36 @@ function CardDetails() {
     };
   }, [eventId]);
 
+  const handleCancelEvent = async () => {
+    setActionError("");
+    try {
+      const data = await cancelEvent(eventId);
+      setEventData(data.event);
+    } catch (error) {
+      setActionError(error.message || "No se pudo cancelar el evento.");
+    }
+  };
+
+  const handleDismissEvent = async () => {
+    setActionError("");
+    try {
+      await dismissEvent(eventId);
+      navigate("/profile", { replace: true });
+    } catch (error) {
+      setActionError(error.message || "No se pudo borrar el evento de tu perfil.");
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    setActionError("");
+    try {
+      await deleteEvent(eventId);
+      navigate("/profile", { replace: true });
+    } catch (error) {
+      setActionError(error.message || "No se pudo eliminar el evento.");
+    }
+  };
+
   if (isLoading) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
@@ -116,6 +169,11 @@ function CardDetails() {
   const participants = eventData.participantsList || [];
   const locationHref = safeLocationHref(eventData.location);
   const isCreator = eventData.creator === users.userName;
+  const status = eventData.status || EVENT_STATUS.OPEN;
+  const isActiveLifecycle = status === EVENT_STATUS.OPEN || status === EVENT_STATUS.FULL;
+  const canManageActiveEvent = isCreator && isActiveLifecycle;
+  const canEdit = isCreator && status !== EVENT_STATUS.CANCELLED;
+  const canEditDate = canEditEventDate(eventData, isCreator);
 
   return (
     <AppShell
@@ -123,14 +181,43 @@ function CardDetails() {
       subtitle={eventData.description}
       maxWidth="md"
       actions={
-        <Stack direction="row" spacing={1}>
-          {isCreator && (
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {canEdit && (
             <Button
               variant="contained"
               startIcon={<EditOutlinedIcon />}
               onClick={() => navigate(`/events/${eventId}/edit`)}
             >
-              Editar
+              {canEditDate ? "Cambiar fecha" : "Editar"}
+            </Button>
+          )}
+          {canManageActiveEvent && (
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<CancelOutlinedIcon />}
+              onClick={handleCancelEvent}
+            >
+              Cancelar evento
+            </Button>
+          )}
+          {(status === EVENT_STATUS.CANCELLED || status === EVENT_STATUS.PAST) && (
+            <Button
+              variant="outlined"
+              startIcon={<VisibilityOffOutlinedIcon />}
+              onClick={handleDismissEvent}
+            >
+              Borrar de mi perfil
+            </Button>
+          )}
+          {canManageActiveEvent && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteOutlineOutlinedIcon />}
+              onClick={handleDeleteEvent}
+            >
+              Eliminar globalmente
             </Button>
           )}
           <Button
@@ -143,6 +230,7 @@ function CardDetails() {
         </Stack>
       }
     >
+      {actionError && <Alert severity="error">{actionError}</Alert>}
       <Paper
         sx={{
           p: { xs: 2, md: 3 },
@@ -153,14 +241,21 @@ function CardDetails() {
         <Stack spacing={3}>
           <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
             <Chip label={eventData.sport} color="primary" />
+            <Chip
+              label={getEventStatusLabel(status)}
+              color={getEventStatusColor(status)}
+              variant={status === EVENT_STATUS.OPEN ? "filled" : "outlined"}
+            />
             <Chip label={eventData.city} variant="outlined" />
             <Chip
               icon={<PeopleAltOutlinedIcon />}
               label={`${participants.length}/${eventData.participants} plazas`}
-              color="secondary"
+              color={status === EVENT_STATUS.OPEN ? "secondary" : "default"}
               variant="outlined"
             />
           </Stack>
+
+          <Alert severity={status === EVENT_STATUS.OPEN ? "success" : "info"}>{getStatusMessage(status)}</Alert>
 
           <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
             <Stack spacing={2} sx={{ flex: 1 }}>
