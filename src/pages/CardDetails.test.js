@@ -43,6 +43,10 @@ function renderDetails(path = "/events/event-id") {
   );
 }
 
+async function confirmAction(nameMatcher) {
+  fireEvent.click(await screen.findByRole("button", { name: nameMatcher }));
+}
+
 describe("CardDetails", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -129,22 +133,26 @@ describe("CardDetails", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/events");
   });
 
-  test("creator can cancel active events", async () => {
+  test("creator can cancel active events after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
     eventsApi.cancelEvent.mockResolvedValue({ event: { ...baseEvent, status: "cancelled" } });
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /cancelar evento/i }));
+    expect(screen.getByText(/quedara bloqueado para sus participantes/i)).toBeInTheDocument();
+    await confirmAction(/^cancelar evento$/i);
+
     await waitFor(() => expect(eventsApi.cancelEvent).toHaveBeenCalledWith("event-id"));
     expect(await screen.findByText("Cancelled")).toBeInTheDocument();
   });
 
-  test("shows cancel event errors", async () => {
+  test("shows cancel event errors after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
     eventsApi.cancelEvent.mockRejectedValue(new Error("No se pudo cancelar"));
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /cancelar evento/i }));
+    await confirmAction(/^cancelar evento$/i);
     expect(await screen.findByText("No se pudo cancelar")).toBeInTheDocument();
   });
 
@@ -154,62 +162,70 @@ describe("CardDetails", () => {
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /cancelar evento/i }));
+    await confirmAction(/^cancelar evento$/i);
     expect(await screen.findByText("No se pudo cancelar el evento.")).toBeInTheDocument();
   });
 
-  test("dismisses cancelled and past events from profile", async () => {
+  test("dismisses cancelled and past events from profile after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "past" } });
     eventsApi.dismissEvent.mockResolvedValue({ eventId: "event-id" });
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /borrar de mi perfil/i }));
+    await confirmAction(/^borrar de mi perfil$/i);
     await waitFor(() => expect(eventsApi.dismissEvent).toHaveBeenCalledWith("event-id"));
     expect(mockNavigate).toHaveBeenCalledWith("/profile", { replace: true });
   });
 
-  test("shows dismiss errors", async () => {
+  test("shows dismiss errors after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "cancelled" } });
     eventsApi.dismissEvent.mockRejectedValue(new Error("No se pudo borrar"));
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /borrar de mi perfil/i }));
+    await confirmAction(/^borrar de mi perfil$/i);
     expect(await screen.findByText("No se pudo borrar")).toBeInTheDocument();
   });
 
-  test("shows default dismiss fallback", async () => {
+  test("shows default dismiss fallback after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "cancelled" } });
     eventsApi.dismissEvent.mockRejectedValue({});
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /borrar de mi perfil/i }));
+    await confirmAction(/^borrar de mi perfil$/i);
     expect(await screen.findByText("No se pudo borrar el evento de tu perfil.")).toBeInTheDocument();
   });
 
-  test("creator can delete active events", async () => {
+  test("creator can delete active events after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
     eventsApi.deleteEvent.mockResolvedValue({ eventId: "event-id" });
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /eliminar globalmente/i }));
+    expect(screen.getByText(/no se podra deshacer/i)).toBeInTheDocument();
+    await confirmAction(/^eliminar globalmente$/i);
     await waitFor(() => expect(eventsApi.deleteEvent).toHaveBeenCalledWith("event-id"));
     expect(mockNavigate).toHaveBeenCalledWith("/profile", { replace: true });
   });
 
-  test("shows delete errors", async () => {
+  test("shows delete errors after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
     eventsApi.deleteEvent.mockRejectedValue(new Error("No se pudo eliminar"));
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /eliminar globalmente/i }));
+    await confirmAction(/^eliminar globalmente$/i);
     expect(await screen.findByText("No se pudo eliminar")).toBeInTheDocument();
   });
 
-  test("shows default delete fallback", async () => {
+  test("shows default delete fallback after confirmation", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: baseEvent });
     eventsApi.deleteEvent.mockRejectedValue({});
     renderDetails();
 
     fireEvent.click(await screen.findByRole("button", { name: /eliminar globalmente/i }));
+    await confirmAction(/^eliminar globalmente$/i);
     expect(await screen.findByText("No se pudo eliminar el evento.")).toBeInTheDocument();
   });
 
@@ -235,7 +251,7 @@ describe("CardDetails", () => {
     eventsApi.getEventById.mockResolvedValue({ event: null });
     renderDetails();
 
-    expect(await screen.findByText("Evento no encontrado.")).toBeInTheDocument();
+    expect(await screen.findByText("Evento no encontrado")).toBeInTheDocument();
   });
 
   test("shows an error when route has no event id", async () => {
@@ -256,7 +272,7 @@ describe("CardDetails", () => {
     renderDetails();
 
     expect(await screen.findByText("Evento no encontrado")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /volver/i }));
+    fireEvent.click(screen.getByRole("button", { name: /volver a eventos/i }));
     expect(mockNavigate).toHaveBeenCalledWith("/events");
   });
 });
