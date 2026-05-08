@@ -18,6 +18,8 @@ SportLife is a full-stack JavaScript application for creating, discovering and j
 - Event list with backend filters and pagination.
 - Public event search only shows open future events that the current user has not dismissed.
 - Event lifecycle states exposed in the UI: `open`, `full`, `cancelled` and `past`.
+- Shared UX feedback components for loading, empty and error states.
+- Shared confirmation dialog for destructive or irreversible event actions.
 - Event creation.
 - Event detail pages by URL: `/events/:eventId`.
 - Creator-only event editing through `/events/:eventId/edit` and `PATCH /api/events/:eventId`.
@@ -71,6 +73,22 @@ Tests live next to the implementation files using `*.test.js` naming.
 - Use `.js` for non-JSX modules: API clients, utility functions, theme configuration and backend files.
 - Tests can remain as `.test.js`; Jest/Babel transpiles their JSX and keeps the current test naming consistent.
 - Vite and Jest resolve `.jsx` before `.js` in the frontend project, so extensionless imports continue to work while the source files follow the modern convention.
+
+## Frontend UX components
+
+Shared UX components live under `src/components`:
+
+- `ConfirmDialog`: reusable confirmation modal for destructive/irreversible actions.
+- `LoadingState`: consistent loading surface for pages and panels.
+- `EmptyState`: consistent empty-state surface for empty event lists and missing resources.
+- `ErrorState`: consistent error surface with optional recovery action.
+
+Current destructive event actions now require confirmation before executing:
+
+- cancel event participation;
+- cancel an owned event;
+- remove an event from the current user's profile;
+- globally delete an owned event.
 
 ## Frontend routes
 
@@ -277,6 +295,8 @@ The project is in a transitional but increasingly clean state:
 - Event creation and edition share the same Formik/Yup form, while the backend enforces creator-only updates.
 - Event edition prevents reducing available places below the number of already joined users.
 - Event lifecycle status is now explicit in the API and visible on event cards/detail pages.
+- Destructive event actions now use a shared confirmation dialog before executing.
+- Loading, empty and error states now use shared frontend components across core event/profile flows.
 - Current-user and event participation flows are token-based instead of username-in-URL based.
 - Event user relationships are stored as `ObjectId` references while API responses expose user names for the current UI.
 - User and event responses now pass through explicit DTOs before leaving the backend.
@@ -296,9 +316,8 @@ Known cleanup areas:
 ## Suggested next priorities
 
 1. Improve frontend state/data fetching with clearer hooks or React Query.
-2. Improve UX with skeletons, confirmation dialogs and consistent empty states.
-3. Add deployment documentation.
-4. Consider migrating Jest to Vitest once the Vite build migration is stable.
+2. Add deployment documentation.
+3. Consider migrating Jest to Vitest once the Vite build migration is stable.
 
 ## PR discipline
 
