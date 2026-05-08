@@ -4,10 +4,10 @@ SportLife is a full-stack JavaScript application for creating, discovering and j
 
 ## Tech stack
 
-- Frontend: React 18, React Router 6, Material UI, Formik and Yup.
+- Frontend: React 18, Vite, React Router 6, Material UI, Formik and Yup.
 - Backend: Node.js, Express, MongoDB and Mongoose.
 - Authentication: JWT sessions with bcrypt password hashing.
-- Quality: Jest tests, coverage reporting and SonarCloud analysis through GitHub Actions.
+- Quality: Jest tests, explicit frontend/backend test environments, coverage reporting and SonarCloud analysis through GitHub Actions.
 
 ## Current features
 
@@ -48,9 +48,13 @@ sportProject/
 │  ├─ context/
 │  ├─ pages/
 │  ├─ theme.js
-│  └─ App.js
+│  └─ index.js
+├─ babel.config.js
+├─ index.html
+├─ jest.config.js
 ├─ package.json
-└─ sonar-project.properties
+├─ sonar-project.properties
+└─ vite.config.js
 ```
 
 Tests live next to the implementation files using `*.test.js` naming.
@@ -142,7 +146,8 @@ All backend routes are mounted under `/api`.
 | `CLIENT_ORIGIN` | `http://localhost:3000` | Allowed CORS origin. |
 | `JWT_SECRET` | `local-dev-secret-change-me` | JWT signing secret. Change outside local development. |
 | `PASSWORD_HASH_ROUNDS` | `10` | bcrypt hash cost. |
-| `REACT_APP_API_URL` | `http://localhost:5000` | Frontend API base URL. |
+| `VITE_API_URL` | `http://localhost:5000` | Frontend API base URL used by Vite. |
+| `REACT_APP_API_URL` | `http://localhost:5000` | Backward-compatible fallback for older local env files. Prefer `VITE_API_URL`. |
 
 ## Local development
 
@@ -158,16 +163,25 @@ npm install
 npm run server
 ```
 
-### Start frontend
+### Start frontend with Vite
 
 ```bash
-npm start
+npm run dev
 ```
+
+`npm start` is kept as an alias for `npm run dev`.
 
 ### Optional dev seed
 
 ```bash
 npm run seed:dev
+```
+
+### Preview production build locally
+
+```bash
+npm run build
+npm run preview
 ```
 
 ## Testing and quality
@@ -178,12 +192,18 @@ npm run test:coverage
 npm run build
 ```
 
+Jest is configured explicitly with two projects:
+
+- `frontend`: uses `jsdom` for React/UI tests under `src/`.
+- `backend`: uses `node` for backend tests under `backend/src/`.
+
 The SonarCloud workflow runs on pushes to `main` and pull requests. It installs dependencies, runs coverage, builds the project and executes the SonarCloud scan.
 
 ## Current architectural notes
 
 The project is in a transitional but increasingly clean state:
 
+- Frontend build/dev tooling has been migrated from Create React App to Vite.
 - Frontend routes have been normalized and legacy redirects/placeholders have been removed.
 - Event details are URL-driven and reload-safe.
 - Event creation and edition share the same Formik/Yup form, while the backend enforces creator-only updates.
@@ -197,9 +217,9 @@ The project is in a transitional but increasingly clean state:
 
 Known cleanup areas:
 
-- The project is still based on Create React App.
 - Some production-hardening work is still pending around validation, rate limiting and payload limits.
 - Event editing currently updates the core event fields; richer flows such as cancellation/status changes are still pending.
+- Jest remains as the test runner for compatibility with the current test suite. A future Vitest migration can be done as a separate focused PR.
 
 ## Suggested next priorities
 
@@ -209,7 +229,7 @@ Known cleanup areas:
 4. Improve UX with skeletons, confirmation dialogs and consistent empty states.
 5. Add event lifecycle states such as open, full, cancelled and past.
 6. Add deployment documentation.
-7. Consider migrating from Create React App to Vite after domain cleanup.
+7. Consider migrating Jest to Vitest once the Vite build migration is stable.
 
 ## PR discipline
 
