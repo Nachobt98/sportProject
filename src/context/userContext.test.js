@@ -13,6 +13,17 @@ function Consumer() {
       <button onClick={() => addUser({ userName: "added", city: "Valencia" })}>add</button>
       <button onClick={() => updateUserData({ city: "Bilbao" })}>update city</button>
       <button onClick={() => updateUserData({ userName: "renamed" })}>update username</button>
+      <button
+        onClick={() =>
+          setUsers({
+            userName: "<script>nacho</script>",
+            city: " Valencia ",
+            role: "admin",
+          })
+        }
+      >
+        set unsafe
+      </button>
       <button onClick={deleteUser}>delete</button>
     </div>
   );
@@ -59,5 +70,21 @@ describe("UserProvider", () => {
     fireEvent.click(screen.getByText("delete"));
     expect(screen.getByTestId("username")).toHaveTextContent("none");
     expect(localStorage.getItem("user")).toBeNull();
+  });
+
+  test("sanitizes user data before storing it", () => {
+    renderUserProvider();
+
+    fireEvent.click(screen.getByText("set unsafe"));
+
+    expect(screen.getByTestId("username")).toHaveTextContent("scriptnacho/script");
+    expect(screen.getByTestId("current")).toHaveTextContent("Valencia");
+
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    expect(storedUser).toEqual({
+      userName: "scriptnacho/script",
+      city: "Valencia",
+    });
+    expect(storedUser.role).toBeUndefined();
   });
 });
