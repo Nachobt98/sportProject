@@ -269,7 +269,7 @@ async function listEvents(filters = {}, authUserName = "") {
   return {
     status: 200,
     body: {
-      events: events.map(toEventDto),
+      events: events.map((event) => toEventDto(event)),
       pagination: buildPaginationMeta({ page, limit, total }),
     },
   };
@@ -288,7 +288,7 @@ async function listCreatedEvents(userName) {
     .populate("dismissedBy", "userName profileImage")
     .exec();
 
-  return events.map(toEventDto);
+  return events.map((event) => toEventDto(event));
 }
 
 async function listJoinedEvents(userName) {
@@ -304,7 +304,7 @@ async function listJoinedEvents(userName) {
     .populate("dismissedBy", "userName profileImage")
     .exec();
 
-  return { status: 200, body: joinedEvents.map(toEventDto) };
+  return { status: 200, body: joinedEvents.map((event) => toEventDto(event)) };
 }
 
 async function joinUserToEvent(eventId, userName) {
