@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "./authContext";
 import * as authApi from "../api/authApi";
@@ -96,13 +96,15 @@ describe("AuthProvider", () => {
     expect(localStorage.getItem("auth")).toBeNull();
   });
 
-  test("handles unauthorized events", () => {
+  test("handles unauthorized events", async () => {
     localStorage.setItem("auth", JSON.stringify({ isAuthenticated: true, username: "nacho", token: "token" }));
     authApi.getCurrentSession.mockResolvedValue({ user: { userName: "nacho" } });
 
     renderAuth();
-    window.dispatchEvent(new Event("sportlife:unauthorized"));
+    act(() => {
+      window.dispatchEvent(new Event("sportlife:unauthorized"));
+    });
 
-    expect(mockDeleteUser).toHaveBeenCalled();
+    await waitFor(() => expect(mockDeleteUser).toHaveBeenCalled());
   });
 });
