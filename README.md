@@ -59,6 +59,13 @@ sportProject/
 
 Tests live next to the implementation files using `*.test.js` naming.
 
+## Frontend source convention
+
+- Use `.jsx` for React application files that render JSX: pages, components, providers and the frontend entrypoint.
+- Use `.js` for non-JSX modules: API clients, utility functions, theme configuration and backend files.
+- Tests can remain as `.test.js`; Jest/Babel transpiles their JSX and keeps the current test naming consistent.
+- Vite and Jest resolve `.jsx` before `.js` in the frontend project, so extensionless imports continue to work while the source files follow the modern convention.
+
 ## Frontend routes
 
 ### Public
@@ -204,6 +211,7 @@ The SonarCloud workflow runs on pushes to `main` and pull requests. It installs 
 The project is in a transitional but increasingly clean state:
 
 - Frontend build/dev tooling has been migrated from Create React App to Vite.
+- React application source files that render JSX now use the `.jsx` extension.
 - Frontend routes have been normalized and legacy redirects/placeholders have been removed.
 - Event details are URL-driven and reload-safe.
 - Event creation and edition share the same Formik/Yup form, while the backend enforces creator-only updates.
