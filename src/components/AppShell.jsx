@@ -1,4 +1,4 @@
-import React from "react";
+import PropTypes from "prop-types";
 import { Box, Container, Stack, Typography } from "@mui/material";
 
 export function AppShell({ title, subtitle, actions, maxWidth = "lg", children }) {
@@ -46,3 +46,11 @@ export function AppShell({ title, subtitle, actions, maxWidth = "lg", children }
     </Box>
   );
 }
+
+AppShell.propTypes = {
+  title: PropTypes.node,
+  subtitle: PropTypes.node,
+  actions: PropTypes.node,
+  maxWidth: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
+  children: PropTypes.node,
+};
