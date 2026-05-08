@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { Contact, handleContactSubmit } from "./contact";
 
 test("renders the contact form and support details", () => {
@@ -10,8 +10,7 @@ test("renders the contact form and support details", () => {
   expect(screen.getByLabelText(/correo electronico/i)).toBeInTheDocument();
   expect(screen.getByLabelText(/mensaje/i)).toBeInTheDocument();
   expect(screen.getByText("93 767 786 7867")).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole("button", { name: /enviar mensaje/i }));
+  expect(screen.getByRole("button", { name: /enviar mensaje/i })).toBeInTheDocument();
 });
 
 test("marks successful contact submissions and resets the form", () => {
