@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const envPath = path.resolve(__dirname, "..", ".env");
 if (fs.existsSync(envPath)) {
@@ -16,6 +17,35 @@ if (fs.existsSync(envPath)) {
 }
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/sportlife";
+const DEMO_PASSWORD = "Dev123";
+const PASSWORD_HASH_ROUNDS = 10;
+
+const DEMO_USERS = [
+  {
+    firstName: "Dev",
+    lastName: "User",
+    userName: "dev",
+    city: "Madrid",
+    email: "dev@sportlife.local",
+    birthdate: new Date("1990-01-01"),
+  },
+  {
+    firstName: "Alex",
+    lastName: "Runner",
+    userName: "alex",
+    city: "Valencia",
+    email: "alex@sportlife.local",
+    birthdate: new Date("1993-04-12"),
+  },
+  {
+    firstName: "Marta",
+    lastName: "Padel",
+    userName: "marta",
+    city: "Barcelona",
+    email: "marta@sportlife.local",
+    birthdate: new Date("1995-08-22"),
+  },
+];
 
 function addDays(days) {
   const date = new Date();
@@ -24,18 +54,10 @@ function addDays(days) {
   return date;
 }
 
-function requireUser(usersByName, userName) {
-  const user = usersByName[userName];
-  if (!user) {
-    throw new Error(`Falta el usuario demo ${userName}. Crea usuarios dev, alex y marta antes de ejecutar este seed.`);
-  }
-  return user;
-}
-
 function buildDemoEvents(usersByName) {
-  const dev = requireUser(usersByName, "dev");
-  const alex = requireUser(usersByName, "alex");
-  const marta = requireUser(usersByName, "marta");
+  const dev = usersByName.dev;
+  const alex = usersByName.alex;
+  const marta = usersByName.marta;
 
   return [
     {
@@ -68,7 +90,7 @@ function buildDemoEvents(usersByName) {
     },
     {
       name: "Cancelled demo - Baloncesto cancelado",
-      description: "Evento cancelado que solo aparece en perfiles vinculados hasta que cada usuario lo quite.",
+      description: "Evento cancelado que solo aparece en perfiles vinculados hasta que cada usuario lo borre de su perfil.",
       sport: "Baloncesto",
       date: addDays(12),
       locationName: "Pabellon demo",
@@ -97,45 +119,98 @@ function buildDemoEvents(usersByName) {
   ];
 }
 
+async function upsertDemoUsers(usersCollection) {
+  const password = await bcrypt.hash(DEMO_PASSWORD, PASSWORD_HASH_ROUNDS);
+
+  await Promise.all(
+    DEMO_USERS.map((user) =>
+      usersCollection.updateOne(
+        { userName: user.userName },
+        {
+          $set: {
+            ...user,
+            password,
+          },
+          $setOnInsert: {
+            joinedEvents: [],
+          },
+        },
+        { upsert: true }
+      )
+    )
+  );
+
+  const users = await usersCollection
+    .find({ userName: { $in: DEMO_USERS.map((user) => user.userName) } })
+    .toArray();
+
+  return Object.fromEntries(users.map((user) => [user.userName, user]));
+}
+
 async function seedDevEvents() {
   await mongoose.connect(MONGO_URI);
   const usersCollection = mongoose.connection.db.collection("users");
   const eventsCollection = mongoose.connection.db.collection("events");
 
-  const users = await usersCollection.find({ userName: { $in: ["dev", "alex", "marta"] } }).toArray();
-  const usersByName = Object.fromEntries(users.map((user) => [user.userName, user]));
+  const usersByName = await upsertDemoUsers(usersCollection);
   const events = buildDemoEvents(usersByName);
 
-  await Promise.all(events.map((event) =>
-    eventsCollection.updateOne(
-      { name: event.name },
-      { $set: event },
-      { upsert: true }
+  await Promise.all(
+    events.map((event) =>
+      eventsCollection.updateOne(
+        { name: event.name },
+        { $set: event },
+        { upsert: true }
+      )
     )
-  ));
+  );
 
-  const storedEvents = await eventsCollection.find({ name: { $in: events.map((event) => event.name) } }).toArray();
+  const storedEvents = await eventsCollection
+    .find({ name: { $in: events.map((event) => event.name) } })
+    .toArray();
   const eventsByName = Object.fromEntries(storedEvents.map((event) => [event.name, event]));
 
   await usersCollection.updateOne(
     { userName: "dev" },
-    { $set: { joinedEvents: [eventsByName["Full demo - Futbol 5 completo"]._id, eventsByName["Cancelled demo - Baloncesto cancelado"]._id] } }
+    {
+      $set: {
+        joinedEvents: [
+          eventsByName["Full demo - Futbol 5 completo"]._id,
+          eventsByName["Cancelled demo - Baloncesto cancelado"]._id,
+        ],
+      },
+    }
   );
   await usersCollection.updateOne(
     { userName: "alex" },
-    { $set: { joinedEvents: [eventsByName["Open demo - Padel en Valencia"]._id, eventsByName["Full demo - Futbol 5 completo"]._id, eventsByName["Cancelled demo - Baloncesto cancelado"]._id] } }
+    {
+      $set: {
+        joinedEvents: [
+          eventsByName["Open demo - Padel en Valencia"]._id,
+          eventsByName["Full demo - Futbol 5 completo"]._id,
+          eventsByName["Cancelled demo - Baloncesto cancelado"]._id,
+        ],
+      },
+    }
   );
   await usersCollection.updateOne(
     { userName: "marta" },
-    { $set: { joinedEvents: [eventsByName["Past demo - Tenis con fecha pasada"]._id] } }
+    {
+      $set: {
+        joinedEvents: [eventsByName["Past demo - Tenis con fecha pasada"]._id],
+      },
+    }
   );
 
-  console.log("Eventos demo actualizados: open, full, cancelled y past.");
+  console.log("Demo local actualizada.");
+  console.log("Usuarios: dev, alex, marta.");
+  console.log(`Password: ${DEMO_PASSWORD}`);
+  console.log("Eventos: open, full, cancelled y past.");
   await mongoose.disconnect();
 }
 
 seedDevEvents().catch(async (error) => {
-  console.error("No se pudieron crear los eventos demo:", error.message);
+  console.error("No se pudo crear la demo local:", error.message);
   await mongoose.disconnect().catch(() => {});
   process.exit(1);
 });
