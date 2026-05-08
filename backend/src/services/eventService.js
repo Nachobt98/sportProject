@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Event = require("../models/Event");
 const User = require("../models/User");
 const { toEventDto } = require("../dtos/eventDto");
+const { ERROR_CODES, serviceResponse } = require("../utils/apiResponses");
 const { normalizeString, validateRequiredFields } = require("../utils/strings");
 
 const DEFAULT_EVENT_PAGE = 1;
@@ -20,10 +21,6 @@ const EVENT_REQUIRED_FIELDS = [
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
-}
-
-function serviceResponse(status, message, extraBody = {}) {
-  return { status, body: { message, ...extraBody } };
 }
 
 function parsePositiveInteger(value, fallback) {
@@ -85,17 +82,17 @@ function buildEditableEventPayload(payload) {
   const missingFields = validateRequiredFields(payload, EVENT_REQUIRED_FIELDS);
 
   if (missingFields.length > 0) {
-    return { error: `Faltan campos obligatorios: ${missingFields.join(", ")}` };
+    return { error: `Faltan campos obligatorios: ${missingFields.join(", ")}`, code: ERROR_CODES.VALIDATION_ERROR };
   }
 
   const eventDate = new Date(payload.date);
   if (Number.isNaN(eventDate.getTime())) {
-    return { error: "La fecha del evento no es valida" };
+    return { error: "La fecha del evento no es valida", code: ERROR_CODES.VALIDATION_ERROR };
   }
 
   const participants = Number(payload.participants);
   if (!Number.isInteger(participants) || participants < 1) {
-    return { error: "El numero de participantes debe ser mayor que cero" };
+    return { error: "El numero de participantes debe ser mayor que cero", code: ERROR_CODES.VALIDATION_ERROR };
   }
 
   return {
@@ -113,10 +110,10 @@ function buildEditableEventPayload(payload) {
 }
 
 function buildEventPayload(payload, creatorId) {
-  const { value, error } = buildEditableEventPayload(payload);
+  const { value, error, code } = buildEditableEventPayload(payload);
 
   if (error) {
-    return { error };
+    return { error, code };
   }
 
   return {
@@ -130,7 +127,7 @@ function buildEventPayload(payload, creatorId) {
 
 async function findEventById(eventId) {
   if (!isValidObjectId(eventId)) {
-    return serviceResponse(400, "El identificador del evento no es valido");
+    return serviceResponse(400, "El identificador del evento no es valido", {}, ERROR_CODES.INVALID_EVENT_ID);
   }
 
   const event = await Event.findById(eventId)
@@ -138,7 +135,7 @@ async function findEventById(eventId) {
     .populate("participantsList", "userName profileImage")
     .exec();
   if (!event) {
-    return serviceResponse(404, "Evento no encontrado");
+    return serviceResponse(404, "Evento no encontrado", {}, ERROR_CODES.EVENT_NOT_FOUND);
   }
 
   return { status: 200, body: { event: toEventDto(event) } };
@@ -146,12 +143,12 @@ async function findEventById(eventId) {
 
 async function findEventAndUser(eventId, userName) {
   if (!isValidObjectId(eventId)) {
-    return serviceResponse(400, "El identificador del evento no es valido");
+    return serviceResponse(400, "El identificador del evento no es valido", {}, ERROR_CODES.INVALID_EVENT_ID);
   }
 
   const normalizedUserName = normalizeString(userName);
   if (!normalizedUserName) {
-    return serviceResponse(400, "El nombre de usuario es requerido");
+    return serviceResponse(400, "El nombre de usuario es requerido", {}, ERROR_CODES.VALIDATION_ERROR);
   }
 
   const [event, user] = await Promise.all([
@@ -160,11 +157,11 @@ async function findEventAndUser(eventId, userName) {
   ]);
 
   if (!event) {
-    return serviceResponse(404, "Evento no encontrado");
+    return serviceResponse(404, "Evento no encontrado", {}, ERROR_CODES.EVENT_NOT_FOUND);
   }
 
   if (!user) {
-    return serviceResponse(404, "Usuario no encontrado");
+    return serviceResponse(404, "Usuario no encontrado", {}, ERROR_CODES.USER_NOT_FOUND);
   }
 
   return { event, user };
@@ -173,13 +170,13 @@ async function findEventAndUser(eventId, userName) {
 async function createEvent(payload, creatorUserName) {
   const creator = await User.findOne({ userName: normalizeString(creatorUserName) }).exec();
   if (!creator) {
-    return serviceResponse(404, "Usuario creador no encontrado");
+    return serviceResponse(404, "Usuario creador no encontrado", {}, ERROR_CODES.USER_NOT_FOUND);
   }
 
-  const { value, error } = buildEventPayload(payload, creator._id);
+  const { value, error, code } = buildEventPayload(payload, creator._id);
 
   if (error) {
-    return serviceResponse(400, error);
+    return serviceResponse(400, error, {}, code);
   }
 
   const newEvent = new Event(value);
@@ -229,7 +226,7 @@ async function listCreatedEvents(userName) {
 async function listJoinedEvents(userName) {
   const user = await User.findOne({ userName }).exec();
   if (!user) {
-    return serviceResponse(404, "Usuario no encontrado");
+    return serviceResponse(404, "Usuario no encontrado", {}, ERROR_CODES.USER_NOT_FOUND);
   }
 
   const joinedEvents = await Event.find({ _id: { $in: user.joinedEvents } })
@@ -243,7 +240,7 @@ async function listJoinedEvents(userName) {
 
 async function joinUserToEvent(eventId, userName) {
   if (!eventId || !userName) {
-    return serviceResponse(400, "Faltan parámetros obligatorios");
+    return serviceResponse(400, "Faltan parametros obligatorios", {}, ERROR_CODES.VALIDATION_ERROR);
   }
   const lookup = await findEventAndUser(eventId, userName);
   if (lookup.status) {
@@ -254,13 +251,13 @@ async function joinUserToEvent(eventId, userName) {
   const userId = user._id.toString();
 
   if (event.creator.toString() === userId) {
-    return serviceResponse(400, "El creador no puede unirse a su propio evento");
+    return serviceResponse(400, "El creador no puede unirse a su propio evento", {}, ERROR_CODES.EVENT_CREATOR_CANNOT_JOIN);
   }
   if (event.participantsList.some((participantId) => participantId.toString() === userId)) {
-    return serviceResponse(409, "El usuario ya participa en este evento");
+    return serviceResponse(409, "El usuario ya participa en este evento", {}, ERROR_CODES.EVENT_ALREADY_JOINED);
   }
   if (event.participantsList.length >= event.participants) {
-    return serviceResponse(409, "El evento ya no tiene plazas disponibles");
+    return serviceResponse(409, "El evento ya no tiene plazas disponibles", {}, ERROR_CODES.EVENT_FULL);
   }
 
   event.participantsList.push(user._id);
@@ -306,18 +303,20 @@ async function updateEvent(eventId, payload, authUserName) {
 
   const { event, user } = lookup;
   if (event.creator.toString() !== user._id.toString()) {
-    return serviceResponse(403, "Solo el creador puede editar este evento");
+    return serviceResponse(403, "Solo el creador puede editar este evento", {}, ERROR_CODES.EVENT_FORBIDDEN);
   }
 
-  const { value, error } = buildEditableEventPayload(payload);
+  const { value, error, code } = buildEditableEventPayload(payload);
   if (error) {
-    return serviceResponse(400, error);
+    return serviceResponse(400, error, {}, code);
   }
 
   if (value.participants < event.participantsList.length) {
     return serviceResponse(
       400,
-      "El numero de participantes no puede ser menor que los usuarios ya unidos"
+      "El numero de participantes no puede ser menor que los usuarios ya unidos",
+      {},
+      ERROR_CODES.VALIDATION_ERROR
     );
   }
 
@@ -340,7 +339,7 @@ async function deleteEvent(eventId, authUserName) {
 
   const { event, user } = lookup;
   if (event.creator.toString() !== user._id.toString()) {
-    return serviceResponse(403, "Solo el creador puede eliminar este evento");
+    return serviceResponse(403, "Solo el creador puede eliminar este evento", {}, ERROR_CODES.EVENT_FORBIDDEN);
   }
 
   await Event.findByIdAndDelete(eventId).exec();
