@@ -7,6 +7,8 @@ jest.mock("../services/eventService", () => ({
   joinUserToEvent: jest.fn(),
   cancelUserEvent: jest.fn(),
   updateEvent: jest.fn(),
+  cancelEvent: jest.fn(),
+  dismissEventForUser: jest.fn(),
   deleteEvent: jest.fn(),
 }));
 
@@ -52,15 +54,15 @@ describe("eventController", () => {
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
-  test("lists paginated events", async () => {
-    const req = { query: { city: "Valencia", page: "2" } };
+  test("lists paginated events for the authenticated user", async () => {
+    const req = { query: { city: "Valencia", page: "2" }, auth: { userName: "nacho" } };
     const res = createResponse();
     const body = { events: [{ _id: "1" }], pagination: { page: 2 } };
     eventService.listEvents.mockResolvedValue({ status: 200, body });
 
     await controller.listEvents(req, res);
 
-    expect(eventService.listEvents).toHaveBeenCalledWith(req.query);
+    expect(eventService.listEvents).toHaveBeenCalledWith(req.query, "nacho");
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(body);
   });
@@ -80,7 +82,7 @@ describe("eventController", () => {
     const res = createResponse();
     eventService.listEvents.mockRejectedValue(new Error("boom"));
 
-    await controller.listEvents({ query: {} }, res);
+    await controller.listEvents({ query: {}, auth: { userName: "nacho" } }, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
   });
@@ -131,15 +133,21 @@ describe("eventController", () => {
     expect(eventService.cancelUserEvent).toHaveBeenCalledWith("event-id", "nacho");
   });
 
-  test("updates events through the service", async () => {
+  test("updates, cancels and dismisses events through the service", async () => {
     const req = { body: { name: "Padel updated" }, params: { eventId: "event-id" }, auth: { userName: "nacho" } };
     const res = createResponse();
     eventService.updateEvent.mockResolvedValue({ status: 200, body: { event: req.body } });
+    eventService.cancelEvent.mockResolvedValue({ status: 200, body: { event: { status: "cancelled" } } });
+    eventService.dismissEventForUser.mockResolvedValue({ status: 200, body: { eventId: "event-id" } });
 
     await controller.updateEvent(req, res);
-
     expect(eventService.updateEvent).toHaveBeenCalledWith("event-id", req.body, "nacho");
-    expect(res.status).toHaveBeenCalledWith(200);
+
+    await controller.cancelEvent(req, res);
+    expect(eventService.cancelEvent).toHaveBeenCalledWith("event-id", "nacho");
+
+    await controller.dismissEvent(req, res);
+    expect(eventService.dismissEventForUser).toHaveBeenCalledWith("event-id", "nacho");
   });
 
   test("deletes events through the service", async () => {
