@@ -166,7 +166,7 @@ export function CreateEvent() {
           <Button
             variant="outlined"
             startIcon={<ArrowBackOutlinedIcon />}
-            onClick={() => navigate(detailPath)}
+            onClick={() => navigate(detailPath, { replace: true })}
           >
             Volver
           </Button>
@@ -201,7 +201,11 @@ export function CreateEvent() {
 
               setOpenSnackbar(true);
               setTimeout(() => {
-                navigate(isEditMode ? detailPath : "/events", { replace: isEditMode });
+                if (isEditMode) {
+                  navigate(detailPath, { replace: true });
+                } else {
+                  navigate("/events");
+                }
               }, 900);
             } catch (error) {
               setSubmitError(error.message || (isEditMode ? "No se pudo editar el evento" : "No se pudo crear el evento"));
