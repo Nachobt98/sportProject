@@ -234,13 +234,15 @@ npm run dev
 npm run seed:dev
 ```
 
-`seed:dev` creates or updates the local `dev` user. To seed lifecycle demo events, create additional local users `alex` and `marta` through the register page, then run:
+`seed:dev` creates or updates the local `dev` user.
+
+For a complete lifecycle demo, run:
 
 ```bash
 npm run seed:events
 ```
 
-The event seed creates sample `open`, `full`, `cancelled` and `past` events linked across those users.
+`seed:events` creates or updates demo users `dev`, `alex` and `marta` with password `Dev123`, then creates sample `open`, `full`, `cancelled` and `past` events linked across those users.
 
 ### Preview production build locally
 
