@@ -17,3 +17,15 @@ export async function updateCurrentUser(userData) {
 
   return assertOkResponse(response, "No se pudo actualizar el perfil");
 }
+
+export async function uploadProfileImage(file) {
+  const formData = new FormData();
+  formData.append("profileImage", file);
+
+  const response = await apiFetch("/api/users/me/profile-image", {
+    method: "POST",
+    body: formData,
+  });
+
+  return assertOkResponse(response, "No se pudo actualizar la imagen de perfil");
+}
