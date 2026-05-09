@@ -9,10 +9,12 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import { AppShell } from "../components/AppShell";
 import { CardEvent, eventPropType } from "../components/cardEvent";
 import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
+import { StatCard, SurfaceSection } from "../components/SurfacePanel";
 import { UserAvatar } from "../components/UserAvatar";
 import { useUser } from "../context/userContext";
 import { useProfileEvents } from "../hooks/useEvents";
 import { updateCurrentUser, uploadProfileImage } from "../api/usersApi";
+import { removeEventById, replaceEventById, syncJoinedEvents } from "../utils/eventCollections";
 
 const profileFields = [["firstName", "Nombre"], ["lastName", "Apellidos"], ["userName", "Usuario"], ["city", "Ciudad"], ["email", "Email"], ["birthdate", "Fecha de nacimiento"]];
 const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
@@ -40,39 +42,17 @@ function buildProfilePayload(profileData) {
   };
 }
 
-function StatTile({ icon, value, label }) {
-  return (
-    <Paper variant="outlined" sx={{ p: 2, height: "100%", bgcolor: "background.paper" }}>
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Box sx={{ width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "15px", bgcolor: "primary.soft", color: "primary.main" }}>{icon}</Box>
-        <Box>
-          <Typography variant="h5">{value}</Typography>
-          <Typography variant="body2" color="text.secondary">{label}</Typography>
-        </Box>
-      </Stack>
-    </Paper>
-  );
-}
-
-StatTile.propTypes = {
-  icon: PropTypes.node.isRequired,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  label: PropTypes.string.isRequired,
-};
-
 function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, height: "100%" }}>
-      <Stack spacing={2.25}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-          <Box>
-            <Typography variant="h5">{title}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{events.length} eventos</Typography>
-          </Box>
+    <SurfaceSection title={title} description={`${events.length} eventos`}>
+      {events.length === 0 ? (
+        <EmptyState title={emptyText} description="Cuando haya actividad, aparecera aqui con sus acciones disponibles." compact />
+      ) : (
+        <Stack spacing={1.5}>
+          {events.map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />)}
         </Stack>
-        {events.length === 0 ? <EmptyState title={emptyText} description="Cuando haya actividad, aparecera aqui con sus acciones disponibles." compact /> : <Stack spacing={1.5}>{events.map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />)}</Stack>}
-      </Stack>
-    </Paper>
+      )}
+    </SurfaceSection>
   );
 }
 
@@ -147,22 +127,21 @@ export function Perfil() {
   };
 
   const handleEventChanged = (updatedEvent) => {
-    setCreatedEvents((currentEvents) => currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event)));
-    setJoinedEvents((currentEvents) => {
-      const nextEvents = currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event));
-      const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
-      const shouldBeListed = updatedEvent.participantsList?.includes(users.userName);
-      if (shouldBeListed && !isAlreadyListed) return [...nextEvents, updatedEvent];
-      return nextEvents.filter((event) => event.participantsList?.includes(users.userName));
-    });
+    setCreatedEvents((currentEvents) => replaceEventById(currentEvents, updatedEvent));
+    setJoinedEvents((currentEvents) => syncJoinedEvents(currentEvents, updatedEvent, users.userName));
   };
 
   const handleEventRemoved = (eventId) => {
-    setCreatedEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
-    setJoinedEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
+    setCreatedEvents((currentEvents) => removeEventById(currentEvents, eventId));
+    setJoinedEvents((currentEvents) => removeEventById(currentEvents, eventId));
   };
 
   const fullName = [users.firstName, users.lastName].filter(Boolean).join(" ") || users.userName || "Usuario";
+  const profileStats = [
+    { icon: <EventAvailableOutlinedIcon />, value: createdEvents.length, label: "Eventos creados" },
+    { icon: <GroupsOutlinedIcon />, value: joinedEvents.length, label: "Participaciones" },
+    { icon: <PlaceOutlinedIcon />, value: users.city || "Sin completar", label: "Ciudad" },
+  ];
 
   return (
     <AppShell title="Perfil" subtitle="Gestiona tus datos y revisa tu actividad dentro de la plataforma." actions={<Button startIcon={<EditRoundedIcon />} variant="contained" onClick={() => setEditable(true)}>Editar perfil</Button>} maxWidth="xl">
@@ -191,9 +170,11 @@ export function Perfil() {
           </Grid>
 
           <Grid container spacing={2.5} sx={{ mt: 2 }}>
-            <Grid item xs={12} md={4}><StatTile icon={<EventAvailableOutlinedIcon />} value={createdEvents.length} label="Eventos creados" /></Grid>
-            <Grid item xs={12} md={4}><StatTile icon={<GroupsOutlinedIcon />} value={joinedEvents.length} label="Participaciones" /></Grid>
-            <Grid item xs={12} md={4}><StatTile icon={<PlaceOutlinedIcon />} value={users.city || "Sin completar"} label="Ciudad" /></Grid>
+            {profileStats.map((stat) => (
+              <Grid item xs={12} md={4} key={stat.label}>
+                <StatCard {...stat} />
+              </Grid>
+            ))}
           </Grid>
 
           <Divider sx={{ my: 3 }} />

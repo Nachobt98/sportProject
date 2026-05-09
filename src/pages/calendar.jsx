@@ -13,7 +13,9 @@ import { apiFetch } from "../api/client";
 import { CardEvent, eventPropType } from "../components/cardEvent";
 import { AppShell } from "../components/AppShell";
 import { EmptyState } from "../components/FeedbackState";
+import { StatCard, SurfaceSection } from "../components/SurfacePanel";
 import { useUser } from "../context/userContext";
+import { removeEventById, replaceEventById, syncJoinedEvents } from "../utils/eventCollections";
 
 dayjs.locale("es");
 
@@ -25,49 +27,12 @@ async function fetchEventArray(path) {
   return Array.isArray(data) ? data : [];
 }
 
-function replaceEventById(events, updatedEvent) {
-  return events.map((event) => (event._id === updatedEvent._id ? updatedEvent : event));
-}
-
-function removeEventById(events, eventId) {
-  return events.filter((event) => event._id !== eventId);
-}
-
-function syncJoinedEvents(events, updatedEvent, userName) {
-  const nextEvents = replaceEventById(events, updatedEvent);
-  const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
-  const shouldBeListed = updatedEvent.participantsList?.includes(userName);
-  if (shouldBeListed && !isAlreadyListed) return [...nextEvents, updatedEvent];
-  return nextEvents.filter((event) => event.participantsList?.includes(userName));
-}
-
 function groupEventsByDate(events) {
   return events.reduce((groups, event) => {
     const date = dayjs(event.date).format("YYYY-MM-DD");
     return { ...groups, [date]: [...(groups[date] || []), event] };
   }, {});
 }
-
-function SectionPaper({ title, description, children, sx }) {
-  return (
-    <Paper sx={{ p: { xs: 2, md: 3 }, height: "100%", ...paperBorderSx, ...sx }}>
-      <Stack spacing={2}>
-        <Box>
-          <Typography variant="h5">{title}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{description}</Typography>
-        </Box>
-        {children}
-      </Stack>
-    </Paper>
-  );
-}
-
-SectionPaper.propTypes = {
-  title: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-  children: PropTypes.node,
-  sx: PropTypes.object,
-};
 
 function EventCards({ events, onChanged, onRemoved }) {
   return events.map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />);
@@ -110,32 +75,12 @@ EventList.propTypes = {
   onRemoved: PropTypes.func.isRequired,
 };
 
-function CalendarStat({ icon, label, value }) {
-  return (
-    <Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Box sx={{ width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "15px", bgcolor: "primary.soft", color: "primary.main" }}>{icon}</Box>
-        <Box>
-          <Typography variant="h5">{value}</Typography>
-          <Typography variant="body2" color="text.secondary">{label}</Typography>
-        </Box>
-      </Stack>
-    </Paper>
-  );
-}
-
-CalendarStat.propTypes = {
-  icon: PropTypes.node.isRequired,
-  label: PropTypes.string.isRequired,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-};
-
 function StatsGrid({ stats }) {
   return (
     <Grid container spacing={2.5}>
       {stats.map((stat) => (
         <Grid item xs={12} md={4} key={stat.label}>
-          <CalendarStat {...stat} />
+          <StatCard {...stat} />
         </Grid>
       ))}
     </Grid>
@@ -152,11 +97,11 @@ StatsGrid.propTypes = {
 
 function DatePickerPanel({ selectedDate, onDateChange }) {
   return (
-    <SectionPaper title="Selector de fecha" description="Elige un dia para revisar actividades concretas." sx={{ p: { xs: 1.5, sm: 2 } }}>
+    <SurfaceSection title="Selector de fecha" description="Elige un dia para revisar actividades concretas." sx={{ p: { xs: 1.5, sm: 2 } }}>
       <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
         <DateCalendar value={selectedDate} onChange={onDateChange} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
       </LocalizationProvider>
-    </SectionPaper>
+    </SurfaceSection>
   );
 }
 
@@ -167,7 +112,7 @@ DatePickerPanel.propTypes = {
 
 function SelectedDayPanel({ selectedDate, selectedEvents, onChanged, onRemoved }) {
   return (
-    <SectionPaper title="Dia seleccionado" description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")}>
+    <SurfaceSection title="Dia seleccionado" description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")}>
       <Stack direction="row" justifyContent="flex-end">
         <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
       </Stack>
@@ -178,7 +123,7 @@ function SelectedDayPanel({ selectedDate, selectedEvents, onChanged, onRemoved }
           <EventCards events={selectedEvents} onChanged={onChanged} onRemoved={onRemoved} />
         </Stack>
       )}
-    </SectionPaper>
+    </SurfaceSection>
   );
 }
 
