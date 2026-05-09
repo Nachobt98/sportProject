@@ -70,7 +70,6 @@ export function SearchCard2() {
   const eventsQuery = useEvents(queryFilters);
   const events = eventsQuery.data?.events || [];
   const pagination = eventsQuery.data?.pagination || null;
-  const visibleEvents = page === DEFAULT_PAGE ? events : localEvents;
 
   React.useEffect(() => {
     if (!eventsQuery.data) {
@@ -131,7 +130,7 @@ export function SearchCard2() {
         {renderEventsContent({
           isLoading: eventsQuery.isLoading,
           loadError: eventsQuery.error?.message || "",
-          events: visibleEvents,
+          events: localEvents,
           onEventChanged: handleEventChanged,
           onEventRemoved: handleEventRemoved,
         })}
