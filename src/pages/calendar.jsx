@@ -20,10 +20,7 @@ dayjs.locale("es");
 function groupEventsByDate(events) {
   return events.reduce((groups, event) => {
     const date = dayjs(event.date).format("YYYY-MM-DD");
-    return {
-      ...groups,
-      [date]: [...(groups[date] || []), event],
-    };
+    return { ...groups, [date]: [...(groups[date] || []), event] };
   }, {});
 }
 
@@ -33,9 +30,7 @@ function EventList({ events, selectedDate, emptyText, onChanged, onRemoved }) {
     .filter((date) => dayjs(date).isSame(selectedDate, "day") || dayjs(date).isAfter(selectedDate, "day"))
     .sort((a, b) => dayjs(a).valueOf() - dayjs(b).valueOf());
 
-  if (upcomingDates.length === 0) {
-    return <EmptyState title="Sin eventos proximos" description={emptyText} compact />;
-  }
+  if (upcomingDates.length === 0) return <EmptyState title="Sin eventos proximos" description={emptyText} compact />;
 
   return (
     <Stack spacing={3}>
@@ -43,13 +38,9 @@ function EventList({ events, selectedDate, emptyText, onChanged, onRemoved }) {
         <Stack spacing={1.5} key={date}>
           <Stack direction="row" spacing={1} alignItems="center">
             <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "primary.main" }} />
-            <Typography variant="h6" color="text.primary">
-              {dayjs(date).format("dddd, D [de] MMMM [de] YYYY")}
-            </Typography>
+            <Typography variant="h6" color="text.primary">{dayjs(date).format("dddd, D [de] MMMM [de] YYYY")}</Typography>
           </Stack>
-          {groupedEvents[date].map((event) => (
-            <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />
-          ))}
+          {groupedEvents[date].map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />)}
         </Stack>
       ))}
     </Stack>
@@ -68,9 +59,7 @@ function CalendarStat({ icon, label, value }) {
   return (
     <Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
       <Stack direction="row" spacing={1.5} alignItems="center">
-        <Box sx={{ width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "15px", bgcolor: "primary.soft", color: "primary.main" }}>
-          {icon}
-        </Box>
+        <Box sx={{ width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "15px", bgcolor: "primary.soft", color: "primary.main" }}>{icon}</Box>
         <Box>
           <Typography variant="h5">{value}</Typography>
           <Typography variant="body2" color="text.secondary">{label}</Typography>
@@ -108,7 +97,6 @@ export function Calendar() {
       setUserEvents([]);
       return;
     }
-
     try {
       const response = await apiFetch(`/api/user/${users.userName}/joinedEvents`);
       if (response.ok) {
@@ -134,7 +122,6 @@ export function Calendar() {
       const nextEvents = currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event));
       const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
       const shouldBeListed = updatedEvent.participantsList?.includes(users.userName);
-
       if (shouldBeListed && !isAlreadyListed) return [...nextEvents, updatedEvent];
       return nextEvents.filter((event) => event.participantsList?.includes(users.userName));
     });
@@ -162,11 +149,7 @@ export function Calendar() {
                 <Typography variant="body2" color="text.secondary">Elige un dia para revisar actividades concretas.</Typography>
               </Box>
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                <DateCalendar
-                  value={selectedDate}
-                  onChange={(newValue) => setSelectedDate(newValue || dayjs())}
-                  sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }}
-                />
+                <DateCalendar value={selectedDate} onChange={(newValue) => setSelectedDate(newValue || dayjs())} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
               </LocalizationProvider>
             </Stack>
           </Paper>
@@ -182,7 +165,7 @@ export function Calendar() {
                 <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
               </Stack>
               {selectedEvents.length === 0 ? (
-                <EmptyState title="No hay eventos para este dia" description="Prueba otra fecha o revisa la lista de eventos proximos." compact />
+                <EmptyState title="No hay eventos para este dia." description="Prueba otra fecha o revisa la lista de eventos proximos." compact />
               ) : (
                 <Stack spacing={1.5}>{selectedEvents.map((event) => <CardEvent key={event._id} event={event} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />)}</Stack>
               )}
