@@ -17,26 +17,7 @@ import { useUser } from "../context/userContext";
 
 dayjs.locale("es");
 
-function SectionPaper({ title, description, children, sx }) {
-  return (
-    <Paper sx={{ p: { xs: 1.5, sm: 2 }, height: "100%", border: "1px solid", borderColor: "divider", ...sx }}>
-      <Stack spacing={2}>
-        <Box sx={{ px: 1 }}>
-          <Typography variant="h5">{title}</Typography>
-          <Typography variant="body2" color="text.secondary">{description}</Typography>
-        </Box>
-        {children}
-      </Stack>
-    </Paper>
-  );
-}
-
-SectionPaper.propTypes = {
-  title: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-  children: PropTypes.node,
-  sx: PropTypes.object,
-};
+const paperBorderSx = { border: "1px solid", borderColor: "divider" };
 
 async function fetchEventArray(path) {
   const response = await apiFetch(path);
@@ -67,15 +48,29 @@ function groupEventsByDate(events) {
   }, {});
 }
 
+function SectionPaper({ title, description, children, sx }) {
+  return (
+    <Paper sx={{ p: { xs: 2, md: 3 }, height: "100%", ...paperBorderSx, ...sx }}>
+      <Stack spacing={2}>
+        <Box>
+          <Typography variant="h5">{title}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{description}</Typography>
+        </Box>
+        {children}
+      </Stack>
+    </Paper>
+  );
+}
+
+SectionPaper.propTypes = {
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string.isRequired,
+  children: PropTypes.node,
+  sx: PropTypes.object,
+};
+
 function EventCards({ events, onChanged, onRemoved }) {
-  return events.map((event) => (
-    <CardEvent
-      key={event._id}
-      event={event}
-      onChanged={onChanged}
-      onRemoved={onRemoved}
-    />
-  ));
+  return events.map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />);
 }
 
 EventCards.propTypes = {
@@ -135,6 +130,97 @@ CalendarStat.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
+function StatsGrid({ stats }) {
+  return (
+    <Grid container spacing={2.5}>
+      {stats.map((stat) => (
+        <Grid item xs={12} md={4} key={stat.label}>
+          <CalendarStat {...stat} />
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
+StatsGrid.propTypes = {
+  stats: PropTypes.arrayOf(PropTypes.shape({
+    icon: PropTypes.node.isRequired,
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  })).isRequired,
+};
+
+function DatePickerPanel({ selectedDate, onDateChange }) {
+  return (
+    <SectionPaper title="Selector de fecha" description="Elige un dia para revisar actividades concretas." sx={{ p: { xs: 1.5, sm: 2 } }}>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+        <DateCalendar value={selectedDate} onChange={onDateChange} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
+      </LocalizationProvider>
+    </SectionPaper>
+  );
+}
+
+DatePickerPanel.propTypes = {
+  selectedDate: PropTypes.shape({ format: PropTypes.func.isRequired }).isRequired,
+  onDateChange: PropTypes.func.isRequired,
+};
+
+function SelectedDayPanel({ selectedDate, selectedEvents, onChanged, onRemoved }) {
+  return (
+    <SectionPaper title="Dia seleccionado" description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")}>
+      <Stack direction="row" justifyContent="flex-end">
+        <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
+      </Stack>
+      {selectedEvents.length === 0 ? (
+        <EmptyState title="No hay eventos para este dia." description="Prueba otra fecha o revisa la lista de eventos proximos." compact />
+      ) : (
+        <Stack spacing={1.5}>
+          <EventCards events={selectedEvents} onChanged={onChanged} onRemoved={onRemoved} />
+        </Stack>
+      )}
+    </SectionPaper>
+  );
+}
+
+SelectedDayPanel.propTypes = {
+  selectedDate: PropTypes.shape({ format: PropTypes.func.isRequired }).isRequired,
+  selectedEvents: PropTypes.arrayOf(eventPropType).isRequired,
+  onChanged: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func.isRequired,
+};
+
+function PlanningPanel({ activeTab, onTabChange, tabs, selectedDate, onChanged, onRemoved }) {
+  const activePlanning = tabs[activeTab];
+
+  return (
+    <Paper sx={{ overflow: "hidden", ...paperBorderSx }}>
+      <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 } }}>
+        <Typography variant="h5">Planning de eventos</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Vista agrupada desde la fecha seleccionada.</Typography>
+      </Box>
+      <Tabs value={activeTab} onChange={onTabChange} sx={{ borderBottom: "1px solid", borderColor: "divider", px: { xs: 1, md: 2 }, mt: 2 }}>
+        {tabs.map((tab) => <Tab key={tab.label} label={tab.label} />)}
+      </Tabs>
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <EventList events={activePlanning.events} selectedDate={selectedDate} emptyText={activePlanning.emptyText} onChanged={onChanged} onRemoved={onRemoved} />
+      </Box>
+    </Paper>
+  );
+}
+
+PlanningPanel.propTypes = {
+  activeTab: PropTypes.number.isRequired,
+  onTabChange: PropTypes.func.isRequired,
+  tabs: PropTypes.arrayOf(PropTypes.shape({
+    label: PropTypes.string.isRequired,
+    events: PropTypes.arrayOf(eventPropType).isRequired,
+    emptyText: PropTypes.string.isRequired,
+  })).isRequired,
+  selectedDate: PropTypes.shape({ format: PropTypes.func.isRequired }).isRequired,
+  onChanged: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func.isRequired,
+};
+
 export function Calendar() {
   const { users } = useUser();
   const [events, setEvents] = useState([]);
@@ -174,6 +260,10 @@ export function Calendar() {
     { label: "Eventos proximos", value: upcomingEventsCount, icon: <EventAvailableOutlinedIcon /> },
     { label: "Mis participaciones", value: userEvents.length, icon: <GroupsOutlinedIcon /> },
   ];
+  const planningTabs = [
+    { label: "Todos los eventos", events, emptyText: "No hay eventos proximos desde esta fecha." },
+    { label: "Mis eventos", events: userEvents, emptyText: "Todavia no te has unido a eventos proximos." },
+  ];
 
   const handleEventChanged = (updatedEvent) => {
     setEvents((currentEvents) => replaceEventById(currentEvents, updatedEvent));
@@ -185,70 +275,23 @@ export function Calendar() {
     setUserEvents((currentEvents) => removeEventById(currentEvents, eventId));
   };
 
-  const handleDateChange = (newValue) => {
-    setSelectedDate(newValue || dayjs());
-  };
+  const handleDateChange = (newValue) => setSelectedDate(newValue || dayjs());
+  const handleTabChange = (_event, nextTab) => setActiveTab(nextTab);
 
   return (
     <AppShell title="Calendario" subtitle="Revisa los eventos por fecha y controla rapidamente los planes en los que participas." maxWidth="xl">
-      <Grid container spacing={2.5}>
-        {calendarStats.map((stat) => (
-          <Grid item xs={12} md={4} key={stat.label}>
-            <CalendarStat icon={stat.icon} value={stat.value} label={stat.label} />
-          </Grid>
-        ))}
-      </Grid>
-
+      <StatsGrid stats={calendarStats} />
 
       <Grid container spacing={3} alignItems="stretch">
         <Grid item xs={12} md={5} lg={4}>
-          <SectionPaper
-            title="Selector de fecha"
-            description="Elige un dia para revisar actividades concretas."
-          >
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-              <DateCalendar value={selectedDate} onChange={handleDateChange} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
-            </LocalizationProvider>
-          </SectionPaper>
+          <DatePickerPanel selectedDate={selectedDate} onDateChange={handleDateChange} />
         </Grid>
         <Grid item xs={12} md={7} lg={8}>
-          <SectionPaper
-            title="Dia seleccionado"
-            description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")}
-            sx={{ p: { xs: 2, md: 3 } }}
-          >
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ sm: "center" }}>
-              <Box />
-              <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
-            </Stack>
-            {selectedEvents.length === 0 ? (
-              <EmptyState title="No hay eventos para este dia." description="Prueba otra fecha o revisa la lista de eventos proximos." compact />
-            ) : (
-              <Stack spacing={1.5}>
-                <EventCards events={selectedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
-              </Stack>
-            )}
-          </SectionPaper>
+          <SelectedDayPanel selectedDate={selectedDate} selectedEvents={selectedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
         </Grid>
       </Grid>
 
-      <Paper sx={{ overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-        <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 } }}>
-          <Typography variant="h5">Planning de eventos</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Vista agrupada desde la fecha seleccionada.</Typography>
-        </Box>
-        <Tabs value={activeTab} onChange={(event, nextTab) => setActiveTab(nextTab)} sx={{ borderBottom: "1px solid", borderColor: "divider", px: { xs: 1, md: 2 }, mt: 2 }}>
-          <Tab label="Todos los eventos" />
-          <Tab label="Mis eventos" />
-        </Tabs>
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          {activeTab === 0 ? (
-            <EventList events={events} selectedDate={selectedDate} emptyText="No hay eventos proximos desde esta fecha." onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
-          ) : (
-            <EventList events={userEvents} selectedDate={selectedDate} emptyText="Todavia no te has unido a eventos proximos." onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
-          )}
-        </Box>
-      </Paper>
+      <PlanningPanel activeTab={activeTab} onTabChange={handleTabChange} tabs={planningTabs} selectedDate={selectedDate} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
     </AppShell>
   );
 }
