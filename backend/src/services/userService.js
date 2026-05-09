@@ -3,6 +3,11 @@ const { ERROR_CODES, serviceResponse } = require("../utils/apiResponses");
 const { normalizeString } = require("../utils/strings");
 const { isValidEmail, parseOptionalDate } = require("../utils/validators");
 const { toPublicUser } = require("../utils/users");
+const {
+  UPLOAD_PROFILE_IMAGE_PREFIX,
+  getProfileImagePublicPath,
+  removeLocalProfileImage,
+} = require("../utils/profileImages");
 
 const MAX_PROFILE_IMAGE_LENGTH = 2100000;
 const PROFILE_IMAGE_PATTERN = /^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/;
@@ -24,7 +29,7 @@ function isValidProfileImage(profileImage) {
   return (
     typeof profileImage === "string" &&
     profileImage.length <= MAX_PROFILE_IMAGE_LENGTH &&
-    PROFILE_IMAGE_PATTERN.test(profileImage)
+    (PROFILE_IMAGE_PATTERN.test(profileImage) || profileImage.startsWith(UPLOAD_PROFILE_IMAGE_PREFIX))
   );
 }
 
@@ -108,8 +113,33 @@ async function updateCurrentUser(userName, payload) {
     }
   }
 
+  const previousProfileImage = user.profileImage;
   Object.assign(user, value);
   await user.save();
+
+  if (value.profileImage !== undefined && previousProfileImage !== value.profileImage) {
+    removeLocalProfileImage(previousProfileImage);
+  }
+
+  return { status: 200, body: { user: toPublicUser(user) } };
+}
+
+async function updateCurrentUserProfileImage(userName, file) {
+  if (!file) {
+    return serviceResponse(400, "La imagen de perfil es requerida", {}, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  const user = await User.findOne({ userName }).exec();
+
+  if (!user) {
+    removeLocalProfileImage(getProfileImagePublicPath(file.filename));
+    return serviceResponse(404, "Usuario no encontrado", {}, ERROR_CODES.USER_NOT_FOUND);
+  }
+
+  const previousProfileImage = user.profileImage;
+  user.profileImage = getProfileImagePublicPath(file.filename);
+  await user.save();
+  removeLocalProfileImage(previousProfileImage);
 
   return { status: 200, body: { user: toPublicUser(user) } };
 }
@@ -118,5 +148,6 @@ module.exports = {
   buildEditableUserPayload,
   getCurrentUser,
   updateCurrentUser,
+  updateCurrentUserProfileImage,
   isValidProfileImage,
 };
