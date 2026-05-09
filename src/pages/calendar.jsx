@@ -115,6 +115,11 @@ export function Calendar() {
 
   const selectedEvents = useMemo(() => events.filter((event) => dayjs(event.date).isSame(selectedDate, "day")), [events, selectedDate]);
   const upcomingEventsCount = useMemo(() => events.filter((event) => dayjs(event.date).isSame(selectedDate, "day") || dayjs(event.date).isAfter(selectedDate, "day")).length, [events, selectedDate]);
+  const calendarStats = [
+    { label: "Eventos este dia", value: selectedEvents.length, icon: <CalendarMonthOutlinedIcon /> },
+    { label: "Eventos proximos", value: upcomingEventsCount, icon: <EventAvailableOutlinedIcon /> },
+    { label: "Mis participaciones", value: userEvents.length, icon: <GroupsOutlinedIcon /> },
+  ];
 
   const handleEventChanged = (updatedEvent) => {
     setEvents((currentEvents) => currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event)));
@@ -135,9 +140,11 @@ export function Calendar() {
   return (
     <AppShell title="Calendario" subtitle="Revisa los eventos por fecha y controla rapidamente los planes en los que participas." maxWidth="xl">
       <Grid container spacing={2.5}>
-        <Grid item xs={12} md={4}><CalendarStat icon={<CalendarMonthOutlinedIcon />} value={selectedEvents.length} label="Eventos este dia" /></Grid>
-        <Grid item xs={12} md={4}><CalendarStat icon={<EventAvailableOutlinedIcon />} value={upcomingEventsCount} label="Eventos proximos" /></Grid>
-        <Grid item xs={12} md={4}><CalendarStat icon={<GroupsOutlinedIcon />} value={userEvents.length} label="Mis participaciones" /></Grid>
+        {calendarStats.map((stat) => (
+          <Grid item xs={12} md={4} key={stat.label}>
+            <CalendarStat icon={stat.icon} value={stat.value} label={stat.label} />
+          </Grid>
+        ))}
       </Grid>
 
       <Grid container spacing={3} alignItems="stretch">
