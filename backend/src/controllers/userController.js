@@ -25,4 +25,14 @@ async function updateCurrentUser(req, res) {
   }
 }
 
-module.exports = { getCurrentUser, updateCurrentUser };
+async function updateCurrentUserProfileImage(req, res) {
+  try {
+    const result = await userService.updateCurrentUserProfileImage(req.auth.userName, req.file);
+    return sendServiceResult(res, result);
+  } catch (error) {
+    logger.error("Error al actualizar la imagen de perfil", error);
+    return res.status(500).json({ message: "Error al actualizar la imagen de perfil" });
+  }
+}
+
+module.exports = { getCurrentUser, updateCurrentUser, updateCurrentUserProfileImage };
