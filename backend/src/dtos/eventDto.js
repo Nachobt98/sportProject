@@ -15,6 +15,10 @@ function serializeUserReference(user) {
   return user.userName || serializeId(user);
 }
 
+function serializeProfileImage(profileImage = "") {
+  return typeof profileImage === "string" && profileImage.startsWith("/uploads/profile-images/") ? profileImage : "";
+}
+
 function serializeUserProfile(user) {
   if (!user) {
     return null;
@@ -24,7 +28,7 @@ function serializeUserProfile(user) {
 
   return {
     userName,
-    profileImage: user.profileImage || "",
+    profileImage: serializeProfileImage(user.profileImage),
   };
 }
 
@@ -90,6 +94,7 @@ module.exports = {
   getEffectiveEventStatus,
   isPastEventDate,
   toEventDto,
+  serializeProfileImage,
   serializeUserReference,
   serializeUserProfile,
 };
