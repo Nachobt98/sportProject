@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from "react";
 import {
   Alert,
+  Box,
   Button,
+  Grid,
   MenuItem,
   Paper,
   Snackbar,
@@ -10,6 +12,9 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { useNavigate, useParams } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -60,6 +65,25 @@ function toEventFormValues(event) {
     city: event?.city || "",
     participants: event?.participants ? String(event.participants) : "",
   };
+}
+
+function FormSection({ icon, title, description, children }) {
+  return (
+    <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, bgcolor: "background.paper" }}>
+      <Stack spacing={2}>
+        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+          <Box sx={{ width: 40, height: 40, display: "grid", placeItems: "center", borderRadius: "14px", bgcolor: "primary.soft", color: "primary.main", flexShrink: 0 }}>
+            {icon}
+          </Box>
+          <Box>
+            <Typography variant="h6">{title}</Typography>
+            <Typography variant="body2" color="text.secondary">{description}</Typography>
+          </Box>
+        </Stack>
+        {children}
+      </Stack>
+    </Paper>
+  );
 }
 
 export function CreateEvent() {
@@ -116,99 +140,117 @@ export function CreateEvent() {
     <AppShell
       title={pageTitle}
       subtitle={pageSubtitle}
-      maxWidth="md"
+      maxWidth="lg"
       actions={isEditMode ? <Button variant="outlined" startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(detailPath, { replace: true })}>Volver</Button> : undefined}
     >
-      <Paper sx={{ p: { xs: 2, md: 3 }, border: "1px solid", borderColor: "divider" }}>
-        <Formik
-          initialValues={initialValues}
-          enableReinitialize
-          validationSchema={validationSchema}
-          onSubmit={async (values, { setSubmitting }) => {
-            setSubmitError("");
-            try {
-              const eventData = { ...values, participants: Number(values.participants), creator: users.userName };
-              if (isEditMode) await updateEventMutation.mutateAsync(eventData);
-              else await createEventMutation.mutateAsync(eventData);
-              setOpenSnackbar(true);
-              setTimeout(() => {
-                if (isEditMode) navigate(detailPath, { replace: true });
-                else navigate("/events");
-              }, 900);
-            } catch (error) {
-              setSubmitError(error.message || (isEditMode ? "No se pudo editar el evento" : "No se pudo crear el evento"));
-            } finally {
-              setSubmitting(false);
-            }
-          }}
-        >
-          {(formikProps) => (
-            <Form>
-              <Stack spacing={2.5}>
-                {submitError && <Alert severity="error">{submitError}</Alert>}
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                  <Stack spacing={0.75} sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2">Nombre del evento</Typography>
-                    <Field name="name" as={TextField} label="Nombre del evento" fullWidth autoComplete="off" />
-                    <ErrorMessage name="name" component={Alert} severity="error" />
-                  </Stack>
-                  <Stack spacing={0.75} sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2">Deporte</Typography>
-                    <Field name="sport" as={TextField} label="Deporte" fullWidth autoComplete="off" />
-                    <ErrorMessage name="sport" component={Alert} severity="error" />
-                  </Stack>
-                </Stack>
+      <Formik
+        initialValues={initialValues}
+        enableReinitialize
+        validationSchema={validationSchema}
+        onSubmit={async (values, { setSubmitting }) => {
+          setSubmitError("");
+          try {
+            const eventData = { ...values, participants: Number(values.participants), creator: users.userName };
+            if (isEditMode) await updateEventMutation.mutateAsync(eventData);
+            else await createEventMutation.mutateAsync(eventData);
+            setOpenSnackbar(true);
+            setTimeout(() => {
+              if (isEditMode) navigate(detailPath, { replace: true });
+              else navigate("/events");
+            }, 900);
+          } catch (error) {
+            setSubmitError(error.message || (isEditMode ? "No se pudo editar el evento" : "No se pudo crear el evento"));
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+      >
+        {(formikProps) => (
+          <Form>
+            <Grid container spacing={3} alignItems="flex-start">
+              <Grid item xs={12} lg={8}>
+                <Stack spacing={2.5}>
+                  {submitError && <Alert severity="error">{submitError}</Alert>}
 
-                <Stack spacing={0.75}>
-                  <Typography variant="subtitle2">Descripcion</Typography>
-                  <Field name="description" as={TextField} label="Descripcion" fullWidth multiline rows={4} autoComplete="off" />
-                  <ErrorMessage name="description" component={Alert} severity="error" />
-                </Stack>
+                  <FormSection icon={<EventAvailableOutlinedIcon />} title="Actividad" description="Explica de forma clara que se va a hacer y que tipo de participante encaja.">
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                      <Stack spacing={0.75} sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2">Nombre del evento</Typography>
+                        <Field name="name" as={TextField} label="Nombre del evento" fullWidth autoComplete="off" />
+                        <ErrorMessage name="name" component={Alert} severity="error" />
+                      </Stack>
+                      <Stack spacing={0.75} sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2">Deporte</Typography>
+                        <Field name="sport" as={TextField} label="Deporte" fullWidth autoComplete="off" />
+                        <ErrorMessage name="sport" component={Alert} severity="error" />
+                      </Stack>
+                    </Stack>
+                    <Stack spacing={0.75} sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2">Descripcion</Typography>
+                      <Field name="description" as={TextField} label="Descripcion" fullWidth multiline rows={4} autoComplete="off" />
+                      <ErrorMessage name="description" component={Alert} severity="error" />
+                    </Stack>
+                  </FormSection>
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                  <Stack spacing={0.75} sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2">Ciudad</Typography>
-                    <Field name="city" as={TextField} label="Ciudad" fullWidth autoComplete="off" />
-                    <ErrorMessage name="city" component={Alert} severity="error" />
-                  </Stack>
-                  <Stack spacing={0.75} sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2">Fecha</Typography>
-                    <Field name="date" as={TextField} label="Fecha" type="date" fullWidth InputLabelProps={{ shrink: true }} />
-                    <ErrorMessage name="date" component={Alert} severity="error" />
-                  </Stack>
-                </Stack>
+                  <FormSection icon={<PlaceOutlinedIcon />} title="Lugar y fecha" description="Añade una referencia facil de encontrar y una fecha concreta para evitar dudas.">
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                      <Stack spacing={0.75} sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2">Ciudad</Typography>
+                        <Field name="city" as={TextField} label="Ciudad" fullWidth autoComplete="off" />
+                        <ErrorMessage name="city" component={Alert} severity="error" />
+                      </Stack>
+                      <Stack spacing={0.75} sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2">Fecha</Typography>
+                        <Field name="date" as={TextField} label="Fecha" type="date" fullWidth InputLabelProps={{ shrink: true }} />
+                        <ErrorMessage name="date" component={Alert} severity="error" />
+                      </Stack>
+                    </Stack>
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 2 }}>
+                      <Stack spacing={0.75} sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2">Ubicacion</Typography>
+                        <Field name="location" as={TextField} label="Ubicacion" fullWidth autoComplete="off" />
+                        <ErrorMessage name="location" component={Alert} severity="error" />
+                      </Stack>
+                      <Stack spacing={0.75} sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2">Direccion</Typography>
+                        <Field name="locationName" as={TextField} label="Direccion" fullWidth autoComplete="off" />
+                        <ErrorMessage name="locationName" component={Alert} severity="error" />
+                      </Stack>
+                    </Stack>
+                  </FormSection>
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                  <Stack spacing={0.75} sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2">Ubicacion</Typography>
-                    <Field name="location" as={TextField} label="Ubicacion" fullWidth autoComplete="off" />
-                    <ErrorMessage name="location" component={Alert} severity="error" />
-                  </Stack>
-                  <Stack spacing={0.75} sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2">Direccion</Typography>
-                    <Field name="locationName" as={TextField} label="Direccion" fullWidth autoComplete="off" />
-                    <ErrorMessage name="locationName" component={Alert} severity="error" />
-                  </Stack>
-                </Stack>
+                  <FormSection icon={<GroupsOutlinedIcon />} title="Plazas" description="Define el aforo maximo. La app bloqueara inscripciones si el evento se llena.">
+                    <Stack spacing={0.75}>
+                      <Typography variant="subtitle2">Numero de participantes</Typography>
+                      <Field name="participants" as={TextField} label="Numero de participantes" select fullWidth>
+                        {participantOptions.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
+                      </Field>
+                      <ErrorMessage name="participants" component={Alert} severity="error" />
+                    </Stack>
+                  </FormSection>
 
-                <Stack spacing={0.75}>
-                  <Typography variant="subtitle2">Numero de participantes</Typography>
-                  <Field name="participants" as={TextField} label="Numero de participantes" select fullWidth>
-                    {participantOptions.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
-                  </Field>
-                  <ErrorMessage name="participants" component={Alert} severity="error" />
+                  <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                    <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={formikProps.isSubmitting || createEventMutation.isPending || updateEventMutation.isPending}>
+                      {isEditMode ? "Guardar cambios" : "Crear evento"}
+                    </Button>
+                  </Stack>
                 </Stack>
+              </Grid>
 
-                <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                  <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={formikProps.isSubmitting || createEventMutation.isPending || updateEventMutation.isPending}>
-                    {isEditMode ? "Guardar cambios" : "Crear evento"}
-                  </Button>
-                </Stack>
-              </Stack>
-            </Form>
-          )}
-        </Formik>
-      </Paper>
+              <Grid item xs={12} lg={4}>
+                <Paper sx={{ p: { xs: 2.5, md: 3 }, position: { lg: "sticky" }, top: { lg: 104 }, border: "1px solid", borderColor: "divider" }}>
+                  <Stack spacing={2}>
+                    <Typography variant="h5">Consejos rapidos</Typography>
+                    <Typography variant="body2" color="text.secondary">Un evento claro consigue mejores participantes y menos mensajes de ida y vuelta.</Typography>
+                    <Alert severity="info">Nombre concreto, deporte claro, ubicacion reconocible y numero de plazas realista.</Alert>
+                    <Alert severity="success">Antes de guardar, revisa fecha y plazas: son los datos que mas impacto tienen en la participacion.</Alert>
+                  </Stack>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Form>
+        )}
+      </Formik>
 
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={handleSnackbarClose} message={successMessage} anchorOrigin={{ vertical: "bottom", horizontal: "center" }} />
     </AppShell>
