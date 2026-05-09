@@ -1,11 +1,12 @@
 import React from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Grid, Paper, Stack, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Grid, Stack, Typography } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import SportsSoccerRoundedIcon from "@mui/icons-material/SportsSoccerRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 import { AppShell } from "../components/AppShell";
+import { IconTile, SurfacePanel } from "../components/SurfacePanel";
 
 const faqData = [
   { question: "Como puedo registrarme en SportLife?", answer: "Entra en la pagina de registro, completa tus datos personales y confirma el formulario." },
@@ -28,11 +29,11 @@ export function FaqPage() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <Stack spacing={2.5}>
-            <Paper sx={{ p: { xs: 2.25, md: 3 }, border: "1px solid", borderColor: "divider" }}>
+            <SurfacePanel sx={{ p: { xs: 2.25, md: 3 } }}>
               <Stack spacing={2}>
-                <Box sx={{ width: 54, height: 54, display: "grid", placeItems: "center", borderRadius: "18px", bgcolor: "primary.soft", color: "primary.main" }}>
+                <IconTile size={54} radius="18px">
                   <HelpOutlineRoundedIcon />
-                </Box>
+                </IconTile>
                 <Box>
                   <Typography variant="h5">Centro de ayuda</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
@@ -41,26 +42,26 @@ export function FaqPage() {
                 </Box>
                 <Alert severity="info">Si no encuentras respuesta, usa la pagina de contacto y describe el evento afectado.</Alert>
               </Stack>
-            </Paper>
+            </SurfacePanel>
 
             {helpCards.map(([icon, title, description]) => (
-              <Paper key={title} variant="outlined" sx={{ p: 2 }}>
+              <SurfacePanel key={title} sx={{ p: 2 }}>
                 <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Box sx={{ width: 40, height: 40, display: "grid", placeItems: "center", borderRadius: "14px", bgcolor: "secondary.soft", color: "secondary.main" }}>
+                  <IconTile color="secondary" size={40} radius="14px">
                     {icon}
-                  </Box>
+                  </IconTile>
                   <Box>
                     <Typography variant="subtitle1">{title}</Typography>
                     <Typography variant="body2" color="text.secondary">{description}</Typography>
                   </Box>
                 </Stack>
-              </Paper>
+              </SurfacePanel>
             ))}
           </Stack>
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: { xs: 1.5, md: 2 }, border: "1px solid", borderColor: "divider" }}>
+          <SurfacePanel sx={{ p: { xs: 1.5, md: 2 } }}>
             <Stack spacing={1.5}>
               {faqData.map((item) => (
                 <Accordion key={item.question} disableGutters variant="outlined" sx={{ borderRadius: "16px !important", overflow: "hidden", "&:before": { display: "none" } }}>
@@ -73,7 +74,7 @@ export function FaqPage() {
                 </Accordion>
               ))}
             </Stack>
-          </Paper>
+          </SurfacePanel>
         </Grid>
       </Grid>
     </AppShell>

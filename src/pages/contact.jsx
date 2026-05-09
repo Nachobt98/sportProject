@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Box, Button, Grid, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Grid, InputAdornment, Stack, TextField, Typography } from "@mui/material";
 import LocalPhoneRoundedIcon from "@mui/icons-material/LocalPhoneRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
@@ -8,6 +8,7 @@ import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import { Form, Formik } from "formik";
 import * as Yup from "yup";
 import { AppShell } from "../components/AppShell";
+import { IconTile, SurfacePanel } from "../components/SurfacePanel";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Nombre requerido"),
@@ -31,7 +32,7 @@ export function Contact() {
     <AppShell title="Contacto" subtitle="Envia una consulta o avisanos si necesitas ayuda con un evento." maxWidth="lg">
       <Grid container spacing={3} alignItems="stretch">
         <Grid item xs={12} md={7}>
-          <Paper sx={{ p: { xs: 2.25, md: 3 }, height: "100%", border: "1px solid", borderColor: "divider" }}>
+          <SurfacePanel sx={{ p: { xs: 2.25, md: 3 }, height: "100%" }}>
             <Stack spacing={2.5}>
               <Box>
                 <Typography variant="h5">Cuéntanos qué ocurre</Typography>
@@ -87,16 +88,16 @@ export function Contact() {
                 )}
               </Formik>
             </Stack>
-          </Paper>
+          </SurfacePanel>
         </Grid>
         <Grid item xs={12} md={5}>
           <Stack spacing={3} sx={{ height: "100%" }}>
-            <Paper sx={{ p: { xs: 2.25, md: 3 }, border: "1px solid", borderColor: "divider" }}>
+            <SurfacePanel sx={{ p: { xs: 2.25, md: 3 } }}>
               <Stack spacing={2}>
                 <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Box sx={{ width: 46, height: 46, display: "grid", placeItems: "center", borderRadius: "16px", bgcolor: "primary.soft", color: "primary.main" }}>
+                  <IconTile>
                     <SupportAgentRoundedIcon />
-                  </Box>
+                  </IconTile>
                   <Box>
                     <Typography variant="h5">Soporte</Typography>
                     <Typography variant="body2" color="text.secondary">Respuesta orientativa en 24-48h.</Typography>
@@ -110,9 +111,9 @@ export function Contact() {
                   <Typography variant="subtitle1">93 767 786 7867</Typography>
                 </Stack>
               </Stack>
-            </Paper>
+            </SurfacePanel>
 
-            <Paper sx={{ p: { xs: 2.25, md: 3 }, flex: 1, border: "1px solid", borderColor: "divider" }}>
+            <SurfacePanel sx={{ p: { xs: 2.25, md: 3 }, flex: 1 }}>
               <Stack spacing={2}>
                 <Typography variant="h5">Para ayudarte antes</Typography>
                 {supportTips.map((tip) => (
@@ -122,7 +123,7 @@ export function Contact() {
                   </Stack>
                 ))}
               </Stack>
-            </Paper>
+            </SurfacePanel>
           </Stack>
         </Grid>
       </Grid>
