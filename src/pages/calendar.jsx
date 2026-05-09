@@ -17,6 +17,28 @@ import { useUser } from "../context/userContext";
 
 dayjs.locale("es");
 
+async function fetchEventArray(path) {
+  const response = await apiFetch(path);
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
+
+function replaceEventById(events, updatedEvent) {
+  return events.map((event) => (event._id === updatedEvent._id ? updatedEvent : event));
+}
+
+function removeEventById(events, eventId) {
+  return events.filter((event) => event._id !== eventId);
+}
+
+function syncJoinedEvents(events, updatedEvent, userName) {
+  const nextEvents = replaceEventById(events, updatedEvent);
+  const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
+  const shouldBeListed = updatedEvent.participantsList?.includes(userName);
+  if (shouldBeListed && !isAlreadyListed) return [...nextEvents, updatedEvent];
+  return nextEvents.filter((event) => event.participantsList?.includes(userName));
+}
+
 function groupEventsByDate(events) {
   return events.reduce((groups, event) => {
     const date = dayjs(event.date).format("YYYY-MM-DD");
@@ -84,9 +106,7 @@ export function Calendar() {
 
   const fetchEvents = useCallback(async () => {
     try {
-      const response = await apiFetch("/api/events");
-      const data = await response.json();
-      setEvents(Array.isArray(data) ? data : []);
+      setEvents(await fetchEventArray("/api/events"));
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -98,11 +118,7 @@ export function Calendar() {
       return;
     }
     try {
-      const response = await apiFetch(`/api/user/${users.userName}/joinedEvents`);
-      if (response.ok) {
-        const data = await response.json();
-        setUserEvents(Array.isArray(data) ? data : []);
-      }
+      setUserEvents(await fetchEventArray(`/api/user/${users.userName}/joinedEvents`));
     } catch (error) {
       console.error("Error al obtener los eventos unidos del usuario:", error);
     }
@@ -122,19 +138,13 @@ export function Calendar() {
   ];
 
   const handleEventChanged = (updatedEvent) => {
-    setEvents((currentEvents) => currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event)));
-    setUserEvents((currentEvents) => {
-      const nextEvents = currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event));
-      const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
-      const shouldBeListed = updatedEvent.participantsList?.includes(users.userName);
-      if (shouldBeListed && !isAlreadyListed) return [...nextEvents, updatedEvent];
-      return nextEvents.filter((event) => event.participantsList?.includes(users.userName));
-    });
+    setEvents((currentEvents) => replaceEventById(currentEvents, updatedEvent));
+    setUserEvents((currentEvents) => syncJoinedEvents(currentEvents, updatedEvent, users.userName));
   };
 
   const handleEventRemoved = (eventId) => {
-    setEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
-    setUserEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
+    setEvents((currentEvents) => removeEventById(currentEvents, eventId));
+    setUserEvents((currentEvents) => removeEventById(currentEvents, eventId));
   };
 
   return (
