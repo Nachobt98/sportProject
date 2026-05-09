@@ -15,6 +15,7 @@ import { AppShell } from "../components/AppShell";
 import { EmptyState } from "../components/FeedbackState";
 import { StatCard, SurfaceSection } from "../components/SurfacePanel";
 import { useUser } from "../context/userContext";
+import { removeEventById, replaceEventById, syncJoinedEvents } from "../utils/eventCollections";
 
 dayjs.locale("es");
 
@@ -24,22 +25,6 @@ async function fetchEventArray(path) {
   const response = await apiFetch(path);
   const data = await response.json();
   return Array.isArray(data) ? data : [];
-}
-
-function replaceEventById(events, updatedEvent) {
-  return events.map((event) => (event._id === updatedEvent._id ? updatedEvent : event));
-}
-
-function removeEventById(events, eventId) {
-  return events.filter((event) => event._id !== eventId);
-}
-
-function syncJoinedEvents(events, updatedEvent, userName) {
-  const nextEvents = replaceEventById(events, updatedEvent);
-  const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
-  const shouldBeListed = updatedEvent.participantsList?.includes(userName);
-  if (shouldBeListed && !isAlreadyListed) return [...nextEvents, updatedEvent];
-  return nextEvents.filter((event) => event.participantsList?.includes(userName));
 }
 
 function groupEventsByDate(events) {
