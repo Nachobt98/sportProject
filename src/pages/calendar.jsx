@@ -97,7 +97,7 @@ StatsGrid.propTypes = {
 
 function DatePickerPanel({ selectedDate, onDateChange }) {
   return (
-    <SurfaceSection title="Selector de fecha" description="Elige un dia para revisar actividades concretas." sx={{ p: { xs: 1.5, sm: 2 } }}>
+    <SurfaceSection title="Selector de fecha" description="Elige un dia para revisar actividades concretas." sx={{ p: { xs: 1.5, sm: 2 }, width: "100%" }}>
       <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
         <DateCalendar value={selectedDate} onChange={onDateChange} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
       </LocalizationProvider>
@@ -112,7 +112,7 @@ DatePickerPanel.propTypes = {
 
 function SelectedDayPanel({ selectedDate, selectedEvents, onChanged, onRemoved }) {
   return (
-    <SurfaceSection title="Dia seleccionado" description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")}>
+    <SurfaceSection title="Dia seleccionado" description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")} sx={{ width: "100%" }}>
       <Stack direction="row" justifyContent="flex-end">
         <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
       </Stack>
@@ -203,7 +203,7 @@ export function Calendar() {
   const calendarStats = [
     { label: "Eventos este dia", value: selectedEvents.length, icon: <CalendarMonthOutlinedIcon /> },
     { label: "Eventos proximos", value: upcomingEventsCount, icon: <EventAvailableOutlinedIcon /> },
-    { label: "Mis participaciones", value: userEvents.length, icon: <GroupsOutlinedIcon /> },
+    { label: "Participaciones", value: userEvents.length, icon: <GroupsOutlinedIcon /> },
   ];
   const planningTabs = [
     { label: "Todos los eventos", events, emptyText: "No hay eventos proximos desde esta fecha." },
@@ -228,15 +228,16 @@ export function Calendar() {
       <StatsGrid stats={calendarStats} />
 
       <Grid container spacing={3} alignItems="stretch">
-        <Grid item xs={12} md={5} lg={4}>
+        <Grid item xs={12} md={5} lg={4} sx={{ display: "flex" }}>
           <DatePickerPanel selectedDate={selectedDate} onDateChange={handleDateChange} />
         </Grid>
-        <Grid item xs={12} md={7} lg={8}>
+        <Grid item xs={12} md={7} lg={8} sx={{ display: "flex" }}>
           <SelectedDayPanel selectedDate={selectedDate} selectedEvents={selectedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
         </Grid>
+        <Grid item xs={12}>
+          <PlanningPanel activeTab={activeTab} onTabChange={handleTabChange} tabs={planningTabs} selectedDate={selectedDate} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
+        </Grid>
       </Grid>
-
-      <PlanningPanel activeTab={activeTab} onTabChange={handleTabChange} tabs={planningTabs} selectedDate={selectedDate} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
     </AppShell>
   );
 }
