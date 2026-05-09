@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   Alert,
-  Avatar,
   Box,
   Button,
   Chip,
@@ -18,11 +17,11 @@ import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
-import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
+import { UserAvatar } from "../components/UserAvatar";
 import { useUser } from "../context/userContext";
 import {
   useCancelEventMutation,
@@ -90,6 +89,10 @@ function getStatusMessage(status) {
     return "Este evento ya ha pasado. El creador puede cambiar la fecha para reactivarlo.";
   }
   return "Evento abierto y disponible para inscripciones.";
+}
+
+function findParticipantProfile(event, userName) {
+  return event.participantsProfiles?.find((profile) => profile.userName === userName) || { userName, profileImage: "" };
 }
 
 function CardDetails() {
@@ -171,6 +174,7 @@ function CardDetails() {
   }
 
   const participants = eventData.participantsList || [];
+  const creatorProfile = eventData.creatorProfile || { userName: eventData.creator, profileImage: "" };
   const locationHref = safeLocationHref(eventData.location);
   const isCreator = eventData.creator === users.userName;
   const status = eventData.status || EVENT_STATUS.OPEN;
@@ -232,7 +236,7 @@ function CardDetails() {
                 <Box>
                   <Typography variant="overline" color="text.secondary">Creador</Typography>
                   <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1 }}>
-                    <Avatar src={perfil} />
+                    <UserAvatar userName={creatorProfile.userName} profileImage={creatorProfile.profileImage} />
                     <Typography variant="h6">{eventData.creator || "Usuario desconocido"}</Typography>
                   </Stack>
                 </Box>
@@ -243,7 +247,17 @@ function CardDetails() {
                     {participants.length === 0 ? (
                       <Typography variant="body2" color="text.secondary">Todavia no hay participantes.</Typography>
                     ) : (
-                      participants.map((participant) => <Chip key={participant} avatar={<Avatar src={perfil} />} label={participant} variant="outlined" />)
+                      participants.map((participant) => {
+                        const participantProfile = findParticipantProfile(eventData, participant);
+                        return (
+                          <Chip
+                            key={participant}
+                            avatar={<UserAvatar userName={participantProfile.userName} profileImage={participantProfile.profileImage} />}
+                            label={participant}
+                            variant="outlined"
+                          />
+                        );
+                      })
                     )}
                   </Stack>
                 </Box>
