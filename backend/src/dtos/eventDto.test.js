@@ -2,6 +2,7 @@ const {
   EVENT_STATUS,
   getEffectiveEventStatus,
   isPastEventDate,
+  serializeProfileImage,
   toEventDto,
   serializeUserReference,
   serializeUserProfile,
@@ -18,15 +19,14 @@ describe("eventDto", () => {
     expect(serializeUserReference(null)).toBeNull();
   });
 
-  test("serializes user profile metadata for avatars", () => {
-    expect(serializeUserProfile({ userName: "nacho", profileImage: "avatar.png" })).toEqual({
+  test("serializes only uploaded profile image paths for avatars", () => {
+    expect(serializeProfileImage("/uploads/profile-images/nacho.png")).toBe("/uploads/profile-images/nacho.png");
+    expect(serializeProfileImage("legacy-inline-image")).toBe("");
+    expect(serializeUserProfile({ userName: "nacho", profileImage: "/uploads/profile-images/nacho.png" })).toEqual({
       userName: "nacho",
-      profileImage: "avatar.png",
+      profileImage: "/uploads/profile-images/nacho.png",
     });
-    expect(serializeUserProfile({ userName: "alex" })).toEqual({
-      userName: "alex",
-      profileImage: "",
-    });
+    expect(serializeUserProfile({ userName: "alex" })).toEqual({ userName: "alex", profileImage: "" });
     expect(serializeUserProfile(null)).toBeNull();
   });
 
@@ -62,8 +62,8 @@ describe("eventDto", () => {
       location: "Valencia",
       city: "Valencia",
       participants: 4,
-      participantsList: [{ userName: "nacho", profileImage: "nacho.png" }, objectId("other-id")],
-      creator: { userName: "creator", profileImage: "creator.png" },
+      participantsList: [{ userName: "nacho", profileImage: "/uploads/profile-images/nacho.png" }, objectId("other-id")],
+      creator: { userName: "creator", profileImage: "/uploads/profile-images/creator.png" },
       status: "open",
       dismissedBy: [{ userName: "marta" }],
       __v: 0,
@@ -84,11 +84,11 @@ describe("eventDto", () => {
       participants: 4,
       participantsList: ["nacho", "other-id"],
       participantsProfiles: [
-        { userName: "nacho", profileImage: "nacho.png" },
+        { userName: "nacho", profileImage: "/uploads/profile-images/nacho.png" },
         { userName: "other-id", profileImage: "" },
       ],
       creator: "creator",
-      creatorProfile: { userName: "creator", profileImage: "creator.png" },
+      creatorProfile: { userName: "creator", profileImage: "/uploads/profile-images/creator.png" },
       status: "open",
       baseStatus: "open",
       dismissedBy: ["marta"],
@@ -107,8 +107,8 @@ describe("eventDto", () => {
         name: "Judo",
         date: "2026-01-20",
         participants: 2,
-        creator: { userName: "creator", profileImage: "creator.png" },
-        participantsList: [{ userName: "player", profileImage: "player.png" }],
+        creator: { userName: "creator", profileImage: "/uploads/profile-images/creator.png" },
+        participantsList: [{ userName: "player", profileImage: "/uploads/profile-images/player.png" }],
       }),
     };
 
@@ -117,9 +117,9 @@ describe("eventDto", () => {
       id: "event-id",
       name: "Judo",
       creator: "creator",
-      creatorProfile: { userName: "creator", profileImage: "creator.png" },
+      creatorProfile: { userName: "creator", profileImage: "/uploads/profile-images/creator.png" },
       participantsList: ["player"],
-      participantsProfiles: [{ userName: "player", profileImage: "player.png" }],
+      participantsProfiles: [{ userName: "player", profileImage: "/uploads/profile-images/player.png" }],
       status: "open",
     }));
   });
