@@ -44,13 +44,13 @@ export function useProfileEvents(userName) {
   const enabled = Boolean(userName);
 
   const createdQuery = useQuery({
-    queryKey: queryKeys.events.created,
+    queryKey: queryKeys.events.created(userName),
     queryFn: getCurrentUserCreatedEvents,
     enabled,
   });
 
   const joinedQuery = useQuery({
-    queryKey: queryKeys.events.joined,
+    queryKey: queryKeys.events.joined(userName),
     queryFn: getCurrentUserJoinedEvents,
     enabled,
   });
