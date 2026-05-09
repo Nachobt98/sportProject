@@ -27,20 +27,13 @@ const defaultMockUser = {
   email: "nacho@example.com",
   city: "Valencia",
   birthdate: "1998-10-20T00:00:00.000Z",
-  profileImage: "data:image/png;base64,AAAA",
+  profileImage: "/uploads/profile-images/nacho.png",
 };
 let mockUser = { ...defaultMockUser };
 
 jest.mock("../context/userContext", () => ({
   useUser: () => ({ users: mockUser, setUsers: mockSetUsers }),
 }));
-
-class MockFileReader {
-  readAsDataURL() {
-    this.result = "data:image/png;base64,BBBB";
-    this.onloadend();
-  }
-}
 
 function renderProfile() {
   return renderWithQueryClient(
@@ -59,7 +52,6 @@ describe("Perfil", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUser = { ...defaultMockUser };
-    global.FileReader = MockFileReader;
     eventsApi.getCurrentUserCreatedEvents.mockResolvedValue([
       { _id: "created-id", name: "Created event", participantsList: [], creator: "nacho" },
     ]);
@@ -67,6 +59,7 @@ describe("Perfil", () => {
       { _id: "joined-id", name: "Joined event", participantsList: ["nacho"], creator: "other" },
     ]);
     usersApi.updateCurrentUser.mockResolvedValue({ user: { ...mockUser, city: "Madrid" } });
+    usersApi.uploadProfileImage.mockResolvedValue({ user: { ...mockUser, profileImage: "/uploads/profile-images/new-avatar.png" } });
   });
 
   test("renders profile information and events", async () => {
@@ -97,7 +90,7 @@ describe("Perfil", () => {
     expect(await screen.findByText("No se pudieron cargar los eventos")).toBeInTheDocument();
   });
 
-  test("persists profile changes in the backend", async () => {
+  test("persists profile changes in the backend without sending profile image payload", async () => {
     renderProfile();
     await waitForProfileEvents();
 
@@ -106,15 +99,12 @@ describe("Perfil", () => {
     fireEvent.click(screen.getByRole("button", { name: /guardar/i }));
 
     await waitFor(() => expect(usersApi.updateCurrentUser).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" })));
+    expect(usersApi.updateCurrentUser).toHaveBeenCalledWith(expect.not.objectContaining({ profileImage: expect.anything() }));
     expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ city: "Madrid" }));
     expect(await screen.findByText(/perfil actualizado correctamente/i)).toBeInTheDocument();
   });
 
-  test("saves profile image immediately after selecting a valid file", async () => {
-    usersApi.updateCurrentUser.mockResolvedValue({
-      user: { ...mockUser, profileImage: "data:image/png;base64,BBBB" },
-    });
-
+  test("uploads profile image immediately after selecting a valid file", async () => {
     const { container } = renderProfile();
     await waitForProfileEvents();
 
@@ -123,12 +113,9 @@ describe("Perfil", () => {
 
     fireEvent.change(input, { target: { files: [file] } });
 
-    await waitFor(() =>
-      expect(usersApi.updateCurrentUser).toHaveBeenCalledWith(
-        expect.objectContaining({ profileImage: "data:image/png;base64,BBBB" })
-      )
-    );
-    expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ profileImage: "data:image/png;base64,BBBB" }));
+    await waitFor(() => expect(usersApi.uploadProfileImage).toHaveBeenCalledWith(file));
+    expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
+    expect(mockSetUsers).toHaveBeenCalledWith(expect.objectContaining({ profileImage: "/uploads/profile-images/new-avatar.png" }));
     expect(await screen.findByText(/foto de perfil actualizada correctamente/i)).toBeInTheDocument();
   });
 
@@ -140,7 +127,7 @@ describe("Perfil", () => {
 
     fireEvent.change(input, { target: { files: [] } });
 
-    expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
+    expect(usersApi.uploadProfileImage).not.toHaveBeenCalled();
   });
 
   test("rejects invalid profile image types", async () => {
@@ -153,7 +140,7 @@ describe("Perfil", () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     expect(screen.getByText(/la imagen debe ser jpg, png o webp/i)).toBeInTheDocument();
-    expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
+    expect(usersApi.uploadProfileImage).not.toHaveBeenCalled();
   });
 
   test("rejects profile images that are too large", async () => {
@@ -167,7 +154,20 @@ describe("Perfil", () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     expect(screen.getByText(/menos de 1.5 mb/i)).toBeInTheDocument();
-    expect(usersApi.updateCurrentUser).not.toHaveBeenCalled();
+    expect(usersApi.uploadProfileImage).not.toHaveBeenCalled();
+  });
+
+  test("shows profile image upload errors", async () => {
+    usersApi.uploadProfileImage.mockRejectedValue(new Error("No se pudo actualizar la imagen"));
+
+    const { container } = renderProfile();
+    await waitForProfileEvents();
+
+    const input = container.querySelector('input[type="file"]');
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(await screen.findByText("No se pudo actualizar la imagen")).toBeInTheDocument();
   });
 
   test("shows profile update errors", async () => {
