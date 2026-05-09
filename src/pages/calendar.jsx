@@ -20,6 +20,7 @@ import { removeEventById, replaceEventById, syncJoinedEvents } from "../utils/ev
 dayjs.locale("es");
 
 const paperBorderSx = { border: "1px solid", borderColor: "divider" };
+const topPanelSx = { width: "100%", minHeight: { md: 360, lg: 380 }, display: "flex", flexDirection: "column" };
 
 async function fetchEventArray(path) {
   const response = await apiFetch(path);
@@ -97,7 +98,7 @@ StatsGrid.propTypes = {
 
 function DatePickerPanel({ selectedDate, onDateChange }) {
   return (
-    <SurfaceSection title="Selector de fecha" description="Elige un dia para revisar actividades concretas." sx={{ p: { xs: 1.5, sm: 2 }, width: "100%" }}>
+    <SurfaceSection title="Selector de fecha" description="Elige un dia para revisar actividades concretas." sx={{ ...topPanelSx, p: { xs: 1.5, sm: 2 } }}>
       <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
         <DateCalendar value={selectedDate} onChange={onDateChange} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
       </LocalizationProvider>
@@ -112,7 +113,7 @@ DatePickerPanel.propTypes = {
 
 function SelectedDayPanel({ selectedDate, selectedEvents, onChanged, onRemoved }) {
   return (
-    <SurfaceSection title="Dia seleccionado" description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")} sx={{ width: "100%" }}>
+    <SurfaceSection title="Dia seleccionado" description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")} sx={topPanelSx}>
       <Stack direction="row" justifyContent="flex-end">
         <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
       </Stack>
@@ -228,13 +229,13 @@ export function Calendar() {
       <StatsGrid stats={calendarStats} />
 
       <Grid container spacing={3} alignItems="stretch">
-        <Grid item xs={12} md={5} lg={4} sx={{ display: "flex" }}>
+        <Grid item xs={12} md={5} lg={4} sx={{ display: "flex", alignSelf: "stretch" }}>
           <DatePickerPanel selectedDate={selectedDate} onDateChange={handleDateChange} />
         </Grid>
-        <Grid item xs={12} md={7} lg={8} sx={{ display: "flex" }}>
+        <Grid item xs={12} md={7} lg={8} sx={{ display: "flex", alignSelf: "stretch" }}>
           <SelectedDayPanel selectedDate={selectedDate} selectedEvents={selectedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={12} sx={{ mt: 2 }}>
           <PlanningPanel activeTab={activeTab} onTabChange={handleTabChange} tabs={planningTabs} selectedDate={selectedDate} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
         </Grid>
       </Grid>
