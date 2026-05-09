@@ -46,19 +46,19 @@ const DETAIL_CONFIRM_ACTIONS = {
 const confirmDialogConfig = {
   [DETAIL_CONFIRM_ACTIONS.CANCEL_EVENT]: {
     title: "Cancelar evento",
-    description: "El evento dejara de aparecer en la busqueda publica y quedara bloqueado para sus participantes.",
+    description: "El evento dejará de aparecer en la búsqueda pública y quedará bloqueado para sus participantes.",
     confirmLabel: "Cancelar evento",
     severity: "warning",
   },
   [DETAIL_CONFIRM_ACTIONS.DISMISS_EVENT]: {
     title: "Borrar de mi perfil",
-    description: "El evento desaparecera de tu perfil, pero seguira disponible para otros usuarios vinculados.",
+    description: "El evento desaparecerá de tu perfil, pero seguirá disponible para otros usuarios vinculados.",
     confirmLabel: "Borrar de mi perfil",
     severity: "info",
   },
   [DETAIL_CONFIRM_ACTIONS.DELETE_EVENT]: {
     title: "Eliminar evento globalmente",
-    description: "Esta accion eliminara el evento para todos los usuarios. No se podra deshacer.",
+    description: "Esta acción eliminará el evento para todos los usuarios. No se podrá deshacer.",
     confirmLabel: "Eliminar globalmente",
     severity: "error",
   },
@@ -80,7 +80,7 @@ function safeLocationHref(location) {
 }
 
 function getStatusMessage(status) {
-  if (status === EVENT_STATUS.FULL) return "Este evento esta completo. El detalle sigue disponible, pero no admite nuevas inscripciones.";
+  if (status === EVENT_STATUS.FULL) return "Este evento está completo. El detalle sigue disponible, pero no admite nuevas inscripciones.";
   if (status === EVENT_STATUS.CANCELLED) return "Este evento ha sido cancelado. Solo permanece visible para el creador y usuarios vinculados que no lo hayan borrado de su perfil.";
   if (status === EVENT_STATUS.PAST) return "Este evento ya ha pasado. El creador puede cambiar la fecha para reactivarlo.";
   return "Evento abierto y disponible para inscripciones.";
@@ -143,7 +143,7 @@ function CardDetails() {
   if (!eventId) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
-        <ErrorState title="No se pudo cargar el evento" message="No se ha indicado ningun evento." actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
+        <ErrorState title="No se pudo cargar el evento" message="No se ha indicado ningún evento." actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
       </AppShell>
     );
   }
@@ -169,7 +169,7 @@ function CardDetails() {
   if (!eventData) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
-        <EmptyState title="Evento no encontrado" description="El evento no existe, fue eliminado o ya no esta disponible para tu usuario." action={<Button variant="outlined" onClick={() => navigate("/events")}>Volver a eventos</Button>} />
+        <EmptyState title="Evento no encontrado" description="El evento no existe, fue eliminado o ya no está disponible para tu usuario." action={<Button variant="outlined" onClick={() => navigate("/events")}>Volver a eventos</Button>} />
       </AppShell>
     );
   }
@@ -219,8 +219,8 @@ function CardDetails() {
                   <InfoTile icon={<AccessTimeOutlinedIcon />} label="Fecha">{formatDate(eventData.date)}</InfoTile>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <InfoTile icon={<LocationOnOutlinedIcon />} label="Ubicacion">
-                    {locationHref ? <MuiLink href={locationHref} target="_blank" rel="noopener">{eventData.locationName || eventData.location}</MuiLink> : (eventData.locationName || "Ubicacion no indicada")}
+                  <InfoTile icon={<LocationOnOutlinedIcon />} label="Ubicación">
+                    {locationHref ? <MuiLink href={locationHref} target="_blank" rel="noopener">{eventData.locationName || eventData.location}</MuiLink> : (eventData.locationName || "Ubicación no indicada")}
                   </InfoTile>
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -250,7 +250,7 @@ function CardDetails() {
                       <Typography variant="h5">Participantes</Typography>
                       <Stack direction="row" spacing={1.25} sx={{ flexWrap: "wrap", gap: 1 }}>
                         {participants.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary">Todavia no hay participantes.</Typography>
+                          <Typography variant="body2" color="text.secondary">Todavía no hay participantes.</Typography>
                         ) : (
                           participants.map((participant) => {
                             const participantProfile = findParticipantProfile(eventData, participant);
