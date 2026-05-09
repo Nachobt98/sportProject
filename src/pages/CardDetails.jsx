@@ -203,7 +203,7 @@ function CardDetails() {
 
         <Paper sx={{ overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
           <Box sx={{ height: 8, bgcolor: status === EVENT_STATUS.OPEN ? "primary.main" : "divider" }} />
-          <Box sx={{ p: { xs: 2.25, md: 3 } }}>
+          <Box sx={{ py: { xs: 2.25, md: 3 }, pl: { xs: 2.25, md: 3 }, pr: { xs: 2.25, md: 4.5 } }}>
             <Stack spacing={3}>
               <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
                 <Chip label={eventData.sport} color="primary" />
