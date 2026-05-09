@@ -11,6 +11,9 @@ jest.mock("../components/cardEvent", () => ({
       <button onClick={() => onChanged?.({ ...event, participantsList: ["nacho"] })}>
         change {event._id}
       </button>
+      <button onClick={() => onChanged?.({ ...event, participantsList: [] })}>
+        leave {event._id}
+      </button>
       <button onClick={() => onRemoved?.(event._id)}>remove {event._id}</button>
     </div>
   ),
@@ -72,6 +75,7 @@ describe("Calendar", () => {
     await waitFor(() => expect(screen.getAllByText("Today event").length).toBeGreaterThan(0));
 
     fireEvent.click(screen.getAllByText("change event-id")[0]);
+    fireEvent.click(screen.getAllByText("leave future-id")[0]);
     fireEvent.click(screen.getAllByText("remove event-id")[0]);
 
     await waitFor(() => expect(screen.queryByText("Today event")).not.toBeInTheDocument());
@@ -94,6 +98,20 @@ describe("Calendar", () => {
       "Error al obtener los eventos unidos del usuario:",
       expect.any(Error)
     );
+    consoleErrorSpy.mockRestore();
+  });
+
+  test("handles event list failures", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    apiFetch.mockReset();
+    apiFetch
+      .mockRejectedValueOnce(new Error("events failed"))
+      .mockResolvedValueOnce(jsonResponse([]));
+
+    render(<Calendar />);
+
+    expect(await screen.findByText("No hay eventos para este dia.")).toBeInTheDocument();
+    expect(consoleErrorSpy).toHaveBeenCalledWith("Error fetching events:", expect.any(Error));
     consoleErrorSpy.mockRestore();
   });
 
