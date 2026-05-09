@@ -7,7 +7,7 @@ const mockLogout = jest.fn();
 const mockDeleteUser = jest.fn();
 let mockUsers = {
   userName: "nacho",
-  profileImage: "data:image/png;base64,AAAA",
+  profileImage: "/uploads/profile-images/nacho.png",
 };
 
 jest.mock("../context/authContext", () => ({
@@ -34,7 +34,7 @@ describe("DropdownMenu", () => {
     jest.clearAllMocks();
     mockUsers = {
       userName: "nacho",
-      profileImage: "data:image/png;base64,AAAA",
+      profileImage: "/uploads/profile-images/nacho.png",
     };
   });
 
@@ -68,11 +68,11 @@ describe("DropdownMenu", () => {
     expect(screen.getByText("Mi perfil")).toBeInTheDocument();
   });
 
-  test("falls back to a generic avatar label when username is empty", () => {
+  test("falls back to a generic avatar initial when username is empty", () => {
     mockUsers = { userName: "", profileImage: "" };
 
     renderMenu([]);
 
-    expect(screen.getByTestId("PersonIcon")).toBeInTheDocument();
+    expect(screen.getByText("?")).toBeInTheDocument();
   });
 });
