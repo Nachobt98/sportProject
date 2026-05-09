@@ -16,7 +16,10 @@ describe("securityMiddleware", () => {
 
     security.applySecurityMiddleware(app);
 
-    expect(helmet).toHaveBeenCalled();
+    expect(helmet).toHaveBeenCalledWith(security.HELMET_OPTIONS);
+    expect(security.HELMET_OPTIONS).toEqual({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    });
     expect(express.json).toHaveBeenCalledWith({ limit: security.JSON_BODY_LIMIT });
     expect(app.use).toHaveBeenCalledWith("helmet-middleware");
     expect(app.use).toHaveBeenCalledWith({ type: "json", options: { limit: security.JSON_BODY_LIMIT } });
