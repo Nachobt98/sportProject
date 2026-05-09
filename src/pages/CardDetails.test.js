@@ -64,11 +64,12 @@ describe("CardDetails", () => {
 
   test("renders full and cancelled lifecycle states", async () => {
     eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "full", participants: 1 } });
-    renderDetails();
+    const { unmount } = renderDetails();
 
     expect(await screen.findByText("Full")).toBeInTheDocument();
     expect(screen.getByText(/evento esta completo/i)).toBeInTheDocument();
 
+    unmount();
     jest.clearAllMocks();
     eventsApi.getEventById.mockResolvedValue({ event: { ...baseEvent, status: "cancelled" } });
     renderDetails();
@@ -167,12 +168,13 @@ describe("CardDetails", () => {
 
   test("uses shared error and empty states", async () => {
     eventsApi.getEventById.mockRejectedValue(new Error("Evento no encontrado"));
-    renderDetails();
+    const { unmount } = renderDetails();
 
     expect(await screen.findByText("Evento no encontrado")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /volver a eventos/i }));
     expect(mockNavigate).toHaveBeenCalledWith("/events");
 
+    unmount();
     jest.clearAllMocks();
     eventsApi.getEventById.mockResolvedValue({ event: null });
     renderDetails();
