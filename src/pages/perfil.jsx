@@ -2,7 +2,6 @@ import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Avatar,
   Box,
   Button,
   Dialog,
@@ -23,10 +22,10 @@ import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { AppShell } from "../components/AppShell";
 import { CardEvent, eventPropType } from "../components/cardEvent";
 import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
+import { UserAvatar } from "../components/UserAvatar";
 import { useUser } from "../context/userContext";
 import { useProfileEvents } from "../hooks/useEvents";
 import { updateCurrentUser } from "../api/usersApi";
-import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 
 const profileFields = [
   ["firstName", "Nombre"],
@@ -189,7 +188,7 @@ export function Perfil() {
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12} md="auto">
             <Box sx={{ position: "relative", width: 128, height: 128 }}>
-              <Avatar src={editedData.profileImage || users.profileImage || perfil} sx={{ width: 128, height: 128, border: "1px solid", borderColor: "divider" }} />
+              <UserAvatar userName={users.userName} profileImage={editedData.profileImage || users.profileImage || ""} size={128} sx={{ border: "1px solid", borderColor: "divider" }} />
               <Tooltip title="Editar foto">
                 <IconButton color="primary" onClick={() => inputRef.current?.click()} disabled={isSaving} sx={{ position: "absolute", right: 0, bottom: 0, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", "&:hover": { bgcolor: "background.paper" } }}>
                   <PhotoCameraRoundedIcon fontSize="small" />
