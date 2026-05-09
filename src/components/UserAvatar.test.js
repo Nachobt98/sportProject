@@ -9,9 +9,11 @@ describe("UserAvatar", () => {
     expect(getUserInitials("")).toBe("?");
   });
 
-  test("resolves stored relative profile image paths", () => {
+  test("resolves only supported profile image paths", () => {
     expect(resolveProfileImageUrl("/uploads/profile-images/avatar.png")).toContain("/uploads/profile-images/avatar.png");
-    expect(resolveProfileImageUrl("data:image/png;base64,AAAA")).toBe("data:image/png;base64,AAAA");
+    expect(resolveProfileImageUrl("https://cdn.example/avatar.png")).toBe("https://cdn.example/avatar.png");
+    expect(resolveProfileImageUrl("data:legacy-inline-image")).toBe("");
+    expect(resolveProfileImageUrl("avatar.png")).toBe("");
     expect(resolveProfileImageUrl("")).toBe("");
   });
 
@@ -21,9 +23,9 @@ describe("UserAvatar", () => {
     expect(screen.getByText("MA")).toBeInTheDocument();
   });
 
-  test("uses the provided profile image when available", () => {
-    render(<UserAvatar userName="alex" profileImage="data:image/png;base64,AAAA" />);
+  test("uses the provided uploaded profile image when available", () => {
+    render(<UserAvatar userName="alex" profileImage="/uploads/profile-images/alex.png" />);
 
-    expect(screen.getByAltText("alex")).toHaveAttribute("src", "data:image/png;base64,AAAA");
+    expect(screen.getByAltText("alex")).toHaveAttribute("src", expect.stringContaining("/uploads/profile-images/alex.png"));
   });
 });
