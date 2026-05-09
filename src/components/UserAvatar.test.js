@@ -1,12 +1,18 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { getUserInitials, UserAvatar } from "./UserAvatar";
+import { getUserInitials, resolveProfileImageUrl, UserAvatar } from "./UserAvatar";
 
 describe("UserAvatar", () => {
   test("builds initials from user names", () => {
     expect(getUserInitials("nacho")).toBe("NA");
     expect(getUserInitials(" a ")).toBe("A");
     expect(getUserInitials("")).toBe("?");
+  });
+
+  test("resolves stored relative profile image paths", () => {
+    expect(resolveProfileImageUrl("/uploads/profile-images/avatar.png")).toContain("/uploads/profile-images/avatar.png");
+    expect(resolveProfileImageUrl("data:image/png;base64,AAAA")).toBe("data:image/png;base64,AAAA");
+    expect(resolveProfileImageUrl("")).toBe("");
   });
 
   test("renders initials when there is no profile image", () => {
