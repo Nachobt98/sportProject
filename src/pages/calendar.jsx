@@ -1,7 +1,22 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Chip, Grid, Paper, Stack, Tab, Tabs, Typography } from "@mui/material";
-// Componente reutilizable para secciones con Paper, título y descripción
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
+import { apiFetch } from "../api/client";
+import { CardEvent, eventPropType } from "../components/cardEvent";
+import { AppShell } from "../components/AppShell";
+import { EmptyState } from "../components/FeedbackState";
+import { useUser } from "../context/userContext";
+
+dayjs.locale("es");
+
 function SectionPaper({ title, description, children, sx }) {
   return (
     <Paper sx={{ p: { xs: 1.5, sm: 2 }, height: "100%", border: "1px solid", borderColor: "divider", ...sx }}>
@@ -22,21 +37,6 @@ SectionPaper.propTypes = {
   children: PropTypes.node,
   sx: PropTypes.object,
 };
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
-import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
-import dayjs from "dayjs";
-import "dayjs/locale/es";
-import { apiFetch } from "../api/client";
-import { CardEvent, eventPropType } from "../components/cardEvent";
-import { AppShell } from "../components/AppShell";
-import { EmptyState } from "../components/FeedbackState";
-import { useUser } from "../context/userContext";
-
-dayjs.locale("es");
 
 async function fetchEventArray(path) {
   const response = await apiFetch(path);
@@ -67,6 +67,23 @@ function groupEventsByDate(events) {
   }, {});
 }
 
+function EventCards({ events, onChanged, onRemoved }) {
+  return events.map((event) => (
+    <CardEvent
+      key={event._id}
+      event={event}
+      onChanged={onChanged}
+      onRemoved={onRemoved}
+    />
+  ));
+}
+
+EventCards.propTypes = {
+  events: PropTypes.arrayOf(eventPropType).isRequired,
+  onChanged: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func.isRequired,
+};
+
 function EventList({ events, selectedDate, emptyText, onChanged, onRemoved }) {
   const groupedEvents = useMemo(() => groupEventsByDate(events), [events]);
   const upcomingDates = Object.keys(groupedEvents)
@@ -83,7 +100,7 @@ function EventList({ events, selectedDate, emptyText, onChanged, onRemoved }) {
             <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "primary.main" }} />
             <Typography variant="h6" color="text.primary">{dayjs(date).format("dddd, D [de] MMMM [de] YYYY")}</Typography>
           </Stack>
-          {groupedEvents[date].map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />)}
+          <EventCards events={groupedEvents[date]} onChanged={onChanged} onRemoved={onRemoved} />
         </Stack>
       ))}
     </Stack>
@@ -168,6 +185,10 @@ export function Calendar() {
     setUserEvents((currentEvents) => removeEventById(currentEvents, eventId));
   };
 
+  const handleDateChange = (newValue) => {
+    setSelectedDate(newValue || dayjs());
+  };
+
   return (
     <AppShell title="Calendario" subtitle="Revisa los eventos por fecha y controla rapidamente los planes en los que participas." maxWidth="xl">
       <Grid container spacing={2.5}>
@@ -186,7 +207,7 @@ export function Calendar() {
             description="Elige un dia para revisar actividades concretas."
           >
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-              <DateCalendar value={selectedDate} onChange={(newValue) => setSelectedDate(newValue || dayjs())} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
+              <DateCalendar value={selectedDate} onChange={handleDateChange} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
             </LocalizationProvider>
           </SectionPaper>
         </Grid>
@@ -203,7 +224,9 @@ export function Calendar() {
             {selectedEvents.length === 0 ? (
               <EmptyState title="No hay eventos para este dia." description="Prueba otra fecha o revisa la lista de eventos proximos." compact />
             ) : (
-              <Stack spacing={1.5}>{selectedEvents.map((event) => <CardEvent key={event._id} event={event} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />)}</Stack>
+              <Stack spacing={1.5}>
+                <EventCards events={selectedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
+              </Stack>
             )}
           </SectionPaper>
         </Grid>
