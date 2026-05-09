@@ -21,6 +21,9 @@ const {
   handleProfileImageUpload,
 } = require("./profileImageUploadMiddleware");
 
+const configuredStorage = multer.diskStorage.mock.calls[0][0];
+const configuredOptions = multer.mock.calls[0][0];
+
 function createResponse() {
   return {
     status: jest.fn().mockReturnThis(),
@@ -30,15 +33,15 @@ function createResponse() {
 
 describe("profileImageUploadMiddleware", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockSingle.mockReset();
   });
 
   test("configures multer storage, limits and file filtering", () => {
-    expect(multer.diskStorage).toHaveBeenCalledWith(expect.objectContaining({
+    expect(configuredStorage).toEqual(expect.objectContaining({
       destination: expect.any(Function),
       filename: expect.any(Function),
     }));
-    expect(multer).toHaveBeenCalledWith(expect.objectContaining({
+    expect(configuredOptions).toEqual(expect.objectContaining({
       storage: expect.any(Object),
       limits: { fileSize: 1.5 * 1024 * 1024, files: 1 },
       fileFilter: expect.any(Function),
@@ -46,12 +49,11 @@ describe("profileImageUploadMiddleware", () => {
   });
 
   test("sets upload destination and safe filenames", () => {
-    const storage = multer.diskStorage.mock.calls[0][0];
     const destinationCallback = jest.fn();
     const filenameCallback = jest.fn();
 
-    storage.destination({}, {}, destinationCallback);
-    storage.filename(
+    configuredStorage.destination({}, {}, destinationCallback);
+    configuredStorage.filename(
       { auth: { userName: "Nacho Test" } },
       { mimetype: "image/png", originalname: "avatar.original" },
       filenameCallback
@@ -62,10 +64,9 @@ describe("profileImageUploadMiddleware", () => {
   });
 
   test("falls back to original extension for unexpected but accepted storage calls", () => {
-    const storage = multer.diskStorage.mock.calls[0][0];
     const filenameCallback = jest.fn();
 
-    storage.filename(
+    configuredStorage.filename(
       { auth: {} },
       { mimetype: "image/unknown", originalname: "avatar.gif" },
       filenameCallback
@@ -75,12 +76,11 @@ describe("profileImageUploadMiddleware", () => {
   });
 
   test("accepts allowed image mime types", () => {
-    const fileFilter = multer.mock.calls[0][0].fileFilter;
     const callback = jest.fn();
 
-    fileFilter({}, { mimetype: "image/jpeg" }, callback);
-    fileFilter({}, { mimetype: "image/png" }, callback);
-    fileFilter({}, { mimetype: "image/webp" }, callback);
+    configuredOptions.fileFilter({}, { mimetype: "image/jpeg" }, callback);
+    configuredOptions.fileFilter({}, { mimetype: "image/png" }, callback);
+    configuredOptions.fileFilter({}, { mimetype: "image/webp" }, callback);
 
     expect(callback).toHaveBeenNthCalledWith(1, null, true);
     expect(callback).toHaveBeenNthCalledWith(2, null, true);
@@ -88,10 +88,9 @@ describe("profileImageUploadMiddleware", () => {
   });
 
   test("rejects unsupported image mime types", () => {
-    const fileFilter = multer.mock.calls[0][0].fileFilter;
     const callback = jest.fn();
 
-    fileFilter({}, { mimetype: "image/gif" }, callback);
+    configuredOptions.fileFilter({}, { mimetype: "image/gif" }, callback);
 
     expect(callback.mock.calls[0][0]).toBeInstanceOf(Error);
     expect(callback.mock.calls[0][0].message).toBe("La imagen debe ser JPG, PNG o WEBP.");
