@@ -1,6 +1,5 @@
 const User = require("../models/User");
 const { createSessionToken, hashPassword, verifyPassword } = require("../services/authService");
-const { isValidProfileImage } = require("../services/userService");
 const { buildErrorBody, ERROR_CODES } = require("../utils/apiResponses");
 const { normalizeString, validateRequiredFields } = require("../utils/strings");
 const { isValidEmail, isValidPassword, parseOptionalDate } = require("../utils/validators");
@@ -50,14 +49,6 @@ async function register(req, res) {
       ));
     }
 
-    if (!isValidProfileImage(req.body.profileImage)) {
-      return res.status(400).json(buildErrorBody(
-        "La imagen de perfil no es valida o es demasiado grande",
-        ERROR_CODES.VALIDATION_ERROR,
-        { field: "profileImage" }
-      ));
-    }
-
     const userName = normalizeString(req.body.userName);
     const email = normalizeString(req.body.email).toLowerCase();
     const existingUser = await User.findOne({ $or: [{ userName }, { email }] }).exec();
@@ -76,7 +67,7 @@ async function register(req, res) {
       city: normalizeString(req.body.city),
       email,
       birthdate: birthdateResult.value,
-      profileImage: req.body.profileImage || "",
+      profileImage: "",
       password: await hashPassword(req.body.password),
       joinedEvents: [],
     });
