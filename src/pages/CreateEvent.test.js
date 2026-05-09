@@ -1,8 +1,9 @@
 import React from "react";
-import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { CreateEvent } from "./CreateEvent";
 import * as eventsApi from "../api/eventsApi";
+import { renderWithQueryClient } from "../testUtils/renderWithQueryClient";
 
 jest.mock("../api/eventsApi");
 const mockNavigate = jest.fn();
@@ -29,7 +30,7 @@ const baseEvent = {
 };
 
 function renderCreateEvent(path = "/events/new") {
-  return render(
+  return renderWithQueryClient(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/events/new" element={<CreateEvent />} />
