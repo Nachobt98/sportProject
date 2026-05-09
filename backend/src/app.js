@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const { config } = require("./config/env");
@@ -11,6 +12,7 @@ function createApp() {
 
   app.use(cors({ origin: config.clientOrigin }));
   applySecurityMiddleware(app);
+  app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
   app.get("/api/health", (req, res) => {
     res.status(200).json({ status: "ok" });
