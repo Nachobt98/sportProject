@@ -1,8 +1,9 @@
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { SearchCard2 } from "./searchCard2";
 import * as eventsApi from "../api/eventsApi";
+import { renderWithQueryClient } from "../testUtils/renderWithQueryClient";
 
 jest.mock("../api/eventsApi");
 jest.mock("../components/cardEvent", () => ({
@@ -56,7 +57,7 @@ function paginatedResponse(items = events, overrides = {}) {
 }
 
 function renderSearch() {
-  return render(
+  return renderWithQueryClient(
     <MemoryRouter>
       <SearchCard2 />
     </MemoryRouter>
