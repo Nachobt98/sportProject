@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+export const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const PUBLIC_API_PATHS = ["/api/login", "/api/register", "/api/health"];
 
 export function apiFetch(path, options) {
