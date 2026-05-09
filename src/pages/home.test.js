@@ -2,16 +2,18 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { Home } from "./home";
 
-jest.mock("../components/carousel", () => ({
-  Carousel: () => <div>Carousel mocked</div>,
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => jest.fn(),
 }));
 
-test("renders home testimonials", () => {
+test("renders home dashboard", () => {
   render(<Home />);
 
-  expect(screen.getByText("Carousel mocked")).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: /comunidad deportiva local/i })).toBeInTheDocument();
-  expect(screen.getByText("Nacho Bru Tarin")).toBeInTheDocument();
-  expect(screen.getByText("Adrian Perez Lopez")).toBeInTheDocument();
-  expect(screen.getByText("Raul Fernandez Iglesias")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /encuentra gente para moverte/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /buscar eventos/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /crear evento/i })).toBeInTheDocument();
+  expect(screen.getByText(/eventos disponibles/i)).toBeInTheDocument();
+  expect(screen.getByText(/deportes populares/i)).toBeInTheDocument();
+  expect(screen.getByText(/actividad semanal/i)).toBeInTheDocument();
 });

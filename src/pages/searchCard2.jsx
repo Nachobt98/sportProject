@@ -1,13 +1,17 @@
 import React, { useMemo, useState } from "react";
 import {
+  Box,
   Button,
+  Chip,
   MenuItem,
   Paper,
   Stack,
   TextField,
+  Typography,
 } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
@@ -17,33 +21,10 @@ import { useEvents } from "../hooks/useEvents";
 const DEFAULT_PAGE = 1;
 const EVENTS_PAGE_SIZE = 10;
 
-const cities = [
-  "Madrid",
-  "Barcelona",
-  "Valencia",
-  "Sevilla",
-  "Zaragoza",
-  "Malaga",
-  "Murcia",
-  "Palma",
-  "Las Palmas",
-  "Bilbao",
-];
+const cities = ["Madrid", "Barcelona", "Valencia", "Sevilla", "Zaragoza", "Malaga", "Murcia", "Palma", "Las Palmas", "Bilbao"];
+const sports = ["Futbol", "Baloncesto", "Tenis", "Atletismo", "Natacion", "Ciclismo", "Voleibol", "Golf", "Balonmano", "Padel"];
 
-const sports = [
-  "Futbol",
-  "Baloncesto",
-  "Tenis",
-  "Atletismo",
-  "Natacion",
-  "Ciclismo",
-  "Voleibol",
-  "Golf",
-  "Balonmano",
-  "Padel",
-];
-
-function renderEventsContent({ isLoading, loadError, events, onEventChanged, onEventRemoved }) {
+function renderEventsContent({ isLoading, loadError, events, onEventChanged, onEventRemoved, onClearFilters, onCreateEvent }) {
   if (isLoading && events.length === 0) {
     return <LoadingState title="Cargando eventos" description="Buscando actividades disponibles con los filtros actuales." />;
   }
@@ -53,7 +34,18 @@ function renderEventsContent({ isLoading, loadError, events, onEventChanged, onE
   }
 
   if (events.length === 0) {
-    return <EmptyState title="No hay eventos disponibles" description="Prueba a limpiar filtros o buscar otra ciudad, deporte o fecha." />;
+    return (
+      <EmptyState
+        title="No hay eventos disponibles"
+        description="Prueba a limpiar filtros, cambiar de ciudad o crear una actividad nueva."
+        action={
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <Button variant="outlined" startIcon={<RestartAltOutlinedIcon />} onClick={onClearFilters}>Reiniciar filtros</Button>
+            <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={onCreateEvent}>Crear nuevo evento</Button>
+          </Stack>
+        }
+      />
+    );
   }
 
   return events.map((event) => (
@@ -70,12 +62,10 @@ export function SearchCard2() {
   const eventsQuery = useEvents(queryFilters);
   const events = eventsQuery.data?.events || [];
   const pagination = eventsQuery.data?.pagination || null;
+  const hasFilters = Boolean(searchCriteria.city || searchCriteria.sport || searchCriteria.date);
 
   React.useEffect(() => {
-    if (!eventsQuery.data) {
-      return;
-    }
-
+    if (!eventsQuery.data) return;
     setLocalEvents((currentEvents) => (page === DEFAULT_PAGE ? events : [...currentEvents, ...events]));
   }, [events, eventsQuery.data, page]);
 
@@ -93,49 +83,55 @@ export function SearchCard2() {
     setLocalEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
   };
 
-  const handleClear = () => {
-    updateSearchCriteria({ city: "", sport: "", date: "" });
-  };
-
-  const handleLoadMore = () => {
-    setPage((currentPage) => currentPage + 1);
-  };
+  const handleClear = () => updateSearchCriteria({ city: "", sport: "", date: "" });
+  const handleLoadMore = () => setPage((currentPage) => currentPage + 1);
+  const handleCreateEvent = () => navigate("/events/new");
 
   return (
     <AppShell
       title="Eventos"
       subtitle="Busca actividades deportivas por ciudad, deporte o fecha y gestiona tu participacion desde una lista mas clara."
+      maxWidth="xl"
       actions={
-        <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate("/events/new")}>
+        <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={handleCreateEvent}>
           Crear evento
         </Button>
       }
     >
       <Paper sx={{ p: { xs: 2, md: 2.5 }, border: "1px solid", borderColor: "divider" }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <TextField fullWidth label="Ciudad" select value={searchCriteria.city} onChange={(event) => updateSearchCriteria({ ...searchCriteria, city: event.target.value })}>
-            {cities.map((city) => <MenuItem key={city} value={city}>{city}</MenuItem>)}
-          </TextField>
-          <TextField fullWidth label="Deporte" select value={searchCriteria.sport} onChange={(event) => updateSearchCriteria({ ...searchCriteria, sport: event.target.value })}>
-            {sports.map((sport) => <MenuItem key={sport} value={sport}>{sport}</MenuItem>)}
-          </TextField>
-          <TextField fullWidth label="Fecha" type="date" value={searchCriteria.date} InputLabelProps={{ shrink: true }} onChange={(event) => updateSearchCriteria({ ...searchCriteria, date: event.target.value })} />
-          <Button variant="outlined" startIcon={<RestartAltOutlinedIcon />} onClick={handleClear} sx={{ minWidth: { md: 150 } }}>
-            Limpiar
-          </Button>
+        <Stack spacing={2}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "flex-end" }}>
+            <TextField fullWidth label="Ciudad" select value={searchCriteria.city} onChange={(event) => updateSearchCriteria({ ...searchCriteria, city: event.target.value })}>
+              {cities.map((city) => <MenuItem key={city} value={city}>{city}</MenuItem>)}
+            </TextField>
+            <TextField fullWidth label="Deporte" select value={searchCriteria.sport} onChange={(event) => updateSearchCriteria({ ...searchCriteria, sport: event.target.value })}>
+              {sports.map((sport) => <MenuItem key={sport} value={sport}>{sport}</MenuItem>)}
+            </TextField>
+            <TextField fullWidth label="Fecha" type="date" value={searchCriteria.date} InputLabelProps={{ shrink: true }} onChange={(event) => updateSearchCriteria({ ...searchCriteria, date: event.target.value })} />
+            <Button variant="outlined" startIcon={<RestartAltOutlinedIcon />} onClick={handleClear} sx={{ minWidth: { md: 150 } }}>
+              Limpiar
+            </Button>
+          </Stack>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap", gap: 1 }}>
+            <Chip icon={<SearchOutlinedIcon />} label={`${localEvents.length} eventos cargados`} color="primary" variant="outlined" />
+            {hasFilters && <Chip label="Filtros activos" color="secondary" />}
+            {!hasFilters && <Typography variant="body2" color="text.secondary">Mostrando eventos disponibles sin filtros.</Typography>}
+          </Stack>
         </Stack>
       </Paper>
 
-      <Stack spacing={2}>
+      <Stack spacing={2.25}>
         {renderEventsContent({
           isLoading: eventsQuery.isLoading,
           loadError: eventsQuery.error?.message || "",
           events: localEvents,
           onEventChanged: handleEventChanged,
           onEventRemoved: handleEventRemoved,
+          onClearFilters: handleClear,
+          onCreateEvent: handleCreateEvent,
         })}
         {pagination?.hasNextPage && (
-          <Button variant="outlined" onClick={handleLoadMore} disabled={eventsQuery.isFetching}>
+          <Button variant="outlined" onClick={handleLoadMore} disabled={eventsQuery.isFetching} sx={{ alignSelf: "center", minWidth: 180 }}>
             {eventsQuery.isFetching ? "Cargando..." : "Cargar mas"}
           </Button>
         )}

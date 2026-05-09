@@ -107,15 +107,9 @@ function formatDate(dateString) {
 }
 
 function getLockedMessage(status) {
-  if (status === EVENT_STATUS.FULL) {
-    return "Evento completo. Puedes consultar el detalle, pero no quedan plazas.";
-  }
-  if (status === EVENT_STATUS.CANCELLED) {
-    return "Evento cancelado. Las acciones de participacion estan bloqueadas.";
-  }
-  if (status === EVENT_STATUS.PAST) {
-    return "Evento pasado. No acepta nuevas inscripciones.";
-  }
+  if (status === EVENT_STATUS.FULL) return "Evento completo. Puedes consultar el detalle, pero no quedan plazas.";
+  if (status === EVENT_STATUS.CANCELLED) return "Evento cancelado. Las acciones de participacion estan bloqueadas.";
+  if (status === EVENT_STATUS.PAST) return "Evento pasado. No acepta nuevas inscripciones.";
   return "";
 }
 
@@ -140,10 +134,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
     setCurrentEvent(event);
   }, [event]);
 
-  const participants = useMemo(
-    () => currentEvent.participantsList || [],
-    [currentEvent.participantsList]
-  );
+  const participants = useMemo(() => currentEvent.participantsList || [], [currentEvent.participantsList]);
   const creatorProfile = currentEvent.creatorProfile || { userName: currentEvent.creator, profileImage: "" };
   const isCreator = currentEvent.creator === users.userName;
   const availableSlots = Math.max(Number(currentEvent.participants || 0) - participants.length, 0);
@@ -156,23 +147,14 @@ export function CardEvent({ event, onChanged, onRemoved }) {
   const canManageActiveEvent = isCreator && isActiveLifecycle;
   const lockedMessage = getLockedMessage(status);
   const activeConfirmConfig = confirmAction ? confirmDialogConfig[confirmAction] : null;
-  const isConfirming =
-    cancelEventMutation.isPending ||
-    cancelEventJoinMutation.isPending ||
-    deleteEventMutation.isPending ||
-    dismissEventMutation.isPending;
+  const isConfirming = cancelEventMutation.isPending || cancelEventJoinMutation.isPending || deleteEventMutation.isPending || dismissEventMutation.isPending;
 
   useEffect(() => {
     setIsUserJoined(participants.includes(users.userName));
   }, [participants, users.userName]);
 
-  const handleInfoClick = () => {
-    navigate(`/events/${currentEvent._id}`);
-  };
-
-  const handleEditClick = () => {
-    navigate(`/events/${currentEvent._id}/edit`);
-  };
+  const handleInfoClick = () => navigate(`/events/${currentEvent._id}`);
+  const handleEditClick = () => navigate(`/events/${currentEvent._id}/edit`);
 
   const handleUpdatedEvent = (updatedEvent) => {
     setCurrentEvent(updatedEvent);
@@ -232,86 +214,60 @@ export function CardEvent({ event, onChanged, onRemoved }) {
     <>
       <Card
         sx={{
-          border: "1px solid",
+          overflow: "hidden",
           borderColor: locked ? "divider" : "primary.light",
           opacity: status === EVENT_STATUS.CANCELLED ? 0.78 : 1,
-          transition: "border-color 160ms ease, box-shadow 160ms ease",
+          transition: "transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
           "&:hover": {
+            transform: "translateY(-2px)",
             borderColor: locked ? "text.disabled" : "primary.light",
-            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.1)",
+            boxShadow: "0 18px 42px rgba(15, 23, 42, 0.12)",
           },
         }}
       >
-        <CardContent sx={{ p: 2.5 }}>
-          <Stack spacing={2}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.5}
-              justifyContent="space-between"
-            >
-              <Box>
-                <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: "wrap" }}>
+        <Box sx={{ height: 6, bgcolor: locked ? "divider" : "primary.main" }} />
+        <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
+          <Stack spacing={2.25}>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
+              <Stack spacing={1.25} sx={{ minWidth: 0 }}>
+                <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
                   <Chip label={currentEvent.sport} size="small" color="primary" />
-                  <Chip
-                    label={getEventStatusLabel(status)}
-                    size="small"
-                    color={getEventStatusColor(status)}
-                    variant={status === EVENT_STATUS.OPEN ? "filled" : "outlined"}
-                  />
-                  <Chip
-                    label={`${participants.length}/${currentEvent.participants} plazas`}
-                    size="small"
-                    color={availableSlots > 0 && status === EVENT_STATUS.OPEN ? "secondary" : "default"}
-                    variant="outlined"
-                  />
+                  <Chip label={getEventStatusLabel(status)} size="small" color={getEventStatusColor(status)} variant={status === EVENT_STATUS.OPEN ? "filled" : "outlined"} />
+                  <Chip label={`${participants.length}/${currentEvent.participants} plazas`} size="small" color={availableSlots > 0 && status === EVENT_STATUS.OPEN ? "secondary" : "default"} variant="outlined" />
                 </Stack>
-                <Typography variant="h5" color="text.primary">
-                  {currentEvent.name}
-                </Typography>
-              </Box>
+                <Box>
+                  <Typography variant="h5" color="text.primary">{currentEvent.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, maxWidth: 760 }}>{currentEvent.description}</Typography>
+                </Box>
+              </Stack>
 
-              <Stack
-                spacing={0.75}
-                sx={{ color: "text.secondary", minWidth: { sm: 190 } }}
-              >
+              <Stack spacing={1} sx={{ color: "text.secondary", minWidth: { md: 220 } }}>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <AccessTimeOutlinedIcon fontSize="small" />
-                  <Typography variant="body2">{formatDate(currentEvent.date)}</Typography>
+                  <AccessTimeOutlinedIcon fontSize="small" color="primary" />
+                  <Typography variant="body2" fontWeight={700}>{formatDate(currentEvent.date)}</Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <PlaceOutlinedIcon fontSize="small" />
+                  <PlaceOutlinedIcon fontSize="small" color="primary" />
                   <Typography variant="body2">{currentEvent.city}</Typography>
                 </Stack>
               </Stack>
             </Stack>
 
-            <Typography variant="body2" color="text.secondary">
-              {currentEvent.description}
-            </Typography>
-
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "flex-start", sm: "center" }} justifyContent="space-between">
               <Stack direction="row" spacing={1} alignItems="center">
-                <UserAvatar userName={creatorProfile.userName} profileImage={creatorProfile.profileImage} size={28} />
-                <Typography variant="body2" color="text.secondary">
-                  Creador: {currentEvent.creator || "Usuario desconocido"}
-                </Typography>
+                <UserAvatar userName={creatorProfile.userName} profileImage={creatorProfile.profileImage} size={32} />
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Creador</Typography>
+                  <Typography variant="body2" fontWeight={700}>{currentEvent.creator || "Usuario desconocido"}</Typography>
+                </Box>
               </Stack>
               {participants.length > 0 && (
                 <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
                   {participants.slice(0, 4).map((participant) => {
                     const participantProfile = findParticipantProfile(currentEvent, participant);
-                    return (
-                      <UserAvatar
-                        key={participant}
-                        userName={participantProfile.userName}
-                        profileImage={participantProfile.profileImage}
-                        size={24}
-                      />
-                    );
+                    return <UserAvatar key={participant} userName={participantProfile.userName} profileImage={participantProfile.profileImage} size={26} />;
                   })}
-                  {participants.length > 4 && (
-                    <Typography variant="caption" color="text.secondary">+{participants.length - 4}</Typography>
-                  )}
+                  {participants.length > 4 && <Typography variant="caption" color="text.secondary">+{participants.length - 4}</Typography>}
                 </Stack>
               )}
             </Stack>
@@ -320,97 +276,18 @@ export function CardEvent({ event, onChanged, onRemoved }) {
           </Stack>
         </CardContent>
 
-        <CardActions
-          sx={{
-            px: 2.5,
-            pb: 2.5,
-            pt: 0,
-            justifyContent: "space-between",
-            gap: 1,
-            flexWrap: "wrap",
-          }}
-        >
-          <Button startIcon={<InfoOutlinedIcon />} onClick={handleInfoClick}>
-            Detalle
-          </Button>
-
+        <CardActions sx={{ px: { xs: 2, md: 2.75 }, pb: { xs: 2, md: 2.75 }, pt: 0, justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+          <Button startIcon={<InfoOutlinedIcon />} onClick={handleInfoClick}>Detalle</Button>
           <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
-            {!isCreator && !isUserJoined && (
-              <Button
-                variant="contained"
-                startIcon={<LoginOutlinedIcon />}
-                onClick={handleJoinClick}
-                disabled={!canJoin || joinEventMutation.isPending}
-              >
-                Unirse
-              </Button>
-            )}
-
-            {!isCreator && isUserJoined && (
-              <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<LogoutOutlinedIcon />}
-                onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_PARTICIPATION)}
-                disabled={!canCancelParticipation || cancelEventJoinMutation.isPending}
-              >
-                Cancelar participacion
-              </Button>
-            )}
-
-            {canManageActiveEvent && (
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<CancelOutlinedIcon />}
-                onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_EVENT)}
-                disabled={cancelEventMutation.isPending}
-              >
-                Cancelar evento
-              </Button>
-            )}
-
-            {canEditDate && (
-              <Button
-                variant="outlined"
-                startIcon={<EditCalendarOutlinedIcon />}
-                onClick={handleEditClick}
-              >
-                Cambiar fecha
-              </Button>
-            )}
-
-            {(status === EVENT_STATUS.CANCELLED || status === EVENT_STATUS.PAST) && (
-              <Button
-                variant="outlined"
-                color="inherit"
-                startIcon={<VisibilityOffOutlinedIcon />}
-                onClick={() => setConfirmAction(CONFIRM_ACTIONS.DISMISS_EVENT)}
-                disabled={dismissEventMutation.isPending}
-              >
-                Borrar de mi perfil
-              </Button>
-            )}
-
-            {canManageActiveEvent && (
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteOutlineOutlinedIcon />}
-                onClick={() => setConfirmAction(CONFIRM_ACTIONS.DELETE_EVENT)}
-                disabled={deleteEventMutation.isPending}
-              >
-                Eliminar globalmente
-              </Button>
-            )}
+            {!isCreator && !isUserJoined && <Button variant="contained" startIcon={<LoginOutlinedIcon />} onClick={handleJoinClick} disabled={!canJoin || joinEventMutation.isPending}>Unirse</Button>}
+            {!isCreator && isUserJoined && <Button variant="outlined" color="secondary" startIcon={<LogoutOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_PARTICIPATION)} disabled={!canCancelParticipation || cancelEventJoinMutation.isPending}>Cancelar participacion</Button>}
+            {canManageActiveEvent && <Button variant="outlined" color="warning" startIcon={<CancelOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_EVENT)} disabled={cancelEventMutation.isPending}>Cancelar evento</Button>}
+            {canEditDate && <Button variant="outlined" startIcon={<EditCalendarOutlinedIcon />} onClick={handleEditClick}>Cambiar fecha</Button>}
+            {(status === EVENT_STATUS.CANCELLED || status === EVENT_STATUS.PAST) && <Button variant="outlined" color="inherit" startIcon={<VisibilityOffOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.DISMISS_EVENT)} disabled={dismissEventMutation.isPending}>Borrar de mi perfil</Button>}
+            {canManageActiveEvent && <Button variant="outlined" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.DELETE_EVENT)} disabled={deleteEventMutation.isPending}>Eliminar globalmente</Button>}
           </Stack>
         </CardActions>
-        <Snackbar
-          open={Boolean(feedback)}
-          autoHideDuration={3500}
-          onClose={() => setFeedback(null)}
-          message={feedback?.message}
-        />
+        <Snackbar open={Boolean(feedback)} autoHideDuration={3500} onClose={() => setFeedback(null)} message={feedback?.message} />
       </Card>
       {activeConfirmConfig && (
         <ConfirmDialog
