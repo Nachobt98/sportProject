@@ -88,7 +88,8 @@ describe("SearchCard2", () => {
 
     renderSearch();
 
-    expect(await screen.findByText("No se pudieron cargar los eventos")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "No se pudieron cargar los eventos" })).toBeInTheDocument();
+    expect(screen.getByText("No se pudieron cargar los eventos", { selector: "p" })).toBeInTheDocument();
   });
 
   test("shows an empty state when there are no events", async () => {
@@ -96,14 +97,15 @@ describe("SearchCard2", () => {
 
     renderSearch();
 
-    expect(await screen.findByText(/no se encontraron eventos/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no hay eventos disponibles/i)).toBeInTheDocument();
+    expect(screen.getByText(/prueba a limpiar filtros/i)).toBeInTheDocument();
   });
 
   test("navigates to create event", async () => {
     eventsApi.getEvents.mockResolvedValue(paginatedResponse([]));
 
     renderSearch();
-    await screen.findByText(/no se encontraron eventos/i);
+    await screen.findByText(/no hay eventos disponibles/i);
     fireEvent.click(screen.getByRole("button", { name: /crear evento/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith("/events/new");
