@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Avatar,
@@ -24,7 +24,12 @@ import { AppShell } from "../components/AppShell";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
 import { useUser } from "../context/userContext";
-import { cancelEvent, deleteEvent, dismissEvent, getEventById } from "../api/eventsApi";
+import {
+  useCancelEventMutation,
+  useDeleteEventMutation,
+  useDismissEventMutation,
+  useEvent,
+} from "../hooks/useEvents";
 import {
   EVENT_STATUS,
   canEditEventDate,
@@ -69,14 +74,8 @@ function formatDate(dateString) {
 }
 
 function safeLocationHref(location) {
-  if (!location) {
-    return null;
-  }
-
-  if (location.startsWith("http://") || location.startsWith("https://")) {
-    return location;
-  }
-
+  if (!location) return null;
+  if (location.startsWith("http://") || location.startsWith("https://")) return location;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
 }
 
@@ -97,66 +96,28 @@ function CardDetails() {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { users } = useUser();
-  const [eventData, setEventData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const eventQuery = useEvent(eventId);
+  const cancelEventMutation = useCancelEventMutation(eventId);
+  const dismissEventMutation = useDismissEventMutation(eventId);
+  const deleteEventMutation = useDeleteEventMutation(eventId);
   const [actionError, setActionError] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
-  const [isConfirming, setIsConfirming] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchEvent() {
-      setIsLoading(true);
-      setLoadError("");
-
-      try {
-        const data = await getEventById(eventId);
-        if (isMounted) {
-          setEventData(data.event);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setLoadError(error.message || "No se pudo cargar el evento.");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    if (!eventId) {
-      setIsLoading(false);
-      setLoadError("No se ha indicado ningun evento.");
-      return undefined;
-    }
-
-    fetchEvent();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [eventId]);
 
   const runConfirmedAction = async () => {
     setActionError("");
-    setIsConfirming(true);
 
     try {
       if (confirmAction === DETAIL_CONFIRM_ACTIONS.CANCEL_EVENT) {
-        const data = await cancelEvent(eventId);
-        setEventData(data.event);
+        await cancelEventMutation.mutateAsync();
       }
 
       if (confirmAction === DETAIL_CONFIRM_ACTIONS.DISMISS_EVENT) {
-        await dismissEvent(eventId);
+        await dismissEventMutation.mutateAsync();
         navigate("/profile", { replace: true });
       }
 
       if (confirmAction === DETAIL_CONFIRM_ACTIONS.DELETE_EVENT) {
-        await deleteEvent(eventId);
+        await deleteEventMutation.mutateAsync();
         navigate("/profile", { replace: true });
       }
 
@@ -168,12 +129,18 @@ function CardDetails() {
         [DETAIL_CONFIRM_ACTIONS.DELETE_EVENT]: "No se pudo eliminar el evento.",
       }[confirmAction];
       setActionError(error.message || fallbackMessage);
-    } finally {
-      setIsConfirming(false);
     }
   };
 
-  if (isLoading) {
+  if (!eventId) {
+    return (
+      <AppShell title="Detalle de evento" maxWidth="md">
+        <ErrorState title="No se pudo cargar el evento" message="No se ha indicado ningun evento." actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
+      </AppShell>
+    );
+  }
+
+  if (eventQuery.isLoading) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
         <LoadingState title="Cargando evento" description="Estamos recuperando los datos actualizados del evento." />
@@ -181,13 +148,15 @@ function CardDetails() {
     );
   }
 
-  if (loadError) {
+  if (eventQuery.error) {
     return (
       <AppShell title="Detalle de evento" maxWidth="md">
-        <ErrorState title="No se pudo cargar el evento" message={loadError} actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
+        <ErrorState title="No se pudo cargar el evento" message={eventQuery.error.message || "No se pudo cargar el evento."} actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
       </AppShell>
     );
   }
+
+  const eventData = eventQuery.data?.event;
 
   if (!eventData) {
     return (
@@ -210,6 +179,7 @@ function CardDetails() {
   const canEdit = isCreator && status !== EVENT_STATUS.CANCELLED;
   const canEditDate = canEditEventDate(eventData, isCreator);
   const activeConfirmConfig = confirmAction ? confirmDialogConfig[confirmAction] : null;
+  const isConfirming = cancelEventMutation.isPending || dismissEventMutation.isPending || deleteEventMutation.isPending;
 
   return (
     <>
