@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 import {
-  Avatar,
   Divider,
   IconButton,
   ListItemIcon,
@@ -15,10 +14,7 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { useUser } from "../context/userContext";
-
-function getInitials(userName = "") {
-  return userName.slice(0, 2).toUpperCase();
-}
+import { UserAvatar } from "./UserAvatar";
 
 export function DropdownMenu({ navItems = [] }) {
   const { logout } = useAuth();
@@ -47,13 +43,7 @@ export function DropdownMenu({ navItems = [] }) {
             "&:hover": { bgcolor: "background.paper", borderColor: "primary.light" },
           }}
         >
-          <Avatar
-            src={users.profileImage || ""}
-            alt={users.userName || "Usuario"}
-            sx={{ width: 40, height: 40, fontSize: 14, fontWeight: 700 }}
-          >
-            {getInitials(users.userName)}
-          </Avatar>
+          <UserAvatar userName={users.userName} profileImage={users.profileImage} size={40} />
         </IconButton>
       </Tooltip>
       <Menu
