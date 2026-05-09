@@ -41,7 +41,7 @@ function renderEventsContent({ isLoading, loadError, events, onEventChanged, onE
         action={
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <Button variant="outlined" startIcon={<RestartAltOutlinedIcon />} onClick={onClearFilters}>Reiniciar filtros</Button>
-            <Button aria-label="Crear evento desde estado vacio" variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={onCreateEvent}>Crear evento</Button>
+            <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={onCreateEvent}>Crear nuevo evento</Button>
           </Stack>
         }
       />
