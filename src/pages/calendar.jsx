@@ -20,7 +20,9 @@ import { removeEventById, replaceEventById, syncJoinedEvents } from "../utils/ev
 dayjs.locale("es");
 
 const paperBorderSx = { border: "1px solid", borderColor: "divider" };
-const topPanelSx = { width: "100%", height: { md: 430, lg: 430 }, display: "flex", flexDirection: "column" };
+const calendarTopPanelHeight = { md: 430, lg: 430 };
+const topPanelSx = { width: "100%", height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" };
+const topGridItemSx = { display: "flex", alignSelf: "stretch", height: calendarTopPanelHeight };
 
 async function fetchEventArray(path) {
   const response = await apiFetch(path);
@@ -229,10 +231,10 @@ export function Calendar() {
       <StatsGrid stats={calendarStats} />
 
       <Grid container spacing={3} alignItems="stretch">
-        <Grid item xs={12} md={5} lg={4} sx={{ display: "flex", alignSelf: "stretch" }}>
+        <Grid item xs={12} md={5} lg={4} sx={topGridItemSx}>
           <DatePickerPanel selectedDate={selectedDate} onDateChange={handleDateChange} />
         </Grid>
-        <Grid item xs={12} md={7} lg={8} sx={{ display: "flex", alignSelf: "stretch" }}>
+        <Grid item xs={12} md={7} lg={8} sx={topGridItemSx}>
           <SelectedDayPanel selectedDate={selectedDate} selectedEvents={selectedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
         </Grid>
         <Grid item xs={12} sx={{ mt: 2 }}>
