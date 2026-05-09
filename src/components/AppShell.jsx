@@ -8,8 +8,8 @@ export function AppShell({ title, subtitle, actions, maxWidth = "lg", children }
       sx={{
         minHeight: "100vh",
         bgcolor: "background.default",
-        pt: { xs: 10, md: 11 },
-        pb: { xs: 4, md: 7 },
+        pt: { xs: 10, md: 12 },
+        pb: { xs: 5, md: 8 },
       }}
     >
       <Container maxWidth={maxWidth}>
@@ -17,7 +17,7 @@ export function AppShell({ title, subtitle, actions, maxWidth = "lg", children }
           {(title || subtitle || actions) && (
             <Stack
               direction={{ xs: "column", md: "row" }}
-              spacing={2}
+              spacing={2.5}
               alignItems={{ xs: "stretch", md: "flex-end" }}
               justifyContent="space-between"
             >
@@ -28,16 +28,12 @@ export function AppShell({ title, subtitle, actions, maxWidth = "lg", children }
                   </Typography>
                 )}
                 {subtitle && (
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{ mt: 0.75, maxWidth: 680 }}
-                  >
+                  <Typography variant="h6" color="text.secondary" sx={{ mt: 1, maxWidth: 760, fontWeight: 500, lineHeight: 1.55 }}>
                     {subtitle}
                   </Typography>
                 )}
               </Box>
-              {actions}
+              {actions && <Box sx={{ flexShrink: 0 }}>{actions}</Box>}
             </Stack>
           )}
           {children}
