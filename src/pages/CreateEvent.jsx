@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Button,
@@ -17,7 +17,7 @@ import * as Yup from "yup";
 import { AppShell } from "../components/AppShell";
 import { ErrorState, LoadingState } from "../components/FeedbackState";
 import { useUser } from "../context/userContext";
-import { createEvent, getEventById, updateEvent } from "../api/eventsApi";
+import { useCreateEventMutation, useEvent, useUpdateEventMutation } from "../hooks/useEvents";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Nombre es requerido"),
@@ -51,14 +51,14 @@ function toDateInputValue(date) {
 
 function toEventFormValues(event) {
   return {
-    name: event.name || "",
-    description: event.description || "",
-    sport: event.sport || "",
-    date: toDateInputValue(event.date),
-    location: event.location || "",
-    locationName: event.locationName || "",
-    city: event.city || "",
-    participants: event.participants ? String(event.participants) : "",
+    name: event?.name || "",
+    description: event?.description || "",
+    sport: event?.sport || "",
+    date: toDateInputValue(event?.date),
+    location: event?.location || "",
+    locationName: event?.locationName || "",
+    city: event?.city || "",
+    participants: event?.participants ? String(event.participants) : "",
   };
 }
 
@@ -67,36 +67,14 @@ export function CreateEvent() {
   const isEditMode = Boolean(eventId);
   const { users } = useUser();
   const navigate = useNavigate();
+  const eventQuery = useEvent(eventId);
+  const createEventMutation = useCreateEventMutation();
+  const updateEventMutation = useUpdateEventMutation(eventId);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [loadError, setLoadError] = useState("");
-  const [isLoading, setIsLoading] = useState(isEditMode);
-  const [initialValues, setInitialValues] = useState(emptyEventValues);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchEditableEvent() {
-      setIsLoading(true);
-      setLoadError("");
-      try {
-        const data = await getEventById(eventId);
-        if (!isMounted) return;
-        if (data.event?.creator !== users.userName) {
-          setLoadError("Solo el creador puede editar este evento.");
-          return;
-        }
-        setInitialValues(toEventFormValues(data.event));
-      } catch (error) {
-        if (isMounted) setLoadError(error.message || "No se pudo cargar el evento.");
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    }
-
-    if (isEditMode) fetchEditableEvent();
-    return () => { isMounted = false; };
-  }, [eventId, isEditMode, users.userName]);
+  const loadedEvent = eventQuery.data?.event;
+  const initialValues = useMemo(() => (isEditMode ? toEventFormValues(loadedEvent) : emptyEventValues), [isEditMode, loadedEvent]);
 
   const handleSnackbarClose = (event, reason) => {
     if (reason === "clickaway") return;
@@ -110,7 +88,7 @@ export function CreateEvent() {
   const successMessage = isEditMode ? "Evento actualizado correctamente" : "Evento creado correctamente";
   const detailPath = `/events/${eventId}`;
 
-  if (isLoading) {
+  if (isEditMode && eventQuery.isLoading) {
     return (
       <AppShell title={pageTitle} maxWidth="md">
         <LoadingState title="Cargando evento" description="Preparando el formulario con los datos actuales." />
@@ -118,10 +96,18 @@ export function CreateEvent() {
     );
   }
 
-  if (loadError) {
+  if (isEditMode && eventQuery.error) {
     return (
       <AppShell title={pageTitle} maxWidth="md">
-        <ErrorState title="No se puede editar el evento" message={loadError} actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
+        <ErrorState title="No se puede editar el evento" message={eventQuery.error.message || "No se pudo cargar el evento."} actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
+      </AppShell>
+    );
+  }
+
+  if (isEditMode && loadedEvent?.creator !== users.userName) {
+    return (
+      <AppShell title={pageTitle} maxWidth="md">
+        <ErrorState title="No se puede editar el evento" message="Solo el creador puede editar este evento." actionLabel="Volver a eventos" onAction={() => navigate("/events")} />
       </AppShell>
     );
   }
@@ -142,8 +128,8 @@ export function CreateEvent() {
             setSubmitError("");
             try {
               const eventData = { ...values, participants: Number(values.participants), creator: users.userName };
-              if (isEditMode) await updateEvent(eventId, eventData);
-              else await createEvent(eventData);
+              if (isEditMode) await updateEventMutation.mutateAsync(eventData);
+              else await createEventMutation.mutateAsync(eventData);
               setOpenSnackbar(true);
               setTimeout(() => {
                 if (isEditMode) navigate(detailPath, { replace: true });
@@ -214,7 +200,7 @@ export function CreateEvent() {
                 </Stack>
 
                 <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                  <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={formikProps.isSubmitting}>
+                  <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={formikProps.isSubmitting || createEventMutation.isPending || updateEventMutation.isPending}>
                     {isEditMode ? "Guardar cambios" : "Crear evento"}
                   </Button>
                 </Stack>
