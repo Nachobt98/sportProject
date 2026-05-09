@@ -31,6 +31,7 @@ import {
   useJoinEventMutation,
 } from "../hooks/useEvents";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { UserAvatar } from "./UserAvatar";
 import {
   EVENT_STATUS,
   canEditEventDate,
@@ -46,6 +47,11 @@ const CONFIRM_ACTIONS = {
   DISMISS_EVENT: "dismiss-event",
   DELETE_EVENT: "delete-event",
 };
+
+const userProfilePropType = PropTypes.shape({
+  userName: PropTypes.string,
+  profileImage: PropTypes.string,
+});
 
 const confirmDialogConfig = {
   [CONFIRM_ACTIONS.CANCEL_PARTICIPATION]: {
@@ -82,11 +88,13 @@ export const eventPropType = PropTypes.shape({
   date: PropTypes.string,
   city: PropTypes.string,
   creator: PropTypes.string,
+  creatorProfile: userProfilePropType,
   status: PropTypes.oneOf(Object.values(EVENT_STATUS)),
   canJoin: PropTypes.bool,
   isLocked: PropTypes.bool,
   participants: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   participantsList: PropTypes.arrayOf(PropTypes.string),
+  participantsProfiles: PropTypes.arrayOf(userProfilePropType),
 });
 
 function formatDate(dateString) {
@@ -111,6 +119,10 @@ function getLockedMessage(status) {
   return "";
 }
 
+function findParticipantProfile(event, userName) {
+  return event.participantsProfiles?.find((profile) => profile.userName === userName) || { userName, profileImage: "" };
+}
+
 export function CardEvent({ event, onChanged, onRemoved }) {
   const { users } = useUser();
   const navigate = useNavigate();
@@ -132,6 +144,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
     () => currentEvent.participantsList || [],
     [currentEvent.participantsList]
   );
+  const creatorProfile = currentEvent.creatorProfile || { userName: currentEvent.creator, profileImage: "" };
   const isCreator = currentEvent.creator === users.userName;
   const availableSlots = Math.max(Number(currentEvent.participants || 0) - participants.length, 0);
   const status = currentEvent.status || EVENT_STATUS.OPEN;
@@ -275,6 +288,33 @@ export function CardEvent({ event, onChanged, onRemoved }) {
             <Typography variant="body2" color="text.secondary">
               {currentEvent.description}
             </Typography>
+
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <UserAvatar userName={creatorProfile.userName} profileImage={creatorProfile.profileImage} size={28} />
+                <Typography variant="body2" color="text.secondary">
+                  Creador: {currentEvent.creator || "Usuario desconocido"}
+                </Typography>
+              </Stack>
+              {participants.length > 0 && (
+                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexWrap: "wrap" }}>
+                  {participants.slice(0, 4).map((participant) => {
+                    const participantProfile = findParticipantProfile(currentEvent, participant);
+                    return (
+                      <UserAvatar
+                        key={participant}
+                        userName={participantProfile.userName}
+                        profileImage={participantProfile.profileImage}
+                        size={24}
+                      />
+                    );
+                  })}
+                  {participants.length > 4 && (
+                    <Typography variant="caption" color="text.secondary">+{participants.length - 4}</Typography>
+                  )}
+                </Stack>
+              )}
+            </Stack>
 
             {lockedMessage && <Alert severity={status === EVENT_STATUS.FULL ? "warning" : "info"}>{lockedMessage}</Alert>}
           </Stack>
