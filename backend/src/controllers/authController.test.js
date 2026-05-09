@@ -7,7 +7,7 @@ jest.mock("../services/authService", () => ({
 }));
 
 jest.mock("../utils/users", () => ({
-  toPublicUser: jest.fn((user) => ({ userName: user.userName })),
+  toPublicUser: jest.fn((user) => ({ userName: user.userName, profileImage: user.profileImage || "" })),
 }));
 
 jest.mock("../utils/logger", () => ({
@@ -57,17 +57,29 @@ describe("authController", () => {
   });
 
   test("registers a new user", async () => {
-    const savedUser = { userName: "nacho", save: jest.fn().mockResolvedValue(undefined) };
+    const savedUser = { userName: "nacho", profileImage: "", save: jest.fn().mockResolvedValue(undefined) };
     User.findOne = jest.fn().mockReturnValue(queryResult(null));
     User.mockImplementation(() => savedUser);
     const res = createResponse();
 
     await controller.register({ body: validRegisterBody({ email: "NACHO@example.com" }) }, res);
 
-    expect(User).toHaveBeenCalledWith(expect.objectContaining({ email: "nacho@example.com" }));
+    expect(User).toHaveBeenCalledWith(expect.objectContaining({ email: "nacho@example.com", profileImage: "" }));
     expect(savedUser.save).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ token: "session-token" }));
+  });
+
+  test("ignores profile images during registration", async () => {
+    const savedUser = { userName: "nacho", profileImage: "", save: jest.fn().mockResolvedValue(undefined) };
+    User.findOne = jest.fn().mockReturnValue(queryResult(null));
+    User.mockImplementation(() => savedUser);
+    const res = createResponse();
+
+    await controller.register({ body: validRegisterBody({ profileImage: "legacy-inline-image" }) }, res);
+
+    expect(User).toHaveBeenCalledWith(expect.objectContaining({ profileImage: "" }));
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 
   test("handles registration errors", async () => {
@@ -115,16 +127,6 @@ describe("authController", () => {
     const res = createResponse();
 
     await controller.register({ body: validRegisterBody({ birthdate: "bad-date" }) }, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expectErrorCode(res, ERROR_CODES.VALIDATION_ERROR);
-    expect(User.findOne).not.toHaveBeenCalled();
-  });
-
-  test("rejects invalid profile images during registration", async () => {
-    const res = createResponse();
-
-    await controller.register({ body: validRegisterBody({ profileImage: "invalid-image" }) }, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expectErrorCode(res, ERROR_CODES.VALIDATION_ERROR);
@@ -223,7 +225,7 @@ describe("authController", () => {
     await controller.getSession({ auth: { userName: "nacho" } }, res);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({ user: { userName: "nacho" } });
+    expect(res.json).toHaveBeenCalledWith({ user: { userName: "nacho", profileImage: "" } });
   });
 
   test("returns 404 or 500 when session user cannot be loaded", async () => {

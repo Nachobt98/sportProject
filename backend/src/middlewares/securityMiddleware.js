@@ -6,6 +6,9 @@ const { buildErrorBody, ERROR_CODES } = require("../utils/apiResponses");
 const JSON_BODY_LIMIT = "1mb";
 const GENERAL_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_WINDOW_MS = 15 * 60 * 1000;
+const HELMET_OPTIONS = {
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+};
 
 function buildRateLimitHandler(message) {
   return function rateLimitHandler(req, res) {
@@ -30,13 +33,14 @@ const authLimiter = rateLimit({
 });
 
 function applySecurityMiddleware(app) {
-  app.use(helmet());
+  app.use(helmet(HELMET_OPTIONS));
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
   app.use("/api", generalApiLimiter);
 }
 
 module.exports = {
   JSON_BODY_LIMIT,
+  HELMET_OPTIONS,
   generalApiLimiter,
   authLimiter,
   applySecurityMiddleware,

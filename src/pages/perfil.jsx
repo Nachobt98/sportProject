@@ -1,57 +1,30 @@
 import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  Grid,
-  IconButton,
-  Paper,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { AppShell } from "../components/AppShell";
 import { CardEvent, eventPropType } from "../components/cardEvent";
 import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
+import { UserAvatar } from "../components/UserAvatar";
 import { useUser } from "../context/userContext";
 import { useProfileEvents } from "../hooks/useEvents";
-import { updateCurrentUser } from "../api/usersApi";
-import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
+import { updateCurrentUser, uploadProfileImage } from "../api/usersApi";
 
-const profileFields = [
-  ["firstName", "Nombre"],
-  ["lastName", "Apellidos"],
-  ["userName", "Usuario"],
-  ["city", "Ciudad"],
-  ["email", "Email"],
-  ["birthdate", "Fecha de nacimiento"],
-];
-
+const profileFields = [["firstName", "Nombre"], ["lastName", "Apellidos"], ["userName", "Usuario"], ["city", "Ciudad"], ["email", "Email"], ["birthdate", "Fecha de nacimiento"]];
 const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function formatDate(date) {
   if (!date) return "Sin completar";
   const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) return "Sin completar";
-  return parsedDate.toLocaleDateString("es-ES");
+  return Number.isNaN(parsedDate.getTime()) ? "Sin completar" : parsedDate.toLocaleDateString("es-ES");
 }
 
 function toDateInputValue(date) {
   if (!date) return "";
   const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) return "";
-  return parsedDate.toISOString().slice(0, 10);
+  return Number.isNaN(parsedDate.getTime()) ? "" : parsedDate.toISOString().slice(0, 10);
 }
 
 function buildProfilePayload(profileData) {
@@ -61,7 +34,6 @@ function buildProfilePayload(profileData) {
     city: profileData.city,
     email: profileData.email,
     birthdate: profileData.birthdate,
-    profileImage: profileData.profileImage || "",
   };
 }
 
@@ -70,15 +42,7 @@ function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
     <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
       <Stack spacing={2}>
         <Typography variant="h5">{title}</Typography>
-        {events.length === 0 ? (
-          <EmptyState title={emptyText} description="Cuando haya actividad, aparecera aqui con sus acciones disponibles." compact />
-        ) : (
-          <Stack spacing={1.5}>
-            {events.map((event) => (
-              <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />
-            ))}
-          </Stack>
-        )}
+        {events.length === 0 ? <EmptyState title={emptyText} description="Cuando haya actividad, aparecera aqui con sus acciones disponibles." compact /> : <Stack spacing={1.5}>{events.map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />)}</Stack>}
       </Stack>
     </Paper>
   );
@@ -104,19 +68,10 @@ export function Perfil() {
   const [editedData, setEditedData] = useState({ ...users });
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    setEditedData({ ...users, birthdate: toDateInputValue(users.birthdate) });
-  }, [users]);
+  useEffect(() => { setEditedData({ ...users, birthdate: toDateInputValue(users.birthdate) }); }, [users]);
+  useEffect(() => { setCreatedEvents(profileEventsQuery.createdEvents); setJoinedEvents(profileEventsQuery.joinedEvents); }, [profileEventsQuery.createdEvents, profileEventsQuery.joinedEvents]);
 
-  useEffect(() => {
-    setCreatedEvents(profileEventsQuery.createdEvents);
-    setJoinedEvents(profileEventsQuery.joinedEvents);
-  }, [profileEventsQuery.createdEvents, profileEventsQuery.joinedEvents]);
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setEditedData((previousData) => ({ ...previousData, [name]: value }));
-  };
+  const handleChange = ({ target }) => setEditedData((previousData) => ({ ...previousData, [target.name]: target.value }));
 
   const persistProfile = async (profileData, successMessage) => {
     setProfileError("");
@@ -136,26 +91,26 @@ export function Perfil() {
     }
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (changeEvent) => {
     setProfileError("");
-    const file = event.target.files?.[0];
-    event.target.value = "";
+    setProfileSuccess("");
+    const file = changeEvent.currentTarget.files?.[0];
+    changeEvent.currentTarget.value = "";
     if (!file) return;
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      setProfileError("La imagen debe ser JPG, PNG o WEBP.");
-      return;
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) { setProfileError("La imagen debe ser JPG, PNG o WEBP."); return; }
+    if (file.size > MAX_IMAGE_BYTES) { setProfileError("La imagen es demasiado grande. Usa una imagen de menos de 1.5 MB."); return; }
+
+    setIsSaving(true);
+    try {
+      const data = await uploadProfileImage(file);
+      setUsers(data.user);
+      setEditedData({ ...data.user, birthdate: toDateInputValue(data.user.birthdate) });
+      setProfileSuccess("Foto de perfil actualizada correctamente.");
+    } catch (error) {
+      setProfileError(error.message || "No se pudo actualizar la imagen de perfil.");
+    } finally {
+      setIsSaving(false);
     }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setProfileError("La imagen es demasiado grande. Usa una imagen de menos de 1.5 MB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const nextData = { ...editedData, profileImage: reader.result };
-      setEditedData(nextData);
-      await persistProfile(nextData, "Foto de perfil actualizada correctamente.");
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
@@ -189,12 +144,8 @@ export function Perfil() {
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12} md="auto">
             <Box sx={{ position: "relative", width: 128, height: 128 }}>
-              <Avatar src={editedData.profileImage || users.profileImage || perfil} sx={{ width: 128, height: 128, border: "1px solid", borderColor: "divider" }} />
-              <Tooltip title="Editar foto">
-                <IconButton color="primary" onClick={() => inputRef.current?.click()} disabled={isSaving} sx={{ position: "absolute", right: 0, bottom: 0, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", "&:hover": { bgcolor: "background.paper" } }}>
-                  <PhotoCameraRoundedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <UserAvatar userName={users.userName} profileImage={editedData.profileImage || users.profileImage || ""} size={128} sx={{ border: "1px solid", borderColor: "divider" }} />
+              <Tooltip title="Editar foto"><IconButton color="primary" onClick={() => inputRef.current?.click()} disabled={isSaving} sx={{ position: "absolute", right: 0, bottom: 0, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", "&:hover": { bgcolor: "background.paper" } }}><PhotoCameraRoundedIcon fontSize="small" /></IconButton></Tooltip>
               <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
             </Box>
           </Grid>
@@ -203,43 +154,19 @@ export function Perfil() {
               <Typography variant="h4">{[users.firstName, users.lastName].filter(Boolean).join(" ") || users.userName || "Usuario"}</Typography>
               <Typography color="text.secondary">{users.email || "Email sin completar"}</Typography>
               <Divider sx={{ my: 1 }} />
-              <Grid container spacing={2}>
-                {profileFields.map(([field, label]) => (
-                  <Grid item xs={12} sm={6} md={4} key={field}>
-                    <Typography variant="caption" color="text.secondary">{label}</Typography>
-                    <Typography variant="body1">{field === "birthdate" ? formatDate(users.birthdate) : users[field] || "Sin completar"}</Typography>
-                  </Grid>
-                ))}
-              </Grid>
+              <Grid container spacing={2}>{profileFields.map(([field, label]) => <Grid item xs={12} sm={6} md={4} key={field}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography variant="body1">{field === "birthdate" ? formatDate(users.birthdate) : users[field] || "Sin completar"}</Typography></Grid>)}</Grid>
             </Stack>
           </Grid>
         </Grid>
       </Paper>
-
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={6}>
-          <EventsPanel title="Eventos creados" emptyText="Aun no has creado ningun evento." events={createdEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
-        </Grid>
-        <Grid item xs={12} lg={6}>
-          <EventsPanel title="Mis eventos" emptyText="No te has unido a ningun evento." events={joinedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
-        </Grid>
+        <Grid item xs={12} lg={6}><EventsPanel title="Eventos creados" emptyText="Aun no has creado ningun evento." events={createdEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} /></Grid>
+        <Grid item xs={12} lg={6}><EventsPanel title="Mis eventos" emptyText="No te has unido a ningun evento." events={joinedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} /></Grid>
       </Grid>
-
       <Dialog open={editable} onClose={() => setEditable(false)} fullWidth maxWidth="sm">
         <DialogTitle>Editar datos personales</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Nombre" name="firstName" value={editedData.firstName || ""} onChange={handleChange} />
-            <TextField label="Apellidos" name="lastName" value={editedData.lastName || ""} onChange={handleChange} />
-            <TextField label="Ciudad" name="city" value={editedData.city || ""} onChange={handleChange} />
-            <TextField label="Email" name="email" type="email" value={editedData.email || ""} onChange={handleChange} />
-            <TextField label="Fecha de nacimiento" name="birthdate" type="date" value={editedData.birthdate || ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditable(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSave} disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar"}</Button>
-        </DialogActions>
+        <DialogContent><Stack spacing={2} sx={{ pt: 1 }}>{profileFields.filter(([field]) => field !== "userName").map(([field, label]) => <TextField key={field} label={label} name={field} type={field === "email" ? "email" : field === "birthdate" ? "date" : "text"} value={editedData[field] || ""} onChange={handleChange} InputLabelProps={field === "birthdate" ? { shrink: true } : undefined} />)}</Stack></DialogContent>
+        <DialogActions><Button onClick={() => setEditable(false)}>Cancelar</Button><Button variant="contained" onClick={handleSave} disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar"}</Button></DialogActions>
       </Dialog>
     </AppShell>
   );
