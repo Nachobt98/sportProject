@@ -214,7 +214,7 @@ function CardDetails() {
 
               <Alert severity={status === EVENT_STATUS.OPEN ? "success" : "info"}>{getStatusMessage(status)}</Alert>
 
-              <Grid container disableEqualOverflow columnSpacing={2.5} rowSpacing={2.5}>
+              <Grid container spacing={2.5}>
                 <Grid item xs={12} md={4}>
                   <InfoTile icon={<AccessTimeOutlinedIcon />} label="Fecha">{formatDate(eventData.date)}</InfoTile>
                 </Grid>
@@ -228,7 +228,7 @@ function CardDetails() {
                 </Grid>
               </Grid>
 
-              <Grid container disableEqualOverflow columnSpacing={3} rowSpacing={3}>
+              <Grid container spacing={3}>
                 <Grid item xs={12} md={5}>
                   <Paper variant="outlined" sx={{ p: 2.5, height: "100%" }}>
                     <Stack spacing={2}>
