@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Button,
   MenuItem,
@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CardEvent } from "../components/cardEvent";
 import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
-import { getEvents } from "../api/eventsApi";
+import { useEvents } from "../hooks/useEvents";
 
 const DEFAULT_PAGE = 1;
 const EVENTS_PAGE_SIZE = 10;
@@ -43,14 +43,6 @@ const sports = [
   "Padel",
 ];
 
-function getEventsFromResponse(response) {
-  return Array.isArray(response) ? response : response?.events || [];
-}
-
-function getPaginationFromResponse(response) {
-  return Array.isArray(response) ? null : response?.pagination || null;
-}
-
 function renderEventsContent({ isLoading, loadError, events, onEventChanged, onEventRemoved }) {
   if (isLoading && events.length === 0) {
     return <LoadingState title="Cargando eventos" description="Buscando actividades disponibles con los filtros actuales." />;
@@ -72,44 +64,34 @@ function renderEventsContent({ isLoading, loadError, events, onEventChanged, onE
 export function SearchCard2() {
   const navigate = useNavigate();
   const [searchCriteria, setSearchCriteria] = useState({ city: "", sport: "", date: "" });
-  const [events, setEvents] = useState([]);
-  const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(DEFAULT_PAGE);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const [localEvents, setLocalEvents] = useState([]);
+  const queryFilters = useMemo(() => ({ ...searchCriteria, page, limit: EVENTS_PAGE_SIZE }), [page, searchCriteria]);
+  const eventsQuery = useEvents(queryFilters);
+  const events = eventsQuery.data?.events || [];
+  const pagination = eventsQuery.data?.pagination || null;
+  const visibleEvents = page === DEFAULT_PAGE ? events : localEvents;
 
-  const fetchEvents = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError("");
-    try {
-      const data = await getEvents({ ...searchCriteria, page, limit: EVENTS_PAGE_SIZE });
-      const nextEvents = getEventsFromResponse(data);
-      setEvents((currentEvents) => (page === DEFAULT_PAGE ? nextEvents : [...currentEvents, ...nextEvents]));
-      setPagination(getPaginationFromResponse(data));
-    } catch (error) {
-      setLoadError(error.message || "No se pudieron cargar los eventos.");
-    } finally {
-      setIsLoading(false);
+  React.useEffect(() => {
+    if (!eventsQuery.data) {
+      return;
     }
-  }, [page, searchCriteria]);
 
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    setLocalEvents((currentEvents) => (page === DEFAULT_PAGE ? events : [...currentEvents, ...events]));
+  }, [events, eventsQuery.data, page]);
 
   const updateSearchCriteria = (nextCriteria) => {
-    setEvents([]);
-    setPagination(null);
+    setLocalEvents([]);
     setPage(DEFAULT_PAGE);
     setSearchCriteria(nextCriteria);
   };
 
   const handleEventChanged = (updatedEvent) => {
-    setEvents((currentEvents) => currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event)));
+    setLocalEvents((currentEvents) => currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event)));
   };
 
   const handleEventRemoved = (eventId) => {
-    setEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
+    setLocalEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
   };
 
   const handleClear = () => {
@@ -146,10 +128,16 @@ export function SearchCard2() {
       </Paper>
 
       <Stack spacing={2}>
-        {renderEventsContent({ isLoading, loadError, events, onEventChanged: handleEventChanged, onEventRemoved: handleEventRemoved })}
+        {renderEventsContent({
+          isLoading: eventsQuery.isLoading,
+          loadError: eventsQuery.error?.message || "",
+          events: visibleEvents,
+          onEventChanged: handleEventChanged,
+          onEventRemoved: handleEventRemoved,
+        })}
         {pagination?.hasNextPage && (
-          <Button variant="outlined" onClick={handleLoadMore} disabled={isLoading}>
-            {isLoading ? "Cargando..." : "Cargar mas"}
+          <Button variant="outlined" onClick={handleLoadMore} disabled={eventsQuery.isFetching}>
+            {eventsQuery.isFetching ? "Cargando..." : "Cargar mas"}
           </Button>
         )}
       </Stack>
