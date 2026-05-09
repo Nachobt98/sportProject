@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  Grid,
   Link as MuiLink,
   Paper,
   Stack,
@@ -40,20 +41,6 @@ const DETAIL_CONFIRM_ACTIONS = {
   CANCEL_EVENT: "cancel-event",
   DISMISS_EVENT: "dismiss-event",
   DELETE_EVENT: "delete-event",
-};
-
-const infoGridSx = {
-  display: "grid",
-  gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-  gap: 2.5,
-  width: "100%",
-};
-
-const peopleGridSx = {
-  display: "grid",
-  gridTemplateColumns: { xs: "1fr", md: "minmax(0, 5fr) minmax(0, 7fr)" },
-  gap: 3,
-  width: "100%",
 };
 
 const confirmDialogConfig = {
@@ -227,44 +214,54 @@ function CardDetails() {
 
               <Alert severity={status === EVENT_STATUS.OPEN ? "success" : "info"}>{getStatusMessage(status)}</Alert>
 
-              <Box sx={infoGridSx}>
-                <InfoTile icon={<AccessTimeOutlinedIcon />} label="Fecha">{formatDate(eventData.date)}</InfoTile>
-                <InfoTile icon={<LocationOnOutlinedIcon />} label="Ubicacion">
-                  {locationHref ? <MuiLink href={locationHref} target="_blank" rel="noopener">{eventData.locationName || eventData.location}</MuiLink> : (eventData.locationName || "Ubicacion no indicada")}
-                </InfoTile>
-                <InfoTile icon={<PeopleAltOutlinedIcon />} label="Plazas">{participants.length} apuntados de {eventData.participants}</InfoTile>
-              </Box>
+              <Grid container spacing={2.5}>
+                <Grid item xs={12} md={4}>
+                  <InfoTile icon={<AccessTimeOutlinedIcon />} label="Fecha">{formatDate(eventData.date)}</InfoTile>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <InfoTile icon={<LocationOnOutlinedIcon />} label="Ubicacion">
+                    {locationHref ? <MuiLink href={locationHref} target="_blank" rel="noopener">{eventData.locationName || eventData.location}</MuiLink> : (eventData.locationName || "Ubicacion no indicada")}
+                  </InfoTile>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <InfoTile icon={<PeopleAltOutlinedIcon />} label="Plazas">{participants.length} apuntados de {eventData.participants}</InfoTile>
+                </Grid>
+              </Grid>
 
-              <Box sx={peopleGridSx}>
-                <Paper variant="outlined" sx={{ p: 2.5, height: "100%" }}>
-                  <Stack spacing={2}>
-                    <Typography variant="h5">Organizador</Typography>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <UserAvatar userName={creatorProfile.userName} profileImage={creatorProfile.profileImage} size={56} />
-                      <Box>
-                        <Typography variant="h6">{eventData.creator || "Usuario desconocido"}</Typography>
-                        <Typography variant="body2" color="text.secondary">Creador del evento</Typography>
-                      </Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={5}>
+                  <Paper variant="outlined" sx={{ p: 2.5, height: "100%" }}>
+                    <Stack spacing={2}>
+                      <Typography variant="h5">Organizador</Typography>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <UserAvatar userName={creatorProfile.userName} profileImage={creatorProfile.profileImage} size={56} />
+                        <Box>
+                          <Typography variant="h6">{eventData.creator || "Usuario desconocido"}</Typography>
+                          <Typography variant="body2" color="text.secondary">Creador del evento</Typography>
+                        </Box>
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </Paper>
+                  </Paper>
+                </Grid>
 
-                <Paper variant="outlined" sx={{ p: 2.5, height: "100%" }}>
-                  <Stack spacing={2}>
-                    <Typography variant="h5">Participantes</Typography>
-                    <Stack direction="row" spacing={1.25} sx={{ flexWrap: "wrap", gap: 1 }}>
-                      {participants.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">Todavia no hay participantes.</Typography>
-                      ) : (
-                        participants.map((participant) => {
-                          const participantProfile = findParticipantProfile(eventData, participant);
-                          return <Chip key={participant} avatar={<UserAvatar userName={participantProfile.userName} profileImage={participantProfile.profileImage} />} label={participant} variant="outlined" />;
-                        })
-                      )}
+                <Grid item xs={12} md={7}>
+                  <Paper variant="outlined" sx={{ p: 2.5, height: "100%" }}>
+                    <Stack spacing={2}>
+                      <Typography variant="h5">Participantes</Typography>
+                      <Stack direction="row" spacing={1.25} sx={{ flexWrap: "wrap", gap: 1 }}>
+                        {participants.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary">Todavia no hay participantes.</Typography>
+                        ) : (
+                          participants.map((participant) => {
+                            const participantProfile = findParticipantProfile(eventData, participant);
+                            return <Chip key={participant} avatar={<UserAvatar userName={participantProfile.userName} profileImage={participantProfile.profileImage} />} label={participant} variant="outlined" />;
+                          })
+                        )}
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </Paper>
-              </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
 
               <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {canManageActiveEvent && <Button variant="outlined" color="warning" startIcon={<CancelOutlinedIcon />} onClick={() => setConfirmAction(DETAIL_CONFIRM_ACTIONS.CANCEL_EVENT)}>Cancelar evento</Button>}
