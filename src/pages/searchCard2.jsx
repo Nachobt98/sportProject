@@ -40,8 +40,8 @@ function renderEventsContent({ isLoading, loadError, events, onEventChanged, onE
         description="Prueba a limpiar filtros, cambiar de ciudad o crear una actividad nueva."
         action={
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button variant="outlined" startIcon={<RestartAltOutlinedIcon />} onClick={onClearFilters}>Limpiar filtros</Button>
-            <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={onCreateEvent}>Crear evento</Button>
+            <Button variant="outlined" startIcon={<RestartAltOutlinedIcon />} onClick={onClearFilters}>Reiniciar filtros</Button>
+            <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={onCreateEvent}>Crear nuevo evento</Button>
           </Stack>
         }
       />
