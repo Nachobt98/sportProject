@@ -44,6 +44,16 @@ function renderDetails(path = "/events/event-id") {
   );
 }
 
+function renderDetailsWithoutEventId() {
+  return renderWithQueryClient(
+    <MemoryRouter initialEntries={["/events"]}>
+      <Routes>
+        <Route path="/events" element={<CardDetails />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
 async function confirmAction(nameMatcher) {
   const dialog = await screen.findByRole("dialog");
   fireEvent.click(within(dialog).getByRole("button", { name: nameMatcher }));
@@ -182,7 +192,7 @@ describe("CardDetails", () => {
   });
 
   test("shows error when route has no event id", async () => {
-    renderDetails("/events");
+    renderDetailsWithoutEventId();
 
     expect(await screen.findByText("No se ha indicado ningun evento.")).toBeInTheDocument();
     expect(eventsApi.getEventById).not.toHaveBeenCalled();
