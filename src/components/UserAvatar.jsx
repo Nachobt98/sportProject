@@ -12,11 +12,11 @@ export function getUserInitials(userName = "") {
 }
 
 export function resolveProfileImageUrl(profileImage = "") {
-  if (!profileImage) {
+  if (!profileImage || profileImage.startsWith("data:")) {
     return "";
   }
 
-  if (/^(https?:|data:)/.test(profileImage)) {
+  if (/^https?:/.test(profileImage)) {
     return profileImage;
   }
 
@@ -24,7 +24,7 @@ export function resolveProfileImageUrl(profileImage = "") {
     return `${API_BASE_URL}${profileImage}`;
   }
 
-  return profileImage;
+  return "";
 }
 
 export function UserAvatar({ userName, profileImage = "", size = 40, sx = {} }) {
