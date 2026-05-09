@@ -20,7 +20,7 @@ import { removeEventById, replaceEventById, syncJoinedEvents } from "../utils/ev
 dayjs.locale("es");
 
 const paperBorderSx = { border: "1px solid", borderColor: "divider" };
-const topPanelSx = { width: "100%", minHeight: { md: 360, lg: 380 }, display: "flex", flexDirection: "column" };
+const topPanelSx = { width: "100%", height: { md: 430, lg: 430 }, display: "flex", flexDirection: "column" };
 
 async function fetchEventArray(path) {
   const response = await apiFetch(path);
