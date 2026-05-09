@@ -15,6 +15,19 @@ function serializeUserReference(user) {
   return user.userName || serializeId(user);
 }
 
+function serializeUserProfile(user) {
+  if (!user) {
+    return null;
+  }
+
+  const userName = serializeUserReference(user);
+
+  return {
+    userName,
+    profileImage: user.profileImage || "",
+  };
+}
+
 function isPastEventDate(date, now = new Date()) {
   const eventDate = new Date(date);
   return !Number.isNaN(eventDate.getTime()) && eventDate < now;
@@ -59,7 +72,9 @@ function toEventDto(event, options = {}) {
     city: eventObject.city,
     participants: eventObject.participants,
     participantsList: participantsList.map(serializeUserReference),
+    participantsProfiles: participantsList.map(serializeUserProfile).filter(Boolean),
     creator: serializeUserReference(eventObject.creator),
+    creatorProfile: serializeUserProfile(eventObject.creator),
     status: effectiveStatus,
     baseStatus: eventObject.status || EVENT_STATUS.OPEN,
     dismissedBy: dismissedBy.map(serializeUserReference),
@@ -76,4 +91,5 @@ module.exports = {
   isPastEventDate,
   toEventDto,
   serializeUserReference,
+  serializeUserProfile,
 };
