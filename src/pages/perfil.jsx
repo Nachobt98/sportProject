@@ -2,7 +2,10 @@ import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import { AppShell } from "../components/AppShell";
 import { CardEvent, eventPropType } from "../components/cardEvent";
 import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
@@ -37,11 +40,36 @@ function buildProfilePayload(profileData) {
   };
 }
 
+function StatTile({ icon, value, label }) {
+  return (
+    <Paper variant="outlined" sx={{ p: 2, height: "100%", bgcolor: "background.paper" }}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Box sx={{ width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "15px", bgcolor: "primary.soft", color: "primary.main" }}>{icon}</Box>
+        <Box>
+          <Typography variant="h5">{value}</Typography>
+          <Typography variant="body2" color="text.secondary">{label}</Typography>
+        </Box>
+      </Stack>
+    </Paper>
+  );
+}
+
+StatTile.propTypes = {
+  icon: PropTypes.node.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  label: PropTypes.string.isRequired,
+};
+
 function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
-      <Stack spacing={2}>
-        <Typography variant="h5">{title}</Typography>
+    <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, height: "100%" }}>
+      <Stack spacing={2.25}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+          <Box>
+            <Typography variant="h5">{title}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{events.length} eventos</Typography>
+          </Box>
+        </Stack>
         {events.length === 0 ? <EmptyState title={emptyText} description="Cuando haya actividad, aparecera aqui con sus acciones disponibles." compact /> : <Stack spacing={1.5}>{events.map((event) => <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />)}</Stack>}
       </Stack>
     </Paper>
@@ -134,35 +162,50 @@ export function Perfil() {
     setJoinedEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
   };
 
+  const fullName = [users.firstName, users.lastName].filter(Boolean).join(" ") || users.userName || "Usuario";
+
   return (
-    <AppShell title="Perfil" subtitle="Gestiona tus datos y revisa tu actividad dentro de la plataforma." actions={<Button startIcon={<EditRoundedIcon />} variant="contained" onClick={() => setEditable(true)}>Editar perfil</Button>}>
+    <AppShell title="Perfil" subtitle="Gestiona tus datos y revisa tu actividad dentro de la plataforma." actions={<Button startIcon={<EditRoundedIcon />} variant="contained" onClick={() => setEditable(true)}>Editar perfil</Button>} maxWidth="xl">
       {profileEventsQuery.error && <ErrorState title="No se pudieron cargar tus eventos" message={profileEventsQuery.error.message || "No se pudieron cargar los eventos del perfil."} compact />}
       {profileEventsQuery.isLoading && <LoadingState title="Cargando tus eventos" description="Preparando tus eventos creados y tus participaciones." compact />}
       {profileError && <Alert severity="error">{profileError}</Alert>}
       {profileSuccess && <Alert severity="success">{profileSuccess}</Alert>}
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
-        <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md="auto">
-            <Box sx={{ position: "relative", width: 128, height: 128 }}>
-              <UserAvatar userName={users.userName} profileImage={editedData.profileImage || users.profileImage || ""} size={128} sx={{ border: "1px solid", borderColor: "divider" }} />
-              <Tooltip title="Editar foto"><IconButton color="primary" onClick={() => inputRef.current?.click()} disabled={isSaving} sx={{ position: "absolute", right: 0, bottom: 0, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", "&:hover": { bgcolor: "background.paper" } }}><PhotoCameraRoundedIcon fontSize="small" /></IconButton></Tooltip>
-              <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
-            </Box>
+
+      <Paper sx={{ overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ height: 96, bgcolor: "primary.dark" }} />
+        <Box sx={{ p: { xs: 2, md: 3 }, mt: -8 }}>
+          <Grid container spacing={3} alignItems="flex-end">
+            <Grid item xs={12} md="auto">
+              <Box sx={{ position: "relative", width: 148, height: 148 }}>
+                <UserAvatar userName={users.userName} profileImage={editedData.profileImage || users.profileImage || ""} size={148} sx={{ border: "5px solid", borderColor: "background.paper", boxShadow: "0 18px 48px rgba(15, 23, 42, 0.18)" }} />
+                <Tooltip title="Editar foto"><IconButton color="primary" onClick={() => inputRef.current?.click()} disabled={isSaving} sx={{ position: "absolute", right: 4, bottom: 4, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", "&:hover": { bgcolor: "background.paper" } }}><PhotoCameraRoundedIcon fontSize="small" /></IconButton></Tooltip>
+                <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+              </Box>
+            </Grid>
+            <Grid item xs={12} md>
+              <Stack spacing={1} sx={{ pt: { xs: 0, md: 7 } }}>
+                <Typography variant="h3">{fullName}</Typography>
+                <Typography color="text.secondary">{users.email || "Email sin completar"}</Typography>
+              </Stack>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md>
-            <Stack spacing={1}>
-              <Typography variant="h4">{[users.firstName, users.lastName].filter(Boolean).join(" ") || users.userName || "Usuario"}</Typography>
-              <Typography color="text.secondary">{users.email || "Email sin completar"}</Typography>
-              <Divider sx={{ my: 1 }} />
-              <Grid container spacing={2}>{profileFields.map(([field, label]) => <Grid item xs={12} sm={6} md={4} key={field}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography variant="body1">{field === "birthdate" ? formatDate(users.birthdate) : users[field] || "Sin completar"}</Typography></Grid>)}</Grid>
-            </Stack>
+
+          <Grid container spacing={2.5} sx={{ mt: 2 }}>
+            <Grid item xs={12} md={4}><StatTile icon={<EventAvailableOutlinedIcon />} value={createdEvents.length} label="Eventos creados" /></Grid>
+            <Grid item xs={12} md={4}><StatTile icon={<GroupsOutlinedIcon />} value={joinedEvents.length} label="Participaciones" /></Grid>
+            <Grid item xs={12} md={4}><StatTile icon={<PlaceOutlinedIcon />} value={users.city || "Sin completar"} label="Ciudad" /></Grid>
           </Grid>
-        </Grid>
+
+          <Divider sx={{ my: 3 }} />
+          <Grid container spacing={2}>{profileFields.map(([field, label]) => <Grid item xs={12} sm={6} md={4} key={field}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography variant="body1" fontWeight={700}>{field === "birthdate" ? formatDate(users.birthdate) : users[field] || "Sin completar"}</Typography></Grid>)}</Grid>
+        </Box>
       </Paper>
+
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={6}><EventsPanel title="Eventos creados" emptyText="Aun no has creado ningun evento." events={createdEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} /></Grid>
-        <Grid item xs={12} lg={6}><EventsPanel title="Mis eventos" emptyText="No te has unido a ningun evento." events={joinedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} /></Grid>
+        <Grid item xs={12} xl={6}><EventsPanel title="Eventos creados" emptyText="Aun no has creado ningun evento." events={createdEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} /></Grid>
+        <Grid item xs={12} xl={6}><EventsPanel title="Mis eventos" emptyText="No te has unido a ningun evento." events={joinedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} /></Grid>
       </Grid>
+
       <Dialog open={editable} onClose={() => setEditable(false)} fullWidth maxWidth="sm">
         <DialogTitle>Editar datos personales</DialogTitle>
         <DialogContent><Stack spacing={2} sx={{ pt: 1 }}>{profileFields.filter(([field]) => field !== "userName").map(([field, label]) => <TextField key={field} label={label} name={field} type={field === "email" ? "email" : field === "birthdate" ? "date" : "text"} value={editedData[field] || ""} onChange={handleChange} InputLabelProps={field === "birthdate" ? { shrink: true } : undefined} />)}</Stack></DialogContent>
