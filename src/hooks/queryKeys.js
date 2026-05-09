@@ -3,8 +3,8 @@ export const queryKeys = {
     all: ["events"],
     list: (filters) => ["events", "list", filters],
     detail: (eventId) => ["events", "detail", eventId],
-    profile: ["events", "profile"],
-    created: ["events", "profile", "created"],
-    joined: ["events", "profile", "joined"],
+    profile: (userName) => ["events", "profile", userName],
+    created: (userName) => ["events", "profile", userName, "created"],
+    joined: (userName) => ["events", "profile", userName, "joined"],
   },
 };
