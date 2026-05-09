@@ -15,10 +15,7 @@ import {
 } from "../api/eventsApi";
 import { queryKeys } from "./queryKeys";
 
-const EMPTY_EVENTS_RESPONSE = {
-  events: [],
-  pagination: null,
-};
+const EMPTY_ARRAY = [];
 
 export function normalizeEventsResponse(response) {
   return Array.isArray(response)
@@ -32,7 +29,6 @@ export function useEvents(filters) {
   return useQuery({
     queryKey: queryKeys.events.list(stableFilters),
     queryFn: async () => normalizeEventsResponse(await getEvents(stableFilters)),
-    placeholderData: (previousData) => previousData || EMPTY_EVENTS_RESPONSE,
   });
 }
 
@@ -60,8 +56,8 @@ export function useProfileEvents(userName) {
   });
 
   return {
-    createdEvents: createdQuery.data || [],
-    joinedEvents: joinedQuery.data || [],
+    createdEvents: createdQuery.data || EMPTY_ARRAY,
+    joinedEvents: joinedQuery.data || EMPTY_ARRAY,
     isLoading: createdQuery.isLoading || joinedQuery.isLoading,
     isFetching: createdQuery.isFetching || joinedQuery.isFetching,
     error: createdQuery.error || joinedQuery.error || null,
