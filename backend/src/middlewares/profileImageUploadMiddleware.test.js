@@ -2,18 +2,18 @@ jest.mock("fs", () => ({
   mkdirSync: jest.fn(),
 }));
 
-const singleMock = jest.fn();
-const multerMock = jest.fn(() => ({ single: singleMock }));
+const mockSingle = jest.fn();
+const mockMulter = jest.fn(() => ({ single: mockSingle }));
 
-multerMock.diskStorage = jest.fn((options) => options);
-multerMock.MulterError = class MulterError extends Error {
+mockMulter.diskStorage = jest.fn((options) => options);
+mockMulter.MulterError = class MulterError extends Error {
   constructor(code) {
     super(code);
     this.code = code;
   }
 };
 
-jest.mock("multer", () => multerMock);
+jest.mock("multer", () => mockMulter);
 
 const multer = require("multer");
 const {
@@ -98,20 +98,20 @@ describe("profileImageUploadMiddleware", () => {
   });
 
   test("continues when upload succeeds", () => {
-    singleMock.mockImplementation(() => (req, res, callback) => callback());
+    mockSingle.mockImplementation(() => (req, res, callback) => callback());
     const req = {};
     const res = createResponse();
     const next = jest.fn();
 
     handleProfileImageUpload(req, res, next);
 
-    expect(singleMock).toHaveBeenCalledWith("profileImage");
+    expect(mockSingle).toHaveBeenCalledWith("profileImage");
     expect(next).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
   });
 
   test("returns normalized error for oversized files", () => {
-    singleMock.mockImplementation(() => (req, res, callback) => callback(new multer.MulterError("LIMIT_FILE_SIZE")));
+    mockSingle.mockImplementation(() => (req, res, callback) => callback(new multer.MulterError("LIMIT_FILE_SIZE")));
     const res = createResponse();
 
     handleProfileImageUpload({}, res, jest.fn());
@@ -121,7 +121,7 @@ describe("profileImageUploadMiddleware", () => {
   });
 
   test("returns normalized error for invalid uploads", () => {
-    singleMock.mockImplementation(() => (req, res, callback) => callback(new Error("Tipo invalido")));
+    mockSingle.mockImplementation(() => (req, res, callback) => callback(new Error("Tipo invalido")));
     const res = createResponse();
 
     handleProfileImageUpload({}, res, jest.fn());
@@ -131,7 +131,7 @@ describe("profileImageUploadMiddleware", () => {
   });
 
   test("returns fallback upload error message", () => {
-    singleMock.mockImplementation(() => (req, res, callback) => callback({}));
+    mockSingle.mockImplementation(() => (req, res, callback) => callback({}));
     const res = createResponse();
 
     handleProfileImageUpload({}, res, jest.fn());
