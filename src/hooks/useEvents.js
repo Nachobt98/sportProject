@@ -45,13 +45,13 @@ export function useProfileEvents(userName) {
 
   const createdQuery = useQuery({
     queryKey: queryKeys.events.created(userName),
-    queryFn: getCurrentUserCreatedEvents,
+    queryFn: () => getCurrentUserCreatedEvents(),
     enabled,
   });
 
   const joinedQuery = useQuery({
     queryKey: queryKeys.events.joined(userName),
-    queryFn: getCurrentUserJoinedEvents,
+    queryFn: () => getCurrentUserJoinedEvents(),
     enabled,
   });
 
@@ -80,7 +80,7 @@ export function useCreateEventMutation() {
   const invalidateEvents = useInvalidateEvents();
 
   return useMutation({
-    mutationFn: createEvent,
+    mutationFn: (eventData) => createEvent(eventData),
     onSuccess: () => invalidateEvents(),
   });
 }
