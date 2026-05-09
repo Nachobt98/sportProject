@@ -22,6 +22,7 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { AppShell } from "../components/AppShell";
 import { CardEvent, eventPropType } from "../components/cardEvent";
+import { EmptyState, ErrorState } from "../components/FeedbackState";
 import { useUser } from "../context/userContext";
 import { getCurrentUserCreatedEvents, getCurrentUserJoinedEvents } from "../api/eventsApi";
 import { updateCurrentUser } from "../api/usersApi";
@@ -40,28 +41,16 @@ const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function formatDate(date) {
-  if (!date) {
-    return "Sin completar";
-  }
-
+  if (!date) return "Sin completar";
   const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Sin completar";
-  }
-
+  if (Number.isNaN(parsedDate.getTime())) return "Sin completar";
   return parsedDate.toLocaleDateString("es-ES");
 }
 
 function toDateInputValue(date) {
-  if (!date) {
-    return "";
-  }
-
+  if (!date) return "";
   const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "";
-  }
-
+  if (Number.isNaN(parsedDate.getTime())) return "";
   return parsedDate.toISOString().slice(0, 10);
 }
 
@@ -82,16 +71,11 @@ function EventsPanel({ title, emptyText, events, onChanged, onRemoved }) {
       <Stack spacing={2}>
         <Typography variant="h5">{title}</Typography>
         {events.length === 0 ? (
-          <Typography color="text.secondary">{emptyText}</Typography>
+          <EmptyState title={emptyText} description="Cuando haya actividad, aparecera aqui con sus acciones disponibles." compact />
         ) : (
           <Stack spacing={1.5}>
             {events.map((event) => (
-              <CardEvent
-                key={event._id}
-                event={event}
-                onChanged={onChanged}
-                onRemoved={onRemoved}
-              />
+              <CardEvent key={event._id} event={event} onChanged={onChanged} onRemoved={onRemoved} />
             ))}
           </Stack>
         )}
@@ -134,10 +118,7 @@ export function Perfil() {
     async function fetchProfileEvents() {
       setEventsError("");
       try {
-        const [created, joined] = await Promise.all([
-          getCurrentUserCreatedEvents(),
-          getCurrentUserJoinedEvents(),
-        ]);
+        const [created, joined] = await Promise.all([getCurrentUserCreatedEvents(), getCurrentUserJoinedEvents()]);
         setCreatedEvents(Array.isArray(created) ? created : []);
         setJoinedEvents(Array.isArray(joined) ? joined : []);
       } catch (error) {
@@ -157,7 +138,6 @@ export function Perfil() {
     setProfileError("");
     setProfileSuccess("");
     setIsSaving(true);
-
     try {
       const data = await updateCurrentUser(buildProfilePayload(profileData));
       setUsers(data.user);
@@ -176,29 +156,18 @@ export function Perfil() {
     setProfileError("");
     const file = event.target.files?.[0];
     event.target.value = "";
-
-    if (!file) {
-      return;
-    }
-
+    if (!file) return;
     if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
       setProfileError("La imagen debe ser JPG, PNG o WEBP.");
       return;
     }
-
     if (file.size > MAX_IMAGE_BYTES) {
       setProfileError("La imagen es demasiado grande. Usa una imagen de menos de 1.5 MB.");
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const profileImage = reader.result;
-      const nextData = {
-        ...editedData,
-        profileImage,
-      };
-
+      const nextData = { ...editedData, profileImage: reader.result };
       setEditedData(nextData);
       await persistProfile(nextData, "Foto de perfil actualizada correctamente.");
     };
@@ -207,107 +176,53 @@ export function Perfil() {
 
   const handleSave = async () => {
     const updatedUser = await persistProfile(editedData, "Perfil actualizado correctamente.");
-    if (updatedUser) {
-      setEditable(false);
-    }
+    if (updatedUser) setEditable(false);
   };
 
   const handleEventChanged = (updatedEvent) => {
-    setCreatedEvents((currentEvents) =>
-      currentEvents.map((event) =>
-        event._id === updatedEvent._id ? updatedEvent : event
-      )
-    );
+    setCreatedEvents((currentEvents) => currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event)));
     setJoinedEvents((currentEvents) => {
-      const nextEvents = currentEvents.map((event) =>
-        event._id === updatedEvent._id ? updatedEvent : event
-      );
+      const nextEvents = currentEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event));
       const isAlreadyListed = nextEvents.some((event) => event._id === updatedEvent._id);
       const shouldBeListed = updatedEvent.participantsList?.includes(users.userName);
-
-      if (shouldBeListed && !isAlreadyListed) {
-        return [...nextEvents, updatedEvent];
-      }
-
-      return nextEvents.filter((event) =>
-        event.participantsList?.includes(users.userName)
-      );
+      if (shouldBeListed && !isAlreadyListed) return [...nextEvents, updatedEvent];
+      return nextEvents.filter((event) => event.participantsList?.includes(users.userName));
     });
   };
 
   const handleEventRemoved = (eventId) => {
-    setCreatedEvents((currentEvents) =>
-      currentEvents.filter((event) => event._id !== eventId)
-    );
-    setJoinedEvents((currentEvents) =>
-      currentEvents.filter((event) => event._id !== eventId)
-    );
+    setCreatedEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
+    setJoinedEvents((currentEvents) => currentEvents.filter((event) => event._id !== eventId));
   };
 
   return (
-    <AppShell
-      title="Perfil"
-      subtitle="Gestiona tus datos y revisa tu actividad dentro de la plataforma."
-      actions={
-        <Button startIcon={<EditRoundedIcon />} variant="contained" onClick={() => setEditable(true)}>
-          Editar perfil
-        </Button>
-      }
-    >
-      {eventsError && <Alert severity="error">{eventsError}</Alert>}
+    <AppShell title="Perfil" subtitle="Gestiona tus datos y revisa tu actividad dentro de la plataforma." actions={<Button startIcon={<EditRoundedIcon />} variant="contained" onClick={() => setEditable(true)}>Editar perfil</Button>}>
+      {eventsError && <ErrorState title="No se pudieron cargar tus eventos" message={eventsError} compact />}
       {profileError && <Alert severity="error">{profileError}</Alert>}
       {profileSuccess && <Alert severity="success">{profileSuccess}</Alert>}
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12} md="auto">
             <Box sx={{ position: "relative", width: 128, height: 128 }}>
-              <Avatar
-                src={editedData.profileImage || users.profileImage || perfil}
-                sx={{ width: 128, height: 128, border: "1px solid", borderColor: "divider" }}
-              />
+              <Avatar src={editedData.profileImage || users.profileImage || perfil} sx={{ width: 128, height: 128, border: "1px solid", borderColor: "divider" }} />
               <Tooltip title="Editar foto">
-                <IconButton
-                  color="primary"
-                  onClick={() => inputRef.current?.click()}
-                  disabled={isSaving}
-                  sx={{
-                    position: "absolute",
-                    right: 0,
-                    bottom: 0,
-                    bgcolor: "background.paper",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    "&:hover": { bgcolor: "background.paper" },
-                  }}
-                >
+                <IconButton color="primary" onClick={() => inputRef.current?.click()} disabled={isSaving} sx={{ position: "absolute", right: 0, bottom: 0, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", "&:hover": { bgcolor: "background.paper" } }}>
                   <PhotoCameraRoundedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-              />
+              <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
             </Box>
           </Grid>
           <Grid item xs={12} md>
             <Stack spacing={1}>
-              <Typography variant="h4">
-                {[users.firstName, users.lastName].filter(Boolean).join(" ") || users.userName || "Usuario"}
-              </Typography>
+              <Typography variant="h4">{[users.firstName, users.lastName].filter(Boolean).join(" ") || users.userName || "Usuario"}</Typography>
               <Typography color="text.secondary">{users.email || "Email sin completar"}</Typography>
               <Divider sx={{ my: 1 }} />
               <Grid container spacing={2}>
                 {profileFields.map(([field, label]) => (
                   <Grid item xs={12} sm={6} md={4} key={field}>
-                    <Typography variant="caption" color="text.secondary">
-                      {label}
-                    </Typography>
-                    <Typography variant="body1">
-                      {field === "birthdate" ? formatDate(users.birthdate) : users[field] || "Sin completar"}
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">{label}</Typography>
+                    <Typography variant="body1">{field === "birthdate" ? formatDate(users.birthdate) : users[field] || "Sin completar"}</Typography>
                   </Grid>
                 ))}
               </Grid>
@@ -318,22 +233,10 @@ export function Perfil() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} lg={6}>
-          <EventsPanel
-            title="Eventos creados"
-            emptyText="Aun no has creado ningun evento."
-            events={createdEvents}
-            onChanged={handleEventChanged}
-            onRemoved={handleEventRemoved}
-          />
+          <EventsPanel title="Eventos creados" emptyText="Aun no has creado ningun evento." events={createdEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
         </Grid>
         <Grid item xs={12} lg={6}>
-          <EventsPanel
-            title="Mis eventos"
-            emptyText="No te has unido a ningun evento."
-            events={joinedEvents}
-            onChanged={handleEventChanged}
-            onRemoved={handleEventRemoved}
-          />
+          <EventsPanel title="Mis eventos" emptyText="No te has unido a ningun evento." events={joinedEvents} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />
         </Grid>
       </Grid>
 
@@ -345,21 +248,12 @@ export function Perfil() {
             <TextField label="Apellidos" name="lastName" value={editedData.lastName || ""} onChange={handleChange} />
             <TextField label="Ciudad" name="city" value={editedData.city || ""} onChange={handleChange} />
             <TextField label="Email" name="email" type="email" value={editedData.email || ""} onChange={handleChange} />
-            <TextField
-              label="Fecha de nacimiento"
-              name="birthdate"
-              type="date"
-              value={editedData.birthdate || ""}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-            />
+            <TextField label="Fecha de nacimiento" name="birthdate" type="date" value={editedData.birthdate || ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditable(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Guardando..." : "Guardar"}
-          </Button>
+          <Button variant="contained" onClick={handleSave} disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar"}</Button>
         </DialogActions>
       </Dialog>
     </AppShell>
