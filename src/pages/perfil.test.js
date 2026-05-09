@@ -1,9 +1,10 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Perfil } from "./perfil";
 import * as eventsApi from "../api/eventsApi";
 import * as usersApi from "../api/usersApi";
+import { renderWithQueryClient } from "../testUtils/renderWithQueryClient";
 
 jest.mock("../api/eventsApi");
 jest.mock("../api/usersApi");
@@ -42,7 +43,7 @@ class MockFileReader {
 }
 
 function renderProfile() {
-  return render(
+  return renderWithQueryClient(
     <MemoryRouter>
       <Perfil />
     </MemoryRouter>
