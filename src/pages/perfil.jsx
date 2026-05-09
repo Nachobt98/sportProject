@@ -22,9 +22,9 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import { AppShell } from "../components/AppShell";
 import { CardEvent, eventPropType } from "../components/cardEvent";
-import { EmptyState, ErrorState } from "../components/FeedbackState";
+import { EmptyState, ErrorState, LoadingState } from "../components/FeedbackState";
 import { useUser } from "../context/userContext";
-import { getCurrentUserCreatedEvents, getCurrentUserJoinedEvents } from "../api/eventsApi";
+import { useProfileEvents } from "../hooks/useEvents";
 import { updateCurrentUser } from "../api/usersApi";
 import perfil from "../img/pexels-stefan-stefancik-91227.jpg";
 
@@ -94,9 +94,9 @@ EventsPanel.propTypes = {
 
 export function Perfil() {
   const { users, setUsers } = useUser();
+  const profileEventsQuery = useProfileEvents(users.userName);
   const [createdEvents, setCreatedEvents] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
-  const [eventsError, setEventsError] = useState("");
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -109,25 +109,9 @@ export function Perfil() {
   }, [users]);
 
   useEffect(() => {
-    if (!users.userName) {
-      setCreatedEvents([]);
-      setJoinedEvents([]);
-      return;
-    }
-
-    async function fetchProfileEvents() {
-      setEventsError("");
-      try {
-        const [created, joined] = await Promise.all([getCurrentUserCreatedEvents(), getCurrentUserJoinedEvents()]);
-        setCreatedEvents(Array.isArray(created) ? created : []);
-        setJoinedEvents(Array.isArray(joined) ? joined : []);
-      } catch (error) {
-        setEventsError(error.message || "No se pudieron cargar los eventos del perfil.");
-      }
-    }
-
-    fetchProfileEvents();
-  }, [users.userName]);
+    setCreatedEvents(profileEventsQuery.createdEvents);
+    setJoinedEvents(profileEventsQuery.joinedEvents);
+  }, [profileEventsQuery.createdEvents, profileEventsQuery.joinedEvents]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -197,7 +181,8 @@ export function Perfil() {
 
   return (
     <AppShell title="Perfil" subtitle="Gestiona tus datos y revisa tu actividad dentro de la plataforma." actions={<Button startIcon={<EditRoundedIcon />} variant="contained" onClick={() => setEditable(true)}>Editar perfil</Button>}>
-      {eventsError && <ErrorState title="No se pudieron cargar tus eventos" message={eventsError} compact />}
+      {profileEventsQuery.error && <ErrorState title="No se pudieron cargar tus eventos" message={profileEventsQuery.error.message || "No se pudieron cargar los eventos del perfil."} compact />}
+      {profileEventsQuery.isLoading && <LoadingState title="Cargando tus eventos" description="Preparando tus eventos creados y tus participaciones." compact />}
       {profileError && <Alert severity="error">{profileError}</Alert>}
       {profileSuccess && <Alert severity="success">{profileSuccess}</Alert>}
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
