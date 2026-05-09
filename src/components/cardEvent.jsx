@@ -23,7 +23,13 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/userContext";
-import { cancelEvent, cancelEventJoin, deleteEvent, dismissEvent, joinEvent } from "../api/eventsApi";
+import {
+  useCancelEventJoinMutation,
+  useCancelEventMutation,
+  useDeleteEventMutation,
+  useDismissEventMutation,
+  useJoinEventMutation,
+} from "../hooks/useEvents";
 import { ConfirmDialog } from "./ConfirmDialog";
 import {
   EVENT_STATUS,
@@ -112,7 +118,11 @@ export function CardEvent({ event, onChanged, onRemoved }) {
   const [isUserJoined, setIsUserJoined] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
-  const [isConfirming, setIsConfirming] = useState(false);
+  const cancelEventMutation = useCancelEventMutation(currentEvent._id);
+  const cancelEventJoinMutation = useCancelEventJoinMutation(currentEvent._id);
+  const deleteEventMutation = useDeleteEventMutation(currentEvent._id);
+  const dismissEventMutation = useDismissEventMutation(currentEvent._id);
+  const joinEventMutation = useJoinEventMutation(currentEvent._id);
 
   useEffect(() => {
     setCurrentEvent(event);
@@ -133,6 +143,11 @@ export function CardEvent({ event, onChanged, onRemoved }) {
   const canManageActiveEvent = isCreator && isActiveLifecycle;
   const lockedMessage = getLockedMessage(status);
   const activeConfirmConfig = confirmAction ? confirmDialogConfig[confirmAction] : null;
+  const isConfirming =
+    cancelEventMutation.isPending ||
+    cancelEventJoinMutation.isPending ||
+    deleteEventMutation.isPending ||
+    dismissEventMutation.isPending;
 
   useEffect(() => {
     setIsUserJoined(participants.includes(users.userName));
@@ -146,33 +161,35 @@ export function CardEvent({ event, onChanged, onRemoved }) {
     navigate(`/events/${currentEvent._id}/edit`);
   };
 
+  const handleUpdatedEvent = (updatedEvent) => {
+    setCurrentEvent(updatedEvent);
+    onChanged?.(updatedEvent);
+  };
+
   const runConfirmedAction = async () => {
-    setIsConfirming(true);
     try {
       if (confirmAction === CONFIRM_ACTIONS.DELETE_EVENT) {
-        await deleteEvent(currentEvent._id);
+        await deleteEventMutation.mutateAsync();
         onRemoved?.(currentEvent._id);
         setFeedback({ severity: "success", message: "Evento eliminado" });
       }
 
       if (confirmAction === CONFIRM_ACTIONS.CANCEL_EVENT) {
-        const data = await cancelEvent(currentEvent._id);
-        setCurrentEvent(data.event);
-        onChanged?.(data.event);
+        const data = await cancelEventMutation.mutateAsync();
+        handleUpdatedEvent(data.event);
         setFeedback({ severity: "success", message: "Evento cancelado" });
       }
 
       if (confirmAction === CONFIRM_ACTIONS.DISMISS_EVENT) {
-        await dismissEvent(currentEvent._id);
+        await dismissEventMutation.mutateAsync();
         onRemoved?.(currentEvent._id);
         setFeedback({ severity: "success", message: "Evento borrado de tu perfil" });
       }
 
       if (confirmAction === CONFIRM_ACTIONS.CANCEL_PARTICIPATION) {
-        const data = await cancelEventJoin(currentEvent._id);
-        setCurrentEvent(data.event);
+        const data = await cancelEventJoinMutation.mutateAsync();
         setIsUserJoined(false);
-        onChanged?.(data.event);
+        handleUpdatedEvent(data.event);
         setFeedback({ severity: "success", message: "Participacion cancelada" });
       }
 
@@ -185,17 +202,14 @@ export function CardEvent({ event, onChanged, onRemoved }) {
         [CONFIRM_ACTIONS.CANCEL_PARTICIPATION]: "No se pudo cancelar la participacion",
       }[confirmAction];
       setFeedback({ severity: "error", message: error.message || fallbackMessage });
-    } finally {
-      setIsConfirming(false);
     }
   };
 
   const handleJoinClick = async () => {
     try {
-      const data = await joinEvent(currentEvent._id);
-      setCurrentEvent(data.event);
+      const data = await joinEventMutation.mutateAsync();
       setIsUserJoined(true);
-      onChanged?.(data.event);
+      handleUpdatedEvent(data.event);
     } catch (error) {
       setFeedback({ severity: "error", message: error.message || "No se pudo conectar con el servidor" });
     }
@@ -286,7 +300,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
                 variant="contained"
                 startIcon={<LoginOutlinedIcon />}
                 onClick={handleJoinClick}
-                disabled={!canJoin}
+                disabled={!canJoin || joinEventMutation.isPending}
               >
                 Unirse
               </Button>
@@ -298,7 +312,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
                 color="secondary"
                 startIcon={<LogoutOutlinedIcon />}
                 onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_PARTICIPATION)}
-                disabled={!canCancelParticipation}
+                disabled={!canCancelParticipation || cancelEventJoinMutation.isPending}
               >
                 Cancelar participacion
               </Button>
@@ -310,6 +324,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
                 color="warning"
                 startIcon={<CancelOutlinedIcon />}
                 onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_EVENT)}
+                disabled={cancelEventMutation.isPending}
               >
                 Cancelar evento
               </Button>
@@ -331,6 +346,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
                 color="inherit"
                 startIcon={<VisibilityOffOutlinedIcon />}
                 onClick={() => setConfirmAction(CONFIRM_ACTIONS.DISMISS_EVENT)}
+                disabled={dismissEventMutation.isPending}
               >
                 Borrar de mi perfil
               </Button>
@@ -342,6 +358,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
                 color="error"
                 startIcon={<DeleteOutlineOutlinedIcon />}
                 onClick={() => setConfirmAction(CONFIRM_ACTIONS.DELETE_EVENT)}
+                disabled={deleteEventMutation.isPending}
               >
                 Eliminar globalmente
               </Button>

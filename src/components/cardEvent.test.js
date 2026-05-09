@@ -1,8 +1,9 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { CardEvent } from "./cardEvent";
 import * as eventsApi from "../api/eventsApi";
+import { renderWithQueryClient } from "../testUtils/renderWithQueryClient";
 
 jest.mock("../api/eventsApi");
 const mockNavigate = jest.fn();
@@ -31,7 +32,7 @@ const baseEvent = {
 };
 
 function renderCard(event = baseEvent, props = {}) {
-  return render(
+  return renderWithQueryClient(
     <MemoryRouter>
       <CardEvent event={event} {...props} />
     </MemoryRouter>
