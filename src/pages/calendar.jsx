@@ -1,6 +1,27 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Chip, Grid, Paper, Stack, Tab, Tabs, Typography } from "@mui/material";
+// Componente reutilizable para secciones con Paper, título y descripción
+function SectionPaper({ title, description, children, sx }) {
+  return (
+    <Paper sx={{ p: { xs: 1.5, sm: 2 }, height: "100%", border: "1px solid", borderColor: "divider", ...sx }}>
+      <Stack spacing={2}>
+        <Box sx={{ px: 1 }}>
+          <Typography variant="h5">{title}</Typography>
+          <Typography variant="body2" color="text.secondary">{description}</Typography>
+        </Box>
+        {children}
+      </Stack>
+    </Paper>
+  );
+}
+
+SectionPaper.propTypes = {
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string.isRequired,
+  children: PropTypes.node,
+  sx: PropTypes.object,
+};
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
@@ -157,37 +178,34 @@ export function Calendar() {
         ))}
       </Grid>
 
+
       <Grid container spacing={3} alignItems="stretch">
         <Grid item xs={12} md={5} lg={4}>
-          <Paper sx={{ p: { xs: 1.5, sm: 2 }, height: "100%", border: "1px solid", borderColor: "divider" }}>
-            <Stack spacing={2}>
-              <Box sx={{ px: 1 }}>
-                <Typography variant="h5">Selector de fecha</Typography>
-                <Typography variant="body2" color="text.secondary">Elige un dia para revisar actividades concretas.</Typography>
-              </Box>
-              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                <DateCalendar value={selectedDate} onChange={(newValue) => setSelectedDate(newValue || dayjs())} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
-              </LocalizationProvider>
-            </Stack>
-          </Paper>
+          <SectionPaper
+            title="Selector de fecha"
+            description="Elige un dia para revisar actividades concretas."
+          >
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+              <DateCalendar value={selectedDate} onChange={(newValue) => setSelectedDate(newValue || dayjs())} sx={{ width: "100%", "& .MuiPickersDay-root.Mui-selected": { bgcolor: "primary.main" } }} />
+            </LocalizationProvider>
+          </SectionPaper>
         </Grid>
         <Grid item xs={12} md={7} lg={8}>
-          <Paper sx={{ p: { xs: 2, md: 3 }, height: "100%", border: "1px solid", borderColor: "divider" }}>
-            <Stack spacing={2.25}>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ sm: "center" }}>
-                <Box>
-                  <Typography variant="h5">Dia seleccionado</Typography>
-                  <Typography variant="body2" color="text.secondary">{selectedDate.format("dddd, D [de] MMMM [de] YYYY")}</Typography>
-                </Box>
-                <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
-              </Stack>
-              {selectedEvents.length === 0 ? (
-                <EmptyState title="No hay eventos para este dia." description="Prueba otra fecha o revisa la lista de eventos proximos." compact />
-              ) : (
-                <Stack spacing={1.5}>{selectedEvents.map((event) => <CardEvent key={event._id} event={event} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />)}</Stack>
-              )}
+          <SectionPaper
+            title="Dia seleccionado"
+            description={selectedDate.format("dddd, D [de] MMMM [de] YYYY")}
+            sx={{ p: { xs: 2, md: 3 } }}
+          >
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ sm: "center" }}>
+              <Box />
+              <Chip label={`${selectedEvents.length} eventos`} color={selectedEvents.length ? "primary" : "default"} />
             </Stack>
-          </Paper>
+            {selectedEvents.length === 0 ? (
+              <EmptyState title="No hay eventos para este dia." description="Prueba otra fecha o revisa la lista de eventos proximos." compact />
+            ) : (
+              <Stack spacing={1.5}>{selectedEvents.map((event) => <CardEvent key={event._id} event={event} onChanged={handleEventChanged} onRemoved={handleEventRemoved} />)}</Stack>
+            )}
+          </SectionPaper>
         </Grid>
       </Grid>
 
