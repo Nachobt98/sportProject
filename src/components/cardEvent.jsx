@@ -55,26 +55,26 @@ const userProfilePropType = PropTypes.shape({
 
 const confirmDialogConfig = {
   [CONFIRM_ACTIONS.CANCEL_PARTICIPATION]: {
-    title: "Cancelar participación",
-    description: "Dejarás de aparecer como participante de este evento. Si quedan plazas, otra persona podrá ocupar tu sitio.",
-    confirmLabel: "Cancelar participación",
+    title: "Cancelar participacion",
+    description: "Dejaras de aparecer como participante de este evento. Si quedan plazas, otra persona podra ocupar tu sitio.",
+    confirmLabel: "Cancelar participacion",
     severity: "warning",
   },
   [CONFIRM_ACTIONS.CANCEL_EVENT]: {
     title: "Cancelar evento",
-    description: "El evento dejará de aparecer en la búsqueda pública y quedará bloqueado para los participantes vinculados.",
+    description: "El evento dejara de aparecer en la busqueda publica y quedara bloqueado para los participantes vinculados.",
     confirmLabel: "Cancelar evento",
     severity: "warning",
   },
   [CONFIRM_ACTIONS.DISMISS_EVENT]: {
     title: "Borrar de mi perfil",
-    description: "El evento desaparecerá de tu perfil, pero no se eliminará para el resto de usuarios vinculados.",
+    description: "El evento desaparecera de tu perfil, pero no se eliminara para el resto de usuarios vinculados.",
     confirmLabel: "Borrar de mi perfil",
     severity: "info",
   },
   [CONFIRM_ACTIONS.DELETE_EVENT]: {
     title: "Eliminar evento globalmente",
-    description: "Esta acción eliminará el evento para todos los usuarios. No se podrá deshacer.",
+    description: "Esta accion eliminara el evento para todos los usuarios. No se podra deshacer.",
     confirmLabel: "Eliminar globalmente",
     severity: "error",
   },
@@ -108,7 +108,7 @@ function formatDate(dateString) {
 
 function getLockedMessage(status) {
   if (status === EVENT_STATUS.FULL) return "Evento completo. Puedes consultar el detalle, pero no quedan plazas.";
-  if (status === EVENT_STATUS.CANCELLED) return "Evento cancelado. Las acciones de participación están bloqueadas.";
+  if (status === EVENT_STATUS.CANCELLED) return "Evento cancelado. Las acciones de participacion estan bloqueadas.";
   if (status === EVENT_STATUS.PAST) return "Evento pasado. No acepta nuevas inscripciones.";
   return "";
 }
@@ -185,7 +185,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
         const data = await cancelEventJoinMutation.mutateAsync();
         setIsUserJoined(false);
         handleUpdatedEvent(data.event);
-        setFeedback({ severity: "success", message: "Participación cancelada" });
+        setFeedback({ severity: "success", message: "Participacion cancelada" });
       }
 
       setConfirmAction(null);
@@ -194,7 +194,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
         [CONFIRM_ACTIONS.DELETE_EVENT]: "No se pudo eliminar el evento",
         [CONFIRM_ACTIONS.CANCEL_EVENT]: "No se pudo cancelar el evento",
         [CONFIRM_ACTIONS.DISMISS_EVENT]: "No se pudo borrar el evento de tu perfil",
-        [CONFIRM_ACTIONS.CANCEL_PARTICIPATION]: "No se pudo cancelar la participación",
+        [CONFIRM_ACTIONS.CANCEL_PARTICIPATION]: "No se pudo cancelar la participacion",
       }[confirmAction];
       setFeedback({ severity: "error", message: error.message || fallbackMessage });
     }
@@ -280,7 +280,7 @@ export function CardEvent({ event, onChanged, onRemoved }) {
           <Button startIcon={<InfoOutlinedIcon />} onClick={handleInfoClick}>Detalle</Button>
           <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
             {!isCreator && !isUserJoined && <Button variant="contained" startIcon={<LoginOutlinedIcon />} onClick={handleJoinClick} disabled={!canJoin || joinEventMutation.isPending}>Unirse</Button>}
-            {!isCreator && isUserJoined && <Button variant="outlined" color="secondary" startIcon={<LogoutOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_PARTICIPATION)} disabled={!canCancelParticipation || cancelEventJoinMutation.isPending}>Cancelar participación</Button>}
+            {!isCreator && isUserJoined && <Button variant="outlined" color="secondary" startIcon={<LogoutOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_PARTICIPATION)} disabled={!canCancelParticipation || cancelEventJoinMutation.isPending}>Cancelar participacion</Button>}
             {canManageActiveEvent && <Button variant="outlined" color="warning" startIcon={<CancelOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.CANCEL_EVENT)} disabled={cancelEventMutation.isPending}>Cancelar evento</Button>}
             {canEditDate && <Button variant="outlined" startIcon={<EditCalendarOutlinedIcon />} onClick={handleEditClick}>Cambiar fecha</Button>}
             {(status === EVENT_STATUS.CANCELLED || status === EVENT_STATUS.PAST) && <Button variant="outlined" color="inherit" startIcon={<VisibilityOffOutlinedIcon />} onClick={() => setConfirmAction(CONFIRM_ACTIONS.DISMISS_EVENT)} disabled={dismissEventMutation.isPending}>Borrar de mi perfil</Button>}
